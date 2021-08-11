@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>用户管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">用户管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-primary btn-sm" onclick="app.methods.openAddBox();"><i class="fa fa-plus-square"></i> 新增</button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+			<div class="modal-dialog modal-md" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title">用户</h4>
+					</div>
+					<div class="modal-body">
+						<input style="display:none;" disabled class="form-control" type="text" name="userId"/>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">用户名<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="userName"/>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">姓名<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="realname"/>
+							</div>
+						</div>
+						<div class="form-group row PWD">
+							<label class="control-label col-sm-2">密码<span class="text-danger">*</span></label>
+							<div class="col-sm-10" style="position: relative;">
+								<input class="form-control" type="password" name="password"/>
+								<i class="fa fa-eye-slash" style="position: absolute;right: 4%;top: 10px;cursor: pointer;" id="togglePwd"></i>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">角色<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<select class="selectpicker" data-live-search="true" name="ids" multiple></select>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.save()">保存</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				mainData: [],
+			},
+			methods : {
+				initTable : function(){
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/user/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.mainData = data.body.content;
+							tableUi.initBootstrapTable();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+                        field: 'userName',title: '用户名',
+					},{
+						field: 'realname',title: '姓名',
+					},
+						{
+						field: 'roleNames',title: '角色',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							if(!row.roleNames){return '--'}
+							var html = '';
+							value.split(',').map(function(e){
+								html += '<span class="label label-info" style="margin:4px;display:inline-block">'+e+'</span>'; 
+							})
+							return html;
+                        }
+					}, {
+						field: 'created_at',title: ' 创建时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+                        title: '操作',align: 'center',minWidth:250,
+                        formatter: function (value, row, index) {
+							return '<div class="toolBox btn-group">'+
+								'<button type="button" class="btn btn-success btn-xs" onclick="app.methods.edit(' + index + ')"><i class="fa fa-edit"></i> 编辑</button>'+
+								'<button type="button" class="btn btn-warning btn-xs" onclick="app.methods.rePwd(' + row.userId + ')">重置密码</button>'+
+								'<button type="button" class="btn btn-danger btn-xs" onclick="app.methods.del(' + row.userId + ')"><i class="fa fa-trash-o"></i> 删除</button>'+
+								'</div>';
+                        }
+                    }];
+                    return option;
+				},
+				initTogglePwd: function(){
+					$('#togglePwd').off().on('click',function(){
+						if($(this).hasClass('fa-eye-slash')){
+							$(this).removeClass('fa-eye-slash').addClass('fa-eye').prev().attr('type',"text");
+						}else{
+							$(this).removeClass('fa-eye').addClass('fa-eye-slash').prev().attr('type',"password");
+						}
+					})
+				},
+				rePwd:function(id){
+					layer.confirm('确定重置吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/user/passwordRest?id=" + id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('重置成功，新密码为123456。');
+									app.data.table.bootstrapTable('refresh');
+									layer.close(_index);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				del:function(id){
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + "/api/admin/user/" + id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.close(_index);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				edit:function(index){
+					app.methods.openAddBox();
+					app.methods.initBox(index);
+                    $('.dialog-create').find(".PWD").hide();
+				},
+				save:function(index){
+					var parame = tools.getParams('.dialog-create');
+					var roles = [];
+					parame.ids.split(',').map(function(e){
+						roles.push({'id': e})
+					})
+					parame['roles'] = roles;
+					parame['username'] = parame.userName;
+					parame['realname'] = parame.realname;
+					parame['id'] = parame.userId;
+					delete parame.ids;
+					delete parame.userId;
+					delete parame.userName;
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/user",
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('保存成功...');
+								app.data.table.bootstrapTable('refresh');
+								$(".dialog-create").modal("hide");
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				initBox: function(index){
+					var data = [];
+					app.data.rolesData = cacheSessionStorage.getCache('roleData')
+					app.data.mainData[index].roleNames && app.data.mainData[index].roleNames.split(',').map(function(e){
+						for(var i = 0;i < app.data.rolesData.length; i++){
+							if(app.data.rolesData[i].name == e){
+								data.push(app.data.rolesData[i].id)
+							}
+						}
+					});
+					app.data.mainData[index].ids = data;
+                    tools.initInput(".dialog-create", app.data.mainData[index]);
+				},
+				openAddBox: function(){
+                    var _modal = $(".dialog-create");
+                    _modal.find("input").val('');
+                    _modal.find("textarea").val('');
+                    _modal.find(".PWD").show();
+					_modal.modal("show");
+                },
+				initSelect : function(){
+					tools.renderSelect.roleData('select[name="ids"]');
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTogglePwd();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}	
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>区域管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">区域管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-primary btn-sm" onclick="app.methods.openAddBox();"><i class="fa fa-plus-square"></i> 新增</button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+			<div class="modal-dialog modal-md" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title">区域关联</h4>
+					</div>
+					<div class="modal-body">
+						<input style="display:none;" disabled class="form-control" type="text" name="id"/>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">仓库名称<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+                                <select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库名称" data-width="100%"></select>
+							</div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">仓库类型<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <select name="storageTypeId" class="selectpicker" data-live-search="true" data-title="仓库类型" data-width="100%"></select>
+                            </div>
+                        </div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">国家<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="country"/>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">省<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="province"/>
+							</div>
+                        </div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.saveArea()">保存</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				areaData: [],
+                storageType: cacheSessionStorage.getCache('storageType'),
+                storehouse: cacheSessionStorage.getCache('storehouse'),
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_list, {
+                        url: utils.prePath() + '/api/admin/erp/storehouse/region',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.areaData = data.body
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+                        field: 'storehouseId',title: '仓库名称',align: 'center',
+                        formatter: function (value, row, index) {
+                            var html = '';
+                            $(app.data.storehouse).each(function(i,e){
+                                if(e.id == value){
+                                    html = e.storehouseName;
+                                }
+                            })
+                            return html;
+                        }
+					}, {
+                        field: 'storageTypeId',title: '仓库类型',align: 'center',
+                        formatter: function (value, row, index) {
+                            var html = '';
+                            $(app.data.storageType).each(function(i,e){
+                                if(e.id == value){
+                                    html = e.name;
+                                }
+                            })
+                            return html;
+                        }
+					}, {
+                        field: 'country',title: '关联区域',align: 'center',
+                        formatter: function (value, row, index) {
+                            return value + ' ' + row.province
+                        }
+					}, {
+						field: 'updatedAt',title: '编辑时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+                        title: '操作',align: 'center',minWidth:250,
+                        formatter: function (value, row, index) {
+							return '<div class="toolBox btn-group">'+
+								'<button type="button" class="btn btn-success btn-xs" authority="STOREHOUSE_REGION_WRITE" onclick="app.methods.editArea(' + index + ')"><i class="fa fa-edit"></i> 编辑</button>'+
+								'<button type="button" class="btn btn-danger btn-xs" authority="STOREHOUSE_REGION_DELETE" onclick="app.methods.delArea(' + index + ')"><i class="fa fa-trash-o"></i> 删除</button>'+
+								'</div>';
+                        }
+                    }];
+                    return option;
+                },
+				delArea:function(index){
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + "/api/admin/erp/storehouse/region/" + app.data.areaData[index].id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.close(_index);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				editArea:function(index){
+					app.methods.openAddBox();
+					app.methods.initAreaBox(index);
+				},
+				saveArea:function(index){
+					var parame = tools.getParams('.dialog-create');
+                    console.log(parame)
+					if(!parame.storehouseId || !parame.storageTypeId || !parame.country || !parame.province){
+						toastr.error('ヽ(#`Д´)ﾉ ,所有的都是必填项！！！');
+						return false;
+					}
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/erp/storehouse/region",
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('保存成功...');
+								app.data.table.bootstrapTable('refresh');
+								$(".dialog-create").modal("hide");
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				initAreaBox: function(index){
+                    tools.initInput(".dialog-create", app.data.areaData[index]);
+                    var storageTypeName = '';
+                    $(app.data.storageType).each(function(i,e){
+                        if(e.id == app.data.areaData[index].storageTypeId){
+                            storageTypeName = e.name;
+                        }
+                    })
+                    tools.initSelect('select[name="storageTypeId"]', app.data.areaData[index].storageTypeId);
+                    tools.initSelect('select[name="storehouseId"]', app.data.areaData[index].storehouseId);
+				},
+				openAddBox: function(){
+                    var _modal = $(".dialog-create");
+                    _modal.find("input").val('');
+                    tools.initSelect('select[name="storageTypeId"]', '');
+                    tools.initSelect('select[name="storehouseId"]', '');
+                    _modal.modal("show");
+                },
+                initSelect : function(){
+                    tools.renderSelect.storageType('select[name="storageTypeId"]');                    
+                    tools.renderSelect.storehouse('select[name="storehouseId"]');                    
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

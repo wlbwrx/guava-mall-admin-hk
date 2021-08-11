@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>已采购表</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.orderUpdate{cursor: pointer;}
+
+			.stockInfoBox li span:nth-child(1){width: 76px;}
+			.stockInfoBox li span:nth-child(2){width: 76px;}
+			.stockInfoBox li span:nth-child(3){width: 70px;}
+			.stockInfoBox li span:nth-child(4){width: 260px;flex: 1}
+			.stockInfoBox li span:nth-child(4) span{display: inline;padding: 0}
+			.stockInfoBox li span:nth-child(5){width: 76px;}
+			.stockInfoBox li span:nth-child(6),
+			.stockInfoBox li span:nth-child(7){width: 140px;}
+
+			#detailToolbar{margin-bottom: 10px;display: flex;flex-wrap: wrap;}
+			#detailToolbar input{max-width: 150px;}
+			ul.stockInfoBox li.noSelect{display: none!important;}
+			ul.stockInfoBox li.select{display: flex!important;}
+			ul.stockInfoBox li:last-child{opacity: 1;}
+			ul.stockInfoBox:not(.showAll) li:nth-child(n+4){display: flex;}
+			
+			.historytrace-div{max-width: 80%; margin: 0px auto; max-height: 300px; overflow: auto;}
+
+			.scrollPic{display: flex;overflow-x: auto;width: 130px;padding-bottom: 4px;}
+			.scrollPic img{margin-right: 6px;margin-left: 0;}
+			.ajaxpicker{
+				z-index:4;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">已采购表</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<button class="btn btn-success btn-sm" id="uploadExcel" class="btn btn-primary"><i class="fa fa-upload"></i>&nbsp;导入采购数据</button>
+							<div class="btn-group">
+								<button type="button" class="btn btn-success btn-sm" id="uploadExpress"><i class="fa fa-upload"></i> 导入采购单物流信息</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/采购单物流导入模板.xls">采购单物流导入模板</a></li>
+								</ul>
+							</div>
+							<button class="btn btn-primary btn-sm" onclick="app.methods.viewDetail();">批量增加物流</button>
+							<button class="btn btn-warning btn-sm export" authority="PURCHASED_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/purchased/list/export');"><i class="fa fa-download"></i> 导出</button>
+						</div>
+						<span id="purchasedInfo"></span>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="createdBegainTime" rangeEnd="reatedEndTime" class="form-control" name="purchasedTimes" placeholder="选择时间" />
+                        <select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库选择"></select>
+                        <select name="purchasedStatus" class="selectpicker" data-live-search="true"></select>
+                        <select name="expressInput" class="selectpicker">
+							<option value="">全部发货状态</option>
+							<option value="0">未发货</option>
+							<option value="1">已发货</option>
+						</select>
+						<select name="scopeId" class="selectpicker" data-live-search="true" data-title="商城"></select>
+						<input type="text" class="form-control" name="purchasedCode" placeholder="采购单号">
+						<div class="ajaxpicker form-control" name="supplierId"></div>
+						<input type="text" class="form-control" name="productTitle" placeholder="输入品名">
+						<input type="text" class="form-control" name="productId" placeholder="输入ID">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="输入条形码">
+						<input type="text" class="form-control" name="expressCode" placeholder="物流单号">
+						<input type="text" class="form-control" name="createdBy" placeholder="入库员">
+						<input type="text" class="form-control" name="comments" placeholder="备注">
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="expressInfoForm" style="display:none;">
+            <div class="form-group" style="visibility:hidden;margin: 0;height: 0;"><label>采购单号</label><input type="text" class="form-control" name="associationId" disabled></div>
+            <div class="form-group" style="visibility:hidden;margin: 0;height: 0;"><label>货运ID</label><input type="text" class="form-control" name="id" disabled></div>
+            <div class="form-group"><label>物流公司</label><input type="text" class="form-control" name="expressCompany"></div>
+            <div class="form-group"><label>物流编号</label><input type="text" class="form-control" name="expressCode"></div>
+			<button class="btn btn-primary" onclick="app.methods.submitExpressInfo()">提交</button>
+        </div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+    <script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20201020"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                scopeData: cacheSessionStorage.getCache('scope'),
+                initPushState: false,
+				importPurchaseState : false,
+				isBatchAdd: false,
+				newData: []
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/purchased/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.purchaseData = data.body.content;
+							app.data.initPushState == false && app.methods.initPushFile();
+							app.data.importPurchaseState == false && app.methods.importPurchaseExpress();
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.events.initCancelExpress();
+							app.events.initEditExpress();
+							app.methods.initToggleOrder();
+							
+							//purchasedInfo
+							$.get(utils.prePath() + '/api/admin/erp/purchased/list/info' , tools.getParams() , function(data){
+								var purchasedInfo = '' ; 
+								$.each(data.body, function(i, map){
+									purchasedInfo += '	' + map.comments + ' : ' + map.value
+								});
+								$('#purchasedInfo').html(purchasedInfo);
+							});
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						checkbox: true
+					},{
+						field: 'purchased_code',title: '采购单号',align: 'center',
+						formatter: function (value, row, index, field) {
+							//return '<span class="simpleBtn" onclick="app.methods.showSkuDetail(' + index + ')">' + value + '</span><span class="nowarp" style="display:block;">（共' + row.sku_quantities + '个SKU）</span>';
+							// 处理天数
+							var days = ''
+							if (row.days > 1) {
+								days = '（' + row.days + '天）'
+							} else {
+								days = ''
+							}
+							return  '<table class="table table-condensed" style="border: none; background: transparent;">'+
+									'	<tbody>'+
+									'        <tr>'+
+									'          <td style="border: none;padding: 0px 3px;">' + value + '</td>'+
+									'          <td style="border: none;padding: 0px 3px;"><a href="#" class="glyphicon glyphicon glyphicon-edit" aria-hidden="true" onclick="app.methods.showSkuDetail(' + index + ')"></a></td>'+
+									'        </tr>'+
+									'        <tr>'+
+									'          <td style="border: none;padding: 0px 3px;">（共' + row.sku_quantities + '个SKU）</td>'+
+									'          <td style="border: none;padding: 0px 3px;"><a href="#" class="glyphicon glyphicon glyphicon-barcode" aria-hidden="true" onclick="app.methods.showPurchaseHistoryTrace(\'' + value + '\')"></a></td>'+
+									'        </tr>'+
+									'        <tr>'+
+									'          <td style="border: none;padding: 0px 3px;">' + days + '</td>'+
+									'        </tr>'+
+									'      </tbody>'+
+									'</table>'
+						}
+					}, {
+                        field: 'purchased_quantities',title: '采购进度',align: 'center',
+                        formatter: function (value, row, index, field) {
+							var progress = 1 - (row.remind_quantities - 0) / (value - 0);
+							var color = '',html = "";
+							if(progress > 1){
+								color = 'text-muted';
+								html += '超额到货'
+							}else if(progress == 1){
+								color = 'text-success';
+							}else if(progress >= 0.6){
+								color = 'text-warning';
+							}else{
+								color = 'text-danger';
+							}
+							html += '<span class="' + color + '" style="font-weight:700;">' + (progress * 100).toFixed(2) + '%<br>（' + (value - row.remind_quantities) + '/' + value + '）</span>';
+							return html
+                        }
+					}, {
+						field: 'storehouse_name',title: '仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + value + '</span>';
+                        }
+					}, {
+                        field: 'purchased_prices',title: '总花费',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return '<span class="money">' + value + '</span>';
+                        }
+					},{
+						field: 'coupon_amount',title: '优惠券',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div style="cursor:pointer;" onclick="app.methods.changeCouponAmount('+index+')" class="money">'+ row.coupon_amount + '</div>';
+						}
+					},
+						{
+                        field: 'purchase_freight_price',title: '运费',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return '<div style="cursor:pointer;" onclick="app.methods.changeFreight('+index+')" class="money">'+ row.purchase_freight_price + '</div>';
+                        }
+					}, {
+						field: 'sku_infos',title: 'SKU图',
+						formatter: function (value, row, index, field) {
+							var html = '<div class="scrollPic">';
+							var skuData = tools.specialStringToArray(value);
+							skuData.map(function(e,i){
+								if(i<3){
+									html += tools.formatterFunction.proImage(e.product_sku_image, e.product_id, e.product_title)
+								}
+							})
+							return html + '</div>';
+                        }
+					}, {
+						field: 'supplier_name',title: '供应商',minWidth:150,
+					}, {
+						field: 'created_by',title: '入库员',align: 'center',
+					}, {
+						field: 'comments',title: '备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							return '<span onclick="app.methods.editComments('+index+')">'+(value || '--')+'</span>'
+                        }
+					}, {
+						field: 'created_at',title: '采购时间',align: 'center',minWidth:90,						
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'express_infos',title: '<span class="columnsTit">物流信息</span><ul class="expressInfoBox"><li><span>物流公司</span><span>物流单号</span><span>操作</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.expressInfos(value);
+                        }
+					}, {
+						title: '操作',align: 'center',minWidth:240,						
+						formatter: function (value, row, index, field) {
+							var html = '<div class="toolBox btn-group">';
+							html += '<button type="button" class="btn btn-info btn-xs" authority="PURCHASED_WRITE" onclick="app.methods.addExpress(' + index + ')">增加物流</button>';
+							html += '<button type="button" class="btn btn-warning btn-xs" authority="PURCHASED_EXPORT" onclick="tools.exportByFrom(\'/api/admin/erp/purchased/purchasedCode/export\',{\'purchasedCode\':\'' + row.purchased_code + '\'});"><i class="fa fa-download"></i> 导出详情</button>';
+							if(row.remind_quantities > 0){
+								html += '<button type="button" class="btn btn-danger btn-xs" authority="PURCHASED_WRITE" onclick="app.methods.deletePurchased(' + index + ')"><i class="fa fa-trash"></i></button>';
+							}
+							html += '</div>';
+							return html;
+                        }
+					}];
+                    return option;
+				},
+				viewDetail: function(){
+					let data = [],postData={};
+					app.data.table.bootstrapTable('getSelections').map(function(e){
+						data.push({
+							'id': e.purchased_id,
+							'purchasedCode': e.purchased_code,
+							'storehouseId': e.storehouse_id
+						})
+					})
+					if(data.length == 0){
+						toastr.error('请选择后再操作')
+						return;
+					}
+					// 多選後的信息
+					app.data.newData = data
+					app.data.isBatchAdd = true;
+					$('.expressInfoForm input').val('');
+					layer.open({
+						type: 1,
+						content: $('.expressInfoForm'),
+						area: ['400px', 'auto'],
+						title: '新增快递信息',
+						closeBtn: 1
+					});
+				},
+				changeFreight: function(index){
+					layer.prompt({
+						title: '运费',
+						value: app.data.purchaseData[index].purchase_freight_price,
+					}, function(_value){
+						var _value = _value.trim()
+						if(!_value){
+							_value = 0
+						}
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/purchased/freight",
+							data: JSON.stringify({
+								id: app.data.purchaseData[index].purchased_id,
+								purchaseFreightPrice: _value
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('成功')
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				changeCouponAmount: function(index){
+					layer.prompt({
+						title: '优惠券',
+						value: app.data.purchaseData[index].coupon_amount,
+					}, function(_value){
+						var _value = _value.trim()
+						if(!_value){
+							_value = 0
+						}
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/purchased/couponAmount",
+							data: JSON.stringify({
+								id: app.data.purchaseData[index].purchased_id,
+								couponAmount: _value
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('成功')
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				editComments: function(index){
+					layer.prompt({
+						title: '备注',
+						value: app.data.purchaseData[index].comments,
+					}, function(_value){
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/purchased/comments",
+							data: JSON.stringify({
+								id: app.data.purchaseData[index].purchased_id,
+								comments: _value
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				showSkuDetail: function(index){
+					layer.open({
+                        type: 1,
+						content: 
+							'<div id="detailToolbar" class="btn-group"><input type="text" class="form-control" name="productId" placeholder="输入商品ID"><input type="text" class="form-control" name="productSkuBarcode" placeholder="输入条形码"><select name="purchasedSkuStatus" class="selectpicker" data-live-search="true"><option value="">全部SKU状态</option><option value="10">已完成</option><option value="20">未完成</option></select><button class="btn btn-primary" onclick="app.methods.filterTable();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button></div>' + 
+							'<ul class="stockInfoBox" style="padding:10px 0;"><li><span>ID</span><span>条码</span><span>SKU图</span><span>品名（货源名）</span><span>入库进度</span><span>采购价</span><span>操作</span></li></ul>' + 
+							'<div class="detailTable" data-index="' + index + '">' + tools.formatterFunction.stockSkuInfos(tools.specialStringToArray(app.data.purchaseData[index].sku_infos), true) + '</div>',
+                        area: ['98vw', '90vh'],
+                        title: '采购单SKU表',
+						closeBtn: 1,
+						cancel:function(){
+							// app.data.openDetailNow = null
+							app.data.table.bootstrapTable('refresh');
+						},
+					});
+					tools.renderSelect.purchasedStatus('select[name="purchasedSkuStatus"]');					
+					app.events.initCancelPurvhsaSku(index);
+				},
+				filterTable: function(){
+            		var data = tools.specialStringToArray(app.data.purchaseData[$('.detailTable').data('index')].sku_infos);
+					var params = tools.getParams('#detailToolbar');
+					var filter_data = [];
+					for(var i = 0;i < data.length;i++){
+						if(params.productId && data[i].product_id != params.productId){
+							continue
+						}
+						if(params.productSkuBarcode && data[i].product_sku_barcode != params.productSkuBarcode){
+							continue
+						}
+						if(params.purchasedSkuStatus && params.purchasedSkuStatus == 10 && data[i].storaged_quantity - data[i].purchased_quantity < 0){
+							continue
+						}
+						if(params.purchasedSkuStatus && params.purchasedSkuStatus == 20 && data[i].storaged_quantity - data[i].purchased_quantity >= 0){
+							continue
+						}
+						filter_data.push(data[i])
+					}
+					$('.detailTable').html(tools.formatterFunction.stockSkuInfos(filter_data, true))
+					app.events.initCancelPurvhsaSku();
+				},
+				initToggleOrder: function(){
+					$('.toggleOrder').on('click',function(){
+						if($(this).parent().parent().hasClass('showAll')){
+							$(this).text('展开').parent().parent().removeClass('showAll');
+						}else{
+							$(this).text('收起').parent().parent().addClass('showAll');
+						}
+					})
+				},
+				deletePurchased: function(index){
+					layer.prompt({
+						title: '取消原因',
+					}, function(_value){
+						if(_value.length > 20){
+							toastr.warning('原因不能超过20个字。');
+							return;
+						}
+						if(_value.length == 0){
+							toastr.warning('原因不能为空。');
+							return;
+						}
+						layer.confirm('关闭采购单不可逆，请确认...', {icon: 5,title:'删除'}, function(){
+							$.ajax({
+								type: "DELETE",
+								url: utils.prePath() + "/api/admin/erp/purchased/" + app.data.purchaseData[index].purchased_id + "/" + _value,
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('采购单关闭成功...');
+										app.data.table.bootstrapTable('refresh');
+										layer.closeAll();
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						});
+					});
+				},
+				initSelect : function(){
+					tools.rangeTime('input[name="purchasedTimes"]');
+					tools.renderSelect.supplier('supplierId');
+					tools.renderSelect.purchasedStatus('select[name="purchasedStatus"]');
+					tools.renderSelect.scope('select[name="scopeId"]');
+					tools.renderSelect.storehouse('select[name="storehouseId"]');
+                },
+                initPushFile: function(){
+					var uploader = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadExcel',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/purchased/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '4000kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+					            toastr.success('导入成功...');
+//								var uploadSize = JSON.parse(responseObject.response).body ; 
+//								toastr.success('文件上传成功,一共有'+uploadSize+'条数据' + (uploadSize > 100 ? ',大约需要'+ uploadSize +'秒...' : '...'));
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								console.log(err)
+								var mes = '';
+								if(err.response && JSON.parse(err.response) && JSON.parse(err.response).body && JSON.parse(err.response).body.message){
+									mes = JSON.parse(err.response).body.message
+								}else{
+									mes = err.message
+								}
+								toastr.error(mes);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader.init();
+					app.data.initPushState = true;
+				},
+				importPurchaseExpress: function(){
+					var uploader = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadExpress',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/purchased/express/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var mes = JSON.parse(responseObject.response).body.errores;
+                                
+                                if(mes.length > 0){
+									var html = '<table class="table"><tr><td>采购单号</td><td>物流公司</td><td>物流编号</td><td>错误原因</td></tr>'
+									mes.map(function(e){
+										html += '<tr><td>'+e.purchasedCode+'</td><td>'+e.expressCompany+'</td><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>';
+									})
+									layer.open({
+										type: 1,
+										content: html+'</table>',
+										title: '导入失败的发货单物流信息',
+										area: ['80vw', '80vh'],
+										closeBtn: 1
+									});
+                                }else{
+                                    toastr.success('导入成功');
+                                }
+								layer.closeAll('loading');							
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader.init();
+					app.data.importPurchaseState = true;
+				},
+				addExpress: function(index){
+					app.data.isBatchAdd = false;
+					$('.expressInfoForm input').val('');
+					$('.expressInfoForm input[name="associationId"]').val(app.data.purchaseData[index].purchased_id);
+					layer.open({
+						type: 1,
+						content: $('.expressInfoForm'),
+						area: ['400px', 'auto'],
+						title: '新增快递信息',
+						closeBtn: 1
+					});
+				},
+				submitExpressInfo: function(){
+					if(!app.data.isBatchAdd){
+						var param = tools.getParams('.expressInfoForm')
+						if (param.expressCode) {
+							param.expressCode = param.expressCode.trim()
+						}
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + "/api/admin/erp/purchased/express",
+							data: JSON.stringify(param),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('快递添加成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}else{
+						// 多选填写物流信息
+						let param = tools.getParams('.expressInfoForm')
+						if (param.expressCode) {
+							param.expressCode = param.expressCode.trim()
+						}
+						param.eRPPurchasedList = app.data.newData
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + "/api/admin/erp/purchased/express/list",
+							data: JSON.stringify(param),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('快递添加成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+				},
+				showPurchaseHistoryTrace : function(purchasedCode){
+					layer.load();  
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/purchased/historytrace/list",
+						data: {purchasedCode : purchasedCode},
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								
+								if(result.body && result.body.length > 0){
+									var historytraceContent = '<ul class="list-unstyled activity-timeline">' ; 
+									$.each(result.body , function(i, info){
+										historytraceContent +=  '	<li>'+
+																'		<i class="fa fa-comment activity-icon"></i>'+
+																'		<p>'+ info.opreator + ' 在 <strong>[' + moment(info.created_at).format('YYYY-MM-DD HH:mm:ss z') + ']</strong> 进行了 <strong>[' + info.event_name +']</strong> 操作  <a href="#" onclick="app.methods.showPurchaseHistoryTraceDetais(this , \'' + purchasedCode + '\',\'' + moment(info.created_at).format('YYYY-MM-DD HH:mm:ss z') + '\')">详情</a> <span class="timestamp">SKU种类: '+info.sku_count+' , SKU总数 : '+info.purchased_count+'</span></p>'+
+																'	</li>';
+									});
+									historytraceContent += '</ul>' ; 
+									
+									layer.open({
+										type: 1,
+										content: historytraceContent,
+										area: ['90vw', '90vh'],
+										title: '采购单记录追踪'
+									});
+								}else{
+									toastr.success('暂时没有日志记录~_~...');
+								}
+								layer.closeAll('loading');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				showPurchaseHistoryTraceDetais : function(target , purchasedCode , createdAt){
+					if($(target).html() == '收起'){
+						$('.historytrace-div').remove();
+						$(target).html('详情');
+					}else{
+						layer.load();  
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/erp/purchased/historytrace/createAt/list",
+							data: {purchasedCode : purchasedCode , createdAt : createdAt},
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									$('.historytrace-div').remove();
+									$('ul.list-unstyled > li > p > a').html('详情');
+									var infoTable = '<div class="historytrace-div"><table class="table table-condensed" style="border: none; background: transparent;"><tbody>' ;
+									$.each(result.body , function(i, info){
+										infoTable += '        <tr>' ; 
+										infoTable += '          <td>' + info.product_id + '</td>' ; 
+										infoTable += '          <td><img src="' + info.product_sku_img + '" class="img-responsive proImage"></td>' ; 
+										infoTable += '          <td>' + info.product_sku_barcode + '</td>' ; 
+										infoTable += '          <td>' + info.quantity + '</td>' ; 
+										infoTable += '          <td>' + info.comments + '</td>' ; 
+										infoTable += '        </tr>' ; 
+									});
+									infoTable += '</tbody></table><div>'
+									
+									$(target).parents('p').append(infoTable);
+									
+									layer.closeAll('loading');
+									
+									$(target).html('收起');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+				}
+			},
+			events: {
+				initCancelPurvhsaSku: function(index){
+					var  clickIndex = index
+					$('.editOrderSku').off().on('click', function(){
+						var ordersku = $(this).data('ordersku');
+						var quantity = $(this).data('quantity');
+						var storaged_quantity = $(this).data('storaged_quantity');
+						var $this = $(this)
+						layer.open({
+							content: '<div id="quantity_tool">'+
+								'入库数量：<input type="number" class="form-control" min="0" name="storagedQuantity" value="'+storaged_quantity+'" placeholder="入库数量">'+
+								'采购单数量：<input type="number" class="form-control" min="1" name="purchasedQuantity" value="'+quantity+'" placeholder="采购单数量">'+
+								'<input type="text" class="form-control" name="purchasedProductId" value="'+ordersku+'" style="display:none">'+
+								'</div>',
+							area: ['400px', 'auto'],
+							title: '编辑数量信息',
+							yes: function(index, layero){
+								var p = tools.getParams('#quantity_tool')
+								if(p.purchasedQuantity - 0 < 1){
+									toastr.warning('采购数不能小于1');
+									return
+								}
+								if(p.storagedQuantity - 0 < 0){
+									toastr.warning('入库不能小于0');
+									return
+								}
+								$.ajax({
+									type: "PUT",
+									url: utils.prePath() + "/api/admin/erp/purchased/product/update",
+									data: JSON.stringify(p),
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											// app.data.openDetailNow = clickIndex
+											$this.data('quantity', p.purchasedQuantity).data('storaged_quantity', p.storagedQuantity).parent().parent().children('span').eq(4).text(p.storagedQuantity + ' / ' + p.purchasedQuantity)
+											toastr.success('数量编辑成功...');
+											layer.close(index);
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							}
+						});
+					});
+
+					$('.cancelOrderSku').off().on('click', function(){
+						var ordersku = $(this).data('ordersku');
+						var quantity = $(this).data('quantity');
+						layer.prompt({
+							formType: 0,
+							value: quantity,
+							title: '输入SKU的取消数量',
+						}, function(value, index){
+							layer.prompt({
+								title: '取消原因',
+							}, function(_value, _index){
+								if(_value.length > 20){
+									toastr.warning('原因不能超过20个字。');
+									return;
+								}
+								if(_value.length == 0){
+									toastr.warning('原因不能为空。');
+									return;
+								}
+								$.ajax({
+									type: "DELETE",
+									url: utils.prePath() + "/api/admin/erp/purchased/product/remove",
+									data: JSON.stringify({
+										"purchasedProductId" : ordersku, 
+										"removeQuantity" : value,
+										"cancelReson": _value
+									}),
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											toastr.success('sku取消成功...');
+											app.data.table.bootstrapTable('refresh');
+											layer.closeAll();
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							});
+						});
+					});
+					$('.delOrderSku').off().on('click', function(){
+						var ordersku = $(this).data('ordersku');
+						layer.prompt({
+							title: '取消原因',
+						}, function(_value){
+							if(_value.length > 20){
+								toastr.warning('原因不能超过20个字。');
+								return;
+							}
+							if(_value.length == 0){
+								toastr.warning('原因不能为空。');
+								return;
+							}
+							layer.confirm('关闭SKU不可逆，请确认...', {icon: 5,title:'删除'}, function(){
+								$.ajax({
+									type: "DELETE",
+									url: utils.prePath() + "/api/admin/erp/purchased/product/" + ordersku + "/" + _value,
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											toastr.success('sku关闭成功...');
+											app.data.table.bootstrapTable('refresh');
+											layer.closeAll();
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							});
+						});
+					});
+				},
+				initEditExpress:function(){
+					$('.editExpress').off().on('click', function(){
+						var expressid = $(this).data('expressid');
+						var expresscode = $(this).data('expresscode');
+						var expresscompany = $(this).data('expresscompany');
+						var associationid = $(this).data('associationid');
+						$('.expressInfoForm input[name="associationId"]').val(associationid);
+						$('.expressInfoForm input[name="expressCompany"]').val(expresscompany);
+						$('.expressInfoForm input[name="expressCode"]').val(expresscode);
+						$('.expressInfoForm input[name="id"]').val(expressid);
+						layer.open({
+							type: 1,
+							content: $('.expressInfoForm'),
+							area: ['400px', 'auto'],
+							title: '编辑快递信息',
+							closeBtn: 1
+						});
+					});
+				},
+				initCancelExpress: function(){
+					$('.cancelExpress').off().on('click', function(){
+						var expressid = $(this).data('expressid');
+						layer.confirm('删除快递信息不可逆，请确认...', {icon: 5,title:'删除'}, function(_index){
+							$.ajax({
+								type: "DELETE",
+								url: utils.prePath() + "/api/admin/erp/purchased/express/" + expressid,
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('快递信息删除成功...');
+										app.data.table.bootstrapTable('refresh');
+										layer.closeAll();
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						});
+                    });
+				}
+			},
+			init: function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

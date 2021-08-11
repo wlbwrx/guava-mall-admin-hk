@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>收货</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.stockInfoBox li span:nth-child(3) span{font-weight: 700;color: #c62828!important;text-align: left;}
+			.stockInfoBox li span:nth-child(5){display: none;}
+
+			.expressInfoBox li span:last-child{display: none;}
+			.expressInfoBox .expressAdd{cursor: default;text-decoration: none;}
+
+			#errorList ul{list-style: none;padding: 0;}
+			#errorList ul li{display: flex;justify-content: center;align-items: center;}
+			#errorList ul li span{display: block;}
+			#errorList ul li span:nth-child(1){width: 160px;}
+			#errorList ul li span:nth-child(2){width: 120px;}
+			#errorList ul li span:nth-child(3){width: 80px;}
+
+			.sanningData{list-style: none;padding: 0;margin-top: 10px;max-height: 60vh;overflow-y: auto;}
+			.sanningData li{display: flex;justify-content: space-between;align-items: center;border-bottom: 1px solid #000;padding: 6px;}
+			.sanningData li span{display: block;padding: 6px;}
+			.sanningData li span i{font-style: normal;font-size: 18px;font-weight: 700;color: #c62828;}
+			.sanningData li span:nth-child(5) input{width: 70px;}
+			.sanningData li span.purchased_num{width: 60px;text-align: center;}
+			.sanningData li span.purchased_num.text-danger{font-size: 18px;font-weight: 700;}
+
+			.inSku{display: flex;align-items: center;justify-content: center}
+			.inSku img{width:300px;height: 300px;}
+			.inSku div{padding: 6px;}
+			.inSku div p:first-child{font-weight: 700;font-size: 16px;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+							<button class="btn btn-success btn-sm" onclick="app.methods.openIntoBox();"><i class="fa fa-archive"></i>&nbsp;扫描收货</button>
+							<audio src="../music/ding.wav" id="ding"></audio>
+							<audio src="../music/wrong.wav" id="wrong"></audio>
+						</div>
+					</div>
+                    <div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i>&nbsp;刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+                        <select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+                        <input type="text" class="form-control" name="purchasedCode" placeholder="采购单号">
+                        <input type="text" class="form-control" name="expressCode" placeholder="物流单号">
+                        <input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+                        <input type="text" class="form-control" name="productTitle" placeholder="品名">
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="printBox"></div>
+		<div class="modal fade" id="storageInto"  role="dialog" data-backdrop="static">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">填写采购单号</h4>
+					</div>
+					<div class="modal-body">
+						<input type="text" class="form-control" name="purchasedCode" placeholder="采购单号">
+						<h5 class="text-danger">*采购单号在包裹外箱，如未发现，请联系运维提供。</h5>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">&nbsp;&nbsp;取&nbsp;消&nbsp;&nbsp;</button>
+						<button type="button" onclick="app.methods.opensSanning()" class="btn btn-primary submit" >&nbsp;&nbsp;开始扫描&nbsp;&nbsp;</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="storage"  role="dialog" data-backdrop="static" data-keyboard="false">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">扫描sku码</h4>
+					</div>
+					<div class="modal-body">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="扫描结果">
+						<ul class="sanningData"></ul>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" onclick="app.methods.storageClose()">&nbsp;&nbsp;取&nbsp;消&nbsp;&nbsp;</button>
+						<button type="button" onclick="app.methods.storageSubmit()" class="btn btn-primary">&nbsp;&nbsp;确认收货&nbsp;&nbsp;</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="errorList"  role="dialog" data-backdrop="static">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">收货错误表</h4>
+					</div>
+					<div class="modal-body">
+						<ul></ul>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-warning" data-dismiss="modal">了解</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/JsBarcode.all.min.js"></script>
+	<script type="text/javascript" src="../dists/print/jQuery.print.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				storeData: [],
+				purchasedThis: [],
+				purchasedProCode: []
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/purchased/list?purchasedStatus=20',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.storeData = data.body.content;
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.methods.initToggleOrder();
+							app.methods.initIntoSku();
+							
+							//如果只有一条记录,默认展开所有
+							if(app.data.storeData.length == 1){
+								$('#table-main > tbody > tr > td > ul.stockInfoBox > li > button.toggleOrder').trigger('click');
+							}
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'purchased_code',title: '采购单号',align: 'center',
+						formatter: function (value, row, index, field) {
+							return value + '<span class="nowarp" style="display:block;">（共' + row.sku_quantities + '个SKU）</span>';
+                        }
+					}, {
+                        field: 'purchased_quantities',title: '收货总进度',align: 'center',
+                        formatter: function (value, row, index, field) {
+							var progress = (row.storaged_quantities - 0) / (value - 0);
+							var color = '',html = "";
+							if(progress > 1){
+								color = 'text-muted';
+								html += '超额到货'
+							}else if(progress == 1){
+								color = 'text-success';
+								html += '到货完成'
+							}else if(progress >= 0.6){
+								color = 'text-warning';
+							}else{
+								color = 'text-danger';
+							}
+							html += '<span class="' + color + '" style="font-weight:700;">' + row.storaged_quantities + ' / ' + value + '</span>';
+							return html
+                        }
+					}, {
+						field: 'storehouse_name',title: '仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + value + '</span>';
+                        }
+					}, {
+						field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="stockInfoBox"><li><span>条码</span><span>SKU图</span><span>品名（货源名）</span><span>收货进度</span><span>采购价</span><span>操作</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.stockSkuInfos(value, false);
+                        }
+					}, {
+						field: 'sku_infos',title: '批量打印',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<button class="btn btn-success btn-sm" onclick="app.methods.setPrintNum(\'' + index + '\')">批量打印</button>'
+                        }
+					}, {
+						field: 'express_infos',title: '<span class="columnsTit">物流信息</span><ul class="expressInfoBox"><li><span>物流公司</span><span>物流单号</span><span>操作</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.expressInfos(value);
+                        }
+					}, {
+						field: 'comments',title: '备注',minWidth:150,
+					}, {
+						field: 'created_at',title: '采购时间',align: 'center',minWidth:90,						
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}];
+                    return option;
+				},
+				initToggleOrder: function(){
+					$('.toggleOrder').off().on('click',function(){
+						if($(this).parent().parent().hasClass('showAll')){
+							$(this).text('展开').parent().parent().removeClass('showAll');
+						}else{
+							$(this).text('收起').parent().parent().addClass('showAll');
+						}
+					})
+				},
+				initIntoSku: function(){
+					$('.inToSku').off().on('click', function(){
+						var i = $(this).parents('tr').data('index')
+						var j = $(this).data('j')
+						var sku = tools.specialStringToArray(app.data.storeData[i].sku_infos)[j],
+							purchasedCode = app.data.storeData[$(this).parents('tr').data('index')].purchased_code;
+						layer.prompt({title: sku.product_sku_barcode + '单条收货（' + purchasedCode + '）', value : sku.purchased_quantity - sku.storaged_quantity , formType: 3}, function(text){
+							if(text < 1){
+								// toastr.info('取消收货···')
+								toastr.warning('收货数量应该大于0···')
+								return;
+							}
+							layer.closeAll();
+							layer.confirm('<div class="inSku" style="width:500px"><img src="'+sku.product_sku_image+'"><div><p><span class="label label-info">'+sku.product_id+'</span>'+sku.product_title+'</p><p>'+sku.product_sku_name+'</p><p>'+sku.product_sku_barcode+'</p></div>', {
+								// icon: 3, 
+								title:'确认收货？请核实!',
+								area:['600px','auto']
+							}, function(index){
+								layer.close(index);
+								$.ajax({
+									type: "POST",
+									url: utils.prePath() + '/api/admin/erp/purchased/products',
+									data: JSON.stringify([{
+										purchasedCode: purchasedCode,
+										productSkuBarcode: sku.product_sku_barcode,
+										quantity: text
+									}]),
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											if(result.body.errores.length == 0){
+												toastr.success('收货成功...');
+												// app.data.table.bootstrapTable('refresh');
+												// 手动更新行信息
+												// 单品
+												var dom = app.data.table.find('tr[data-index="'+i+'"] .inToSku[data-j="'+j+'"]').parent().prev().prev();
+												dom.html((dom.html().split(' / ')[0] - 0 + result.body.successes[0].quantity) + ' / ' + dom.html().split(' / ')[1]);
+												if(dom.html().split(' / ')[1] - (dom.html().split(' / ')[0] - 0 + result.body.successes[0].quantity)){
+													app.data.table.find('tr[data-index="'+i+'"] .inToSku[data-j="'+j+'"]').hide()
+												}
+												// 修改数据
+												var skuData = tools.specialStringToArray(app.data.storeData[i].sku_infos);
+												skuData[j].storaged_quantity = skuData[j].storaged_quantity - 0 + result.body.successes[0].quantity;
+												var skuDataStr = '';
+												skuData.map(function(e){
+													skuDataStr += '{'
+													for(var a in e){
+														skuDataStr += a + ':' + e[a] + ',';
+													}
+													skuDataStr += '} &,& ';
+												})
+												// console.log(app.data.storeData[i].sku_infos)
+												// console.log(skuDataStr)
+												app.data.storeData[i].sku_infos = skuDataStr;
+												// 采购总进度
+												var dom1 = app.data.table.find('tr[data-index="'+i+'"] td').eq(1).find('span');
+												dom1.html((dom1.html().split(' / ')[0] - 0 + result.body.successes[0].quantity) + ' / ' + dom1.html().split(' / ')[1]);
+												if(dom1.html().split(' / ')[0] == dom1.html().split(' / ')[1]){
+													app.data.table.find('tr[data-index="'+i+'"]').hide()
+												}
+											}else{
+												var html = '<li><span>采购单</span><span>sku条码</span><span>数量</span></li>';
+												result.body.errores.map(function(e){
+													html += '<li><span>'+e.purchasedCode+'</span><span>'+e.productSkuBarcode+'</span><span>'+e.quantity+'</span></li>'
+												})
+												$('#errorList ul').html(html);
+												$('#errorList').modal('show');
+											}
+											layer.closeAll();
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							});
+							$('.layui-layer-content').css('height','auto')
+						});
+					});
+				},
+				openIntoBox : function(){
+					$('.sanningData').html('');
+					$('#storageInto').modal('show');
+					$('#storageInto input[name="purchasedCode"]').val('').off().keyup(function(event){
+						if(event.keyCode ==13){
+							$('#storageInto .submit').trigger('click');
+						}
+					});
+				},
+                
+				opensSanning : function(){
+					app.data.purchasedCode = $('#storageInto input[name="purchasedCode"]').val();
+					if(app.data.purchasedCode == ''){
+						toastr.error('请填写采购单号再开始扫描')
+						return false;
+					}
+					$.ajax({
+						type: "GET",
+                        url: utils.prePath() + '/api/admin/erp/purchased/list' + tools.jsonToParameString({size:1, page:0, purchasedCode: app.data.purchasedCode, purchasedStatus:20}),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								if(result.body.content.length == 0){
+									toastr.error('采购单号输入有误，请核查...');
+								}else{
+									toastr.info('请开始扫描条码...');
+									app.data.purchasedThis = [];
+									tools.specialStringToArray(result.body.content[0].sku_infos).map(function(e){
+										app.data.purchasedThis.push({
+											purchasedCode: app.data.purchasedCode,
+											product_id: e.product_id,
+											productSkuBarcode: e.product_sku_barcode,
+											product_sku_image: e.product_sku_image,
+											purchased_quantity: e.purchased_quantity - 0,
+											storaged_quantities: e.storaged_quantity - 0,
+											product_title: e.product_title + '<br/><i>' + e.product_sku_name + '</i>',
+											product_sku_name: e.product_sku_name,
+											quantity: 0
+										});
+									});
+									$('#storageInto').modal('hide');
+									$('#storage').modal('show').find('input[name="productSkuBarcode"]').val('').off().on('keyup', function(event){
+										if(event.keyCode ==13){
+											var scanningInVal = $(this).val().trim();
+											if((scanningInVal - 0) > 0){
+												var state = 0;
+												app.data.purchasedProCode.map(function(e){
+													if(e == scanningInVal){
+														state++;
+													}
+												});
+												if(state == 0){
+													app.data.purchasedProCode.push(scanningInVal);
+												}
+												app.methods.scanningAdd(scanningInVal);
+											}else{
+												toastr.warning('SKU码格式有误，请重新输入！');
+												$(this).val('');
+												return;
+											}
+										}
+									});
+								}
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				getPurchasedOne: function(scanningInVal){
+					var haveState;
+					for(var i = 0;i < app.data.purchasedThis.length; i++){
+						if(app.data.purchasedThis[i].productSkuBarcode == scanningInVal){
+							haveState = app.data.purchasedThis[i];
+							break;
+						}
+					}
+					return haveState;
+				},
+				scanningAdd: function(scanningInVal){
+					var html = '';
+					var haveState = app.methods.getPurchasedOne(scanningInVal);
+					if(haveState){
+						// 修改过的数量需要矫正
+						var changeNum = $('.sanningData input[data-code="' + haveState.productSkuBarcode + '"]').val();
+						if(changeNum == 0 && haveState.productSkuBarcode == scanningInVal){
+							toastr.warning('扫描数量已修改为0！如需正确扫描，请手动增加为1再扫描。')
+							return;
+						}
+						if(changeNum && changeNum != haveState.quantity){
+							haveState.quantity = changeNum - 0;
+						}
+						if(haveState.purchased_quantity == haveState.quantity){
+							// 录入错误
+							$('#wrong')[0].play(1);
+							app.data.purchasedProCode.splice(-1, 1);
+							toastr.warning('本SKU已录入完成，请核实数量！')
+						}else if(haveState.quantity == 0){ 
+							// 录入正确
+							$('#ding')[0].play(1);
+							haveState.quantity = haveState.quantity + 1;
+							html += '<li>'+
+								'<input type="text" name="skuBarcode" style="display:none" disabled value="' + haveState.productSkuBarcode + '"/>'+
+								'<span>' + haveState.productSkuBarcode + '</span>'+
+								'<span>' + tools.formatterFunction.proImage(haveState.product_sku_image, null) + '</span>'+
+								'<span>' + haveState.product_title + '</span>'+
+								'<span data-code="' + haveState.productSkuBarcode + '" class="purchased_num ' + (haveState.purchased_quantity - haveState.storaged_quantities > haveState.quantity ? 'text-danger' : '') + '">' + (haveState.purchased_quantity - haveState.storaged_quantities) + '</span>'+
+								'<span><input type="number" min="0" class="form-control" name="quantity" placeholder="数量" value="1" data-code="' + haveState.productSkuBarcode + '"></span>'+
+								'<span><button class="btn btn-success btn-sm" onclick="app.methods.printOne('+scanningInVal+');">打印标签</button></span>'+
+							'</li>';
+							$('.sanningData').prepend(html);
+						}else{
+							// 录入正确
+							$('#ding')[0].play(1);
+							haveState.quantity = haveState.quantity + 1;
+							$('.sanningData span input[data-code="'+ haveState.productSkuBarcode + '"]').val(haveState.quantity);
+							if(haveState.purchased_quantity > haveState.quantity){
+								$('.sanningData span[data-code="'+ haveState.productSkuBarcode + '"]').addClass('text-danger');
+							}else{
+								$('.sanningData span[data-code="'+ haveState.productSkuBarcode + '"]').removeClass('text-danger');
+							}
+						}
+					}else{
+						// 录入错误
+						$('#wrong')[0].play(1);
+						app.data.purchasedProCode.splice(-1, 1);
+						toastr.error('该采购单中没有录入的SKU，请确认后再录入！')
+					}
+					$('#storage input[name="productSkuBarcode"]').focus().val('');
+				},
+				setPrintNum: function(index){
+					var skuData = tools.specialStringToArray(app.data.storeData[index].sku_infos)
+					var html = '<ul style="list-style:none;padding:10px;" id="setSkuNum">'
+					html += "<li style=\"display:flex;align-items:center;justify-content:space-between\">"+
+							"<span style=\"padding:6px 10px;\">sku图</span>"+
+							"<span style=\"padding:6px 10px;\">名称</span>"+
+							"<span style=\"padding:6px 10px;\">打印数量</span>"+
+							"</li>"
+					skuData.map(function(e,i){
+						if(e.purchased_quantity - e.storaged_quantity > 0){
+							html += "<li style=\"display:flex;align-items:center;justify-content:space-between\">"+
+								"<span style=\"padding:6px 10px;\"><img src=\""+e.product_sku_image+"\" class=\"img-responsive proImage\"></span>"+
+								"<span style=\"padding:6px 10px;\">"+e.product_title+" - <span style='color:#c62828'>"+e.product_sku_name+"</span></span>"+
+								"<span style=\"padding:6px 10px;\"><input min=\"0\" type=\"number\" name=\"sku_number\" data-i=\""+i+"\" value=\""+(e.purchased_quantity - e.storaged_quantity)+"\"></span>"+
+								"</li>"
+						}
+					})
+					html += '</ul>'
+					layer.open({
+						type: 1,
+						title : '打印数量',
+						area: ['800px', '600px'], //宽高
+						content: html,
+						btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						yes: function(){
+							var data = [];
+							$('#setSkuNum input[name="sku_number"]').map(function(){
+								var i = $(this).data('i')
+								var num = $(this).val() - 0
+								if(!num || num < 0){
+									toastr.warning('打印数量格式有误···');
+									return;
+								}
+								if(num > 0){
+									data = data.concat(Array(num).join(",").split(",").map(function(){
+										return {
+											'product_title': skuData[i].product_title,
+											'product_id': skuData[i].product_id,
+											'product_sku_name': skuData[i].product_sku_name,
+											'product_sku_barcode': skuData[i].product_sku_barcode,
+										}
+									}))
+								}
+							})
+							app.methods.printAll(data)
+							layer.closeAll();
+						}
+					});
+				},
+				printAll: function(data){
+					var html = '';
+					if(data.length == 0){
+						toastr.warning('打印数量为空···');
+						return
+					}
+					data.map(function(e, i){
+						html += '<div style="padding-top:12px;">'
+						html += '<div style="margin:0 4px;font-size:14px"><span style="margin-right: 6px;">' + e.product_id + '</span>'
+						html += '<span style="font-weight:700;">' + (e.product_title.length <= 10 ? e.product_title : (e.product_title.slice(0,10) + '···')) + '</span></div>'
+						html += '<div style="margin:6px 4px 0;">' + (e.product_sku_name.length <= 24 ? e.product_sku_name : (e.product_sku_name.slice(0,24) + '···')) + '</div>'
+						html += '<img class="imgcode" data-index="' + i + '" style="transform: scale(.8);"/>'
+						html += '<div style="font-size:28px;text-align:center;margin-top:-10px">' + e.product_sku_barcode + '</div>'
+						html += '</div>'
+						if(i < data.length - 1){
+							html += '<div style="page-break-before:always;height:6px"></div>'
+						}
+					})
+					html += '';
+					$('.printBox').html(html);
+					$('.printBox img.imgcode').each(function(i){
+						JsBarcode(".imgcode[data-index=\"" + i + "\"]", data[i].product_sku_barcode, {
+							height: 50,
+							width: 3,
+							margin: 6,
+							fontSize: 0
+						});
+					})
+					var printStr = "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'></head><body>" + $('.printBox').html() + "</body></html>";                                              
+					var pwin = window.open();
+					pwin.document.write(printStr);
+					pwin.document.close();
+					setTimeout(function(){pwin.print()},500);
+				},
+				printOne: function(scanningInVal){
+					var haveState = app.methods.getPurchasedOne(scanningInVal);
+					tools.printProductTag(haveState.product_id, haveState.product_sku_name, haveState.product_title, haveState.productSkuBarcode);
+				},
+				storageClose: function(){
+					layer.confirm('确认关闭？', {
+					  btn: ['確定','取消'] //按钮
+					},function(index, layero){
+						$('#storage').modal('hide');
+						layer.closeAll();
+					});
+				},
+				storageSubmit : function(){
+					if(app.data.purchasedThis.length == 0){
+						toastr.error('采购单异常，请联系管理员！');
+						return;
+					}
+					var state = 0;
+					app.data.purchasedThis.map(function(e,i){
+						if(e.quantity == 0){
+							state++;
+						}
+					})
+					if(app.data.purchasedThis.length == state){
+						toastr.error('请录入后再进行收货操作！');
+						return;
+					}
+					$('.sanningData li').each(function(i){
+						var parame = tools.getParams(".sanningData > li:nth-child(" + (i+1) + ")"); 
+						app.data.purchasedThis.map(function(e, index){
+							if(e.productSkuBarcode == parame.skuBarcode && e.quantity != parame.quantity){
+								app.data.purchasedThis[index].quantity = parame.quantity;
+							}
+						})
+					});
+					var purchasedData = [];
+					var pubNum = 0;
+					app.data.purchasedThis.map(function(e, index){
+						if(e.quantity > 0){
+							purchasedData.push(e);
+							pubNum += e.quantity - 0;
+						}
+					});
+					layer.confirm('收货货品共' + pubNum + '件，请确认！', {
+					  btn: ['確定','取消'] //按钮
+					},function(index, layero){
+						layer.load();
+						if(app.data.submitState){
+							toastr.error('正在处理请稍后');
+							return;
+						}
+						app.data.submitState = true
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + '/api/admin/erp/purchased/products',
+							data: JSON.stringify(purchasedData),
+							success: function (result) {
+								app.data.submitState = false
+								if (result.statusCode == 'OK') {
+									if(result.body.errores.length == 0){
+										toastr.success('收货成功...');
+										app.data.table.bootstrapTable('refresh');
+										$('#storage').modal('hide');
+										app.data.purchasedThis = [];
+									}else{
+										var html = '<li><span>采购单</span><span>sku条码</span><span>数量</span></li>';
+										result.body.errores.map(function(e){
+											html += '<li><span>'+e.purchasedCode+'</span><span>'+e.productSkuBarcode+'</span><span>'+e.quantity+'</span></li>'
+										})
+										app.data.purchasedThis = [];
+										$('.sanningData').html('');
+										$('#errorList ul').html(html);
+										$('#storage').modal('hide');
+										$('#errorList').modal('show');
+									}
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							},
+							error: function (result) {
+								app.data.submitState = false
+								toastr.error('系统异常,请稍候重试或联系开发人员...');
+							}
+						});	
+					});
+				},
+                initSelect : function(){
+                    tools.renderSelect.storehouse('select[name="storehouseId"]');                    
+				},
+				initFocus: function(){
+					$('#storageInto').off().on('shown.bs.modal',function(e){                    
+						$('#storageInto input[name="purchasedCode"]').focus();
+					});
+					$('#storage').off().on('shown.bs.modal',function(e){                    
+						$('#storage input[name="productSkuBarcode"]').focus();
+					});
+					$('#storageSku').off().on('shown.bs.modal',function(e){                    
+						$('#storageSku input[name="productSkuBarcode_sanning"]').focus();
+					});
+				}
+			},
+			init : function(){
+				//  window.onbeforeunload = function(){if(window.outState != 'direct'){return "确认要离开页面吗？";}}
+				app.methods.initFocus();
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>广告管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/input-tags/css/inputTags.css" />
+        <link rel="stylesheet" href="../dists/linearicons/style.css">
+        <!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+        <style>
+            .container-fluid{background: #fff;}
+            .searchBox{padding: 10px;}
+            .searchBox > *{max-width: 150px;width: 32.5%;margin-right: 2px;}
+            .searchBox > input[inputtpye="daterange"]{min-width: 280px;}
+            .searchBox > button{width: auto;box-shadow: none}
+            .custom-tabs-line{display: flex;justify-content: space-between;padding: 0 10px;}
+            .tab-content{height: calc(100% - 42px - 54px);}
+            .tab-content .tab-pane{height: 100%;box-sizing: border-box}
+            div.inputTags-list input.inputTags-field{margin-left: 0;}
+            .label.label-info{margin-right: 6px;float: left;margin-bottom: 3px;}
+
+            .edit,.viewImg{cursor:pointer}
+            .viewBox{height:120px;width:250px;margin:0 auto;overflow:hidden;position:relative}
+            .viewBox .viewImg{width:250px}
+            .viewBox .picTool{position:absolute;top:0;bottom:0;left:0;right:0;display:flex;opacity:0}
+            .viewBox .picTool:hover{opacity:1}
+            .viewBox .picTool a:first-child{border-right:1px solid #fff}
+            .viewBox .picTool a{display:block;width:50%;background:rgba(0,0,0,.3);color:#fff;text-align:center;line-height:120px;font-size:18px}
+            .viewBox .picTool a:hover{background:rgba(0,0,0,.6)}
+
+            .adBox{padding: 0;display: flex;}
+            .adBox > .leftBox{width: 300px;padding: 6px 20px 6px 0;box-sizing: border-box}
+            .adBox > .rightBox{width: 500px;padding: 6px 10px;box-sizing: border-box;background: #F4F4F4;position: relative;}
+            .adBox > .rightBox::before{content: '';display: block;width: 28px;height: 28px;background: #F4F4F4;position: absolute;top: 30px;left: -10px;transform: rotate(45deg)}
+            .adBox > .rightBox > input{width: 145px;display: inline-block;border-radius: 17px;}
+            .adBox > .rightBox > h5{display: inline-block;}
+            .adBox > .leftBox .tempTag{height: 390px;overflow-y: auto;}
+            .adBox > .leftBox .tempTag ul{padding: 0;display: flex;flex-wrap: wrap;list-style: none;}
+            .adBox > .leftBox .tempTag li{cursor: pointer;padding: 0 15px;margin-right: 10px;border: 1px solid #7b7b7b;border-radius: 14px;height: 28px;line-height: 28px;margin-bottom: 10px;}
+            .adBox > .leftBox .tempTag li.select{background: #B4272D;color: #fff;border-color: #B4272D;}
+
+            .scrollBox .bannerImgBox{position:relative}
+            .scrollBox .bannerImgBox img+span{position:absolute;top:4px;right:10px;display:block;border:1px solid red;color:red;border-radius:50%;height:20px;line-height:20px;width:20px;display:none}
+            .scrollBox .bannerImgBox:hover span{display:block}
+            .scrollBox .bannerImg{margin-right:6px}
+
+            .moduleBox{margin-top: 10px;width:100%;overflow-x:auto;height: 500px;padding: 10px;}
+            .moduleBox.noActive::after{content: '在搜索框输入后，回车筛选';color: #bfbfbf;text-align: center;display: block;line-height: 450px;}
+            .moduleBox .temp{width:100%;margin:16px auto;background: #fff;border-radius: 14px;}
+            .moduleBox .temp:first-child{margin-top: 0;}
+            .moduleBox .temp h4{padding: 10px;margin: 0;}
+            .moduleBox .temp h4 span{font-size: 12px;margin-right: 10px;}
+            .moduleBox .temp p{display: inline-block;height: 28px;line-height: 28px;padding: 0 16px;font-size: 12px;}
+            .moduleBox .temp.select{box-shadow: 0px 0px 12px 3px #B4272D;}
+
+            .addPro .bootstrap-table .fixed-table-container{height: auto!important;}
+            .productBox{overflow: auto;}
+            .productBox ul{padding-left: 0;list-style: none;}
+            .productBox ul li{cursor: not-allowed;}
+
+            .scrollPic{display: flex;overflow-x: auto;width: 130px;padding-bottom: 4px;}
+            .scrollPic img{margin-right: 6px;margin-left: 0;}
+            
+            /* .adLinkAggregateModulesVal{word-break: break-word;} */
+            .adLinkAggregateModule span{position: relative;cursor: pointer;}
+            .adLinkAggregateModule span::after{content: '+';position: absolute;right: -3px;top: -3px;display: block;transform: rotate(45deg);background: red;width: 9px;height: 9px;border-radius: 50%;}
+
+            /* input[name="adLinkAggregateModules"] + .inputTags-list .inputTags-field{display: none;} */
+           
+           .label-module-ad{float: left; margin-bottom: 3px;}
+        </style>
+	</head>
+	<body>
+		<div class="container-fluid">
+            <div class="searchBox btn-group" id="toolbar" style="margin-bottom: 0;">
+                <input type="text" class="form-control" name="id" placeholder="ID">
+                <input type="text" class="form-control" name="name" placeholder="名称">
+                <input type="text" class="form-control" name="tags" placeholder="标签">
+                <input type="text" class="form-control" name="comments" placeholder="备注">
+                <select class="selectpicker" data-live-search="true" name="scopeId" data-title="商城-广告系列"></select>
+                <input type="text" class="form-control" name="productId" placeholder="产品ID">
+            </div>
+            <div class="custom-tabs-line tabs-line-bottom left-aligned">
+                <ul class="nav" role="tablist">
+                    <li class="active" data-type="campaign"><a href="#tab-campaign" role="tab" data-toggle="tab">广告系列</a></li>
+                    <li data-type="group"><a href="#tab-group" role="tab" data-toggle="tab">广告组 <span class="badge" style="display:none">0</span></a></li>
+                    <li data-type="link"><a href="#tab-link" role="tab" data-toggle="tab">广告 <span class="badge" style="display:none">0</span></a></li>
+                </ul>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" onclick="app.methods.openAddBox();"><i class="fa fa-plus-square"></i> 新增</button>
+                    <button class="btn btn-info btn-sm refresh" onclick="window.location.reload();" style="font-size:12px"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane fade in active" id="tab-campaign">
+                    <table id="table-campaign"></table>
+                </div>
+                <div class="tab-pane fade" id="tab-group">
+                    <table id="table-group"></table>                            
+                </div>
+                <div class="tab-pane fade" id="tab-link">
+                    <table id="table-link"></table>                            
+                </div>
+            </div>
+		</div>
+		<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+			<div class="modal-dialog modal-md" role="document">
+                <div class="modal-content" data-type="campaign" style="display:none">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title">广告系列</h4>
+                    </div>
+                    <div class="modal-body">
+                        <input style="display:none;" disabled class="form-control" type="text" name="id"/>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">选择商城<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <select name="scopeId" class="selectpicker" data-live-search="true" data-width="100%"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">广告系列名<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <input class="form-control" type="text" name="campaignName"/>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">广告标签<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <div class="tags"></div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">备注<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <input class="form-control" type="text" name="comments"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="app.methods.saveAd()">保存</button>
+                    </div>
+                </div>
+                <div class="modal-content" data-type="group" style="display:none">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title">广告组</h4>
+                    </div>
+                    <div class="modal-body">
+                        <input style="display:none;" disabled class="form-control" type="text" name="id"/>
+                        <input style="display:none;" disabled class="form-control" type="text" name="campaignId"/>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">广告组名<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <input class="form-control" type="text" name="groupName"/>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">广告标签<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <div class="tags"></div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">备注<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <input class="form-control" type="text" name="comments"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="app.methods.saveAd()">保存</button>
+                    </div>
+                </div>
+                <div class="modal-content" data-type="link" style="display:none">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title">广告</h4>
+                    </div>
+                    <div class="modal-body">
+                        <input style="display:none;" disabled class="form-control" type="text" name="id"/>
+                        <input style="display:none;" disabled class="form-control" type="text" name="groupId"/>
+                        <div class="adBox">
+                            <div class="leftBox">
+                                <div class="form-group">
+                                    <label class="control-label">广告名<span class="text-danger">*</span></label>
+                                    <div>
+                                        <input class="form-control" type="text" name="linkName"/>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">投放源<span class="text-danger">*</span></label>
+                                    <div>
+                                        <input class="form-control" type="text" name="affiliate"/>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">像素ID<span class="text-danger">*</span></label>
+                                    <div>
+                                        <input class="form-control" type="text" name="pixelId"/>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">广告标签<span class="text-danger">*</span></label>
+                                    <div>
+                                        <div class="tags"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">备注<span class="text-danger">*</span></label>
+                                    <div>
+                                        <input class="form-control" type="text" name="comments"/>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">广告跳转链接<span class="text-danger">*</span></label>
+                                    <div>
+                                        <input class="form-control" type="text" name="linkUrl"/>
+                                    </div>
+                                </div>
+                                <!-- <div class="form-group" style="margin-bottom:0">
+                                    <label class="control-label">广告产品</label>
+                                    <div>
+                                        <input class="form-control" type="text" name="adLinkProducts" style="display:none;"/>
+                                        <button class="btn btn-primary btn-xs" onclick="app.methods.openProduct()">选择广告产品</button>
+                                        <div class="productBox" style="height:150px"></div>
+                                    </div>
+                                </div> -->
+                                <div class="form-group">
+                                    <label class="control-label">绑定的模块ID<span class="text-danger">*选择顺序为排序</span></label>
+                                    <div>
+                                        <div class="adLinkAggregateModule"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rightBox">
+                                <!-- <input class="form-control" type="text" name="presentId" style="display:none;"/>
+                                <h5>展现形式</h5>
+                                <input class="form-control" type="text" name="tempSearch" placeholder="回车搜索展现形式" />
+                                <div class="tempBox"></div> -->
+                                <h5>模块</h5>
+                                <input class="form-control" type="text" name="search_title" placeholder="回车搜索标题" />
+                                <input class="form-control" type="text" name="search_commit" placeholder="回车搜索备注" />
+                                <div class="moduleBox noActive"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="app.methods.saveAd()">保存</button>
+                    </div>
+                </div>
+			</div>
+		</div>
+		<div class="modal fade" id="adlinkData"  role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">广告产品销量</h4>
+					</div>
+					<div class="modal-body">
+                        <div class="btn-group" id="product-sell-parame" style="margin-bottom: 10px;display: flex;flex-wrap: wrap;">
+                            <input type="text" class="form-control" name="adlkId" style="display:none">
+                            <input type="text" style="flex: 1;" inputtpye="daterange" rangestart="orderBeginTime" rangeend="orderEndTime" class="form-control" name="orderBeginEndTime" placeholder="选择时间">
+                            <button class="btn btn-primary btn-sm" onclick="app.methods.productSellRefash();">查询</button>
+                        </div>
+                        <div class="scroll" style="max-height:360px;overflow-y: scroll;">
+                            <table id="adlinkData-table" class="table table-bordered"></table>
+                        </div>
+                    </div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/input-tags/js/inputTags.jquery.js" ></script>
+    <script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+    <script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+    <script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+    <script id="scrollBox" type="text/html">
+        <div class="scrollBox">
+            <% for(var i = 0; i < data.length; i++){ %>
+                <div class="temp" data-id="<%= data[i].id %>">
+                    <h4><span class="label label-primary product-id"><%= data[i].id %></span><%= data[i].name %></h4>
+                    <p><%= data[i].comments %></p>
+                    <% if(data[i].tags.length > 0){ %>
+                        <p>
+                            <% for(var j = 0; j < data[i].tags.length; j++){ %>
+                                <span class="label label-info"><%= data[i].tags[j] %></span>
+                            <% } %>
+                        </p>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table:{
+                    campaign: $("#table-campaign"),
+                    group: $("#table-group"),
+                    link: $("#table-link")
+                },
+                isInit:{
+                    campaign: false,
+                    group: false,
+                    link: false
+                },
+                selections:{
+                    campaign: [],
+                    group: [],
+                },
+                scope: cacheSessionStorage.getCache('scope'),
+                campaignData: [],
+                groupData: [],
+                linkData: [],
+                type: 'campaign',
+                adLinkAggregateModules: []
+			},
+			methods : {
+				initTableCampaign: function(){
+                    var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.campaign.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/ad/campaign/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams(), {campaignName: tools.getParams().name});
+                        },
+						columns: [{
+						    checkbox: true
+                        }, {
+                            field: 'scopeId',title: '所属商城',align: 'center',
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                if(!app.data.scope || app.data.scope.length == 0){
+                                    app.data.scope = cacheSessionStorage.getCache('scope')
+                                }
+                                if(!app.data.scope || app.data.scope.length == 0){
+                                    toastr.info('商城数据未加载完成，请点击页面刷新重试···')
+                                    return
+                                }
+                                $(app.data.scope).each(function(i,e){
+                                    if(e.id == value){
+                                        html = e.name;
+                                    }
+                                })
+                                return html;
+                            }
+                        }, {
+                            field: 'campaignName',title: '名称',align: 'center',
+                        }, {
+                            field: 'tags',title: '标签',
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                value && value.split(',').map(function(e){
+                                    html += '<span class="label label-info">' + e + '</span>'
+                                })
+                                return html;
+                            }
+                        }, {
+                            field: 'comments',title: '备注',
+                        }, {
+                            field: 'updatedAt',title: '更新时间',align: 'center',minWidth:90,
+                            formatter: function (value, row, index, field) {
+                                return (row.createdBy || '--') + '<br>' + tools.formatterFunction.time(value);
+                            }
+                        }, {
+                            title: '操作',align: 'center',minWidth:250,
+                            formatter: function (value, row, index) {
+                                return '<div class="toolBox btn-group">'+
+                                    '<button type="button" class="btn btn-success btn-xs" authority="AD_WRITE" onclick="app.methods.editArea(' + index + ')"><i class="fa fa-edit"></i> 编辑</button>'+
+                                    '<button type="button" class="btn btn-danger btn-xs" authority="AD_DELETE" onclick="app.methods.delAdd(' + row.id + ')"><i class="fa fa-trash-o"></i> 删除</button>'+
+                                    '</div>';
+                            }
+                        }],
+						onLoadSuccess : function(data){
+                            app.data.campaignData = data.body.content;
+                            app.data.isInit.campaign = true;
+							tableUi.initTabMixTable(app.data.table.campaign);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTableGroup: function(){
+					app.data.table.group.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/ad/group/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams(), {
+                                'campaignIds': app.data.selections.campaign.toString(','),
+                                'groupName': tools.getParams().name
+                            });
+                        },
+						columns: [{
+						    checkbox: true
+                        }, {
+                            field: 'groupName',title: '名称',align: 'center',
+                        }, {
+                            field: 'tags',title: '标签',
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                value && value.split(',').map(function(e){
+                                    html += '<span class="label label-info">' + e + '</span>'
+                                })
+                                return html;
+                            }
+                        }, {
+                            field: 'comments',title: '备注',
+                        }, {
+                            field: 'updatedAt',title: '更新时间',align: 'center',minWidth:90,
+                            formatter: function (value, row, index, field) {
+                                return (row.createdBy || '--') + '<br>' + tools.formatterFunction.time(value);
+                            }
+                        }, {
+                            title: '操作',align: 'center',minWidth:250,
+                            formatter: function (value, row, index) {
+                                return '<div class="toolBox btn-group">'+
+                                    '<button type="button" class="btn btn-success btn-xs" authority="AD_WRITE" onclick="app.methods.editArea(' + index + ')"><i class="fa fa-edit"></i> 编辑</button>'+
+                                    '<button type="button" class="btn btn-danger btn-xs" authority="AD_DELETE" onclick="app.methods.delAdd(' + row.id + ')"><i class="fa fa-trash-o"></i> 删除</button>'+
+                                    '<button type="button" class="btn btn-info btn-xs" authority="AD_COPY" onclick="app.methods.copyGroup(' + index + ')"><i class="fa fa-trash-o"></i> 复制</button>'+
+                                    '</div>';
+                            }
+                        }],
+						onLoadSuccess : function(data){
+							app.data.groupData = data.body.content;
+                            app.data.isInit.group = true;
+							tableUi.initTabMixTableStyle(app.data.table.group);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                copyGroup: function(index){
+                    var parame = app.data.groupData[index];
+                    delete parame['0'];
+                    delete parame.createdAt;
+                    delete parame.updatedAt;
+                    $.ajax({
+						type: "POST",
+                        url: utils.prePath() + '/api/admin/ad/group/copy',
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('成功...');
+								app.data.table[app.data.type].bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+                },
+                initTableLink: function(){
+                    // app.methods.initTemp();
+					app.data.table.link.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/ad/link/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams(), {
+                                'groupIds': app.data.selections.group.toString(','),
+                                'linkName': tools.getParams().name
+                            });
+                        },
+						columns: [{
+                            field: 'id',title: 'ID',align: 'center',
+                            formatter: function (value, row, index) {
+                                return '<a href="#" onclick="app.methods.adlinkData('+value+');"> '+value+' </a>';
+                            }
+                        },{
+                            field: 'linkName',title: '名称',align: 'center',
+                        }, {
+                            field: 'affiliate',title: '投放源',align: 'center',
+                        }, {
+                            field: 'pixelId',title: '像素ID',align: 'center',
+                        }, {
+                            field: 'scopeId',title: '投放链接',
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                if(!app.data.scope || app.data.scope.length == 0){
+                                    app.data.scope = cacheSessionStorage.getCache('scope')
+                                }
+                                if(!app.data.scope || app.data.scope.length == 0){
+                                    toastr.info('商城数据未加载完成，请点击页面刷新重试···')
+                                    return
+                                }
+                                $(app.data.scope).each(function(i,e){
+                                    if(e.id == value){
+                                        html = e.domains;
+                                    }
+                                });
+                                return html + '/index.html?adlk=' + row.id;
+                            }
+                        }, {
+                            field: 'linkUrl',title: '跳转链接',
+                        },
+                        {
+                            field: 'tags',title: '标签',
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                if(!value){
+                                    return '-'
+                                }
+                                value && value.split(',').map(function(e){
+                                    html += '<span class="label label-info">' + e + '</span>'
+                                })
+                                return html;
+                            }
+                        }, 
+                        {
+                            field: 'adLinkAggregateModules',title: '绑定的模块',maxWidth : 220,
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                value.map(function(e){
+                                    html += '<span class="label label-primary label-module-ad" style="margin-right:6px">' + e.aggregateModuleId + ' ' + e.aggregateModule.name + '</span>'
+                                })
+                                return html;
+                            }
+                        }, {
+                            field: 'comments',title: '备注',
+                        }, {
+                            field: 'updatedAt',title: '更新时间',align: 'center',minWidth:90,
+                            formatter: function (value, row, index, field) {
+                                return (row.createdBy || '--') + '<br>' + tools.formatterFunction.time(value);
+                            }
+                        }, {
+                            title: '操作',align: 'center',minWidth:250,
+                            formatter: function (value, row, index) {
+                                return '<div class="toolBox btn-group">'+
+                                    '<button type="button" class="btn btn-success btn-xs" authority="AD_WRITE" onclick="app.methods.editArea(' + index + ')"><i class="fa fa-edit"></i> 编辑</button>'+
+                                    '<button type="button" class="btn btn-danger btn-xs" authority="AD_DELETE" onclick="app.methods.delAdd(' + row.id + ')"><i class="fa fa-trash-o"></i> 删除</button>'+
+                                    '<button type="button" class="btn btn-info btn-xs" authority="AD_COPY" onclick="app.methods.copyAd(' + index + ')"><i class="fa fa-trash-o"></i> 复制</button>'+
+                                    '</div>';
+                            }
+                        }],
+						onLoadSuccess : function(data){
+							app.data.linkData = data.body.content;
+                            app.data.isInit.link = true;
+							tableUi.initTabMixTableStyle(app.data.table.link);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                adlinkData : function(adlk){
+                    tools.rangeTime('input[name="orderBeginEndTime"]');
+                    $('input[name=adlkId]').val(adlk)
+                    $('#adlinkData .modal-title').text('广告产品销量(adlk:' + adlk + ')')
+                    app.methods.productSellRefash()
+                    $('#product-sell-parame').off().keyup(function(event){
+                        event.keyCode ==13 && app.methods.productSellRefash();
+                    });
+                    $('#adlinkData').modal('show');
+                },
+                productSellRefash: function(){
+                    var p = tools.getParams('#product-sell-parame')
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + '/api/admin/ad/link/data',
+                        data: {
+                            'adlkId': p.adlkId,
+                            'orderBeginTime': p.orderBeginTime,
+                            'orderEndTime': p.orderEndTime,
+                        },
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                var html = '<tr><td>商品ID</td><td>主图</td><td>商品标题</td><td>状态</td><td>商品价格</td><td>销量</td><td>更新</td></tr>'
+                                if(result.body.length > 0){
+                                    result.body.map(function(e){
+                                        html += '<tr><td>'+e.product_id+'</td><td>'+tools.formatterFunction.proImage(e.product_img)+'</td><td>'+e.title+'</td><td>'+tools.formatterFunction.proStatus(e.status)+'</td><td>'+e.min_price + '~' +e.max_price+'</td><td>'+e.sale_quantity+'</td><td>'+tools.formatterFunction.time(e.updated_at)+'</td></tr>'
+                                    })
+                                }else{
+                                    html += '<tr><td colspan="5">暂无数据···</td></tr>'
+                                }
+                                $('#adlinkData-table').html(html)
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+                copyAd: function(index){
+                    var parame = app.data.linkData[index];
+                    delete parame.createdAt;
+                    delete parame.id;
+                    delete parame.present;
+                    delete parame.scopeId;
+                    delete parame.updatedAt;
+                    app.methods.saveAdAjax(parame);
+                },
+                delAdd:function(id){
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+                        var url = '';
+                        switch(app.data.type){
+                            case 'campaign':url = '/api/admin/ad/campaign/';break;
+                            case 'group':url = '/api/admin/ad/group/';break;
+                            case 'link':url = '/api/admin/ad/link/';break;
+                        }
+						$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + url + id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功...');
+									$("#table-" + app.data.type).bootstrapTable('refresh');
+									layer.close(_index);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+                editArea:function(index){
+					app.methods.openAddBox(true);
+					app.methods.initAddVal(index);
+				},
+                initAddVal: function(index){
+                    switch(app.data.type){
+                        case 'campaign':
+                            tools.initInput('.dialog-create .modal-content[data-type="campaign"]', app.data.campaignData[index]);
+                            app.methods.initInputTag(app.data.campaignData[index].tags.split(','));
+                            break;
+                        case 'group':
+                            tools.initInput('.dialog-create .modal-content[data-type="group"]', app.data.groupData[index]);
+                            app.methods.initInputTag(app.data.groupData[index].tags.split(','));
+                            break;
+                        case 'link':
+                            tools.initInput('.dialog-create .modal-content[data-type="link"]', app.data.linkData[index]);
+                            app.methods.initInputTag(app.data.linkData[index].tags.split(','));
+                            // var p_data = [];
+                            // app.data.linkData[index].adLinkAggregateModules.map(function(e){
+                            //     p_data.push(e.aggregateModuleId);
+                            // });
+                            app.methods.initAdLinkAggregateModulesTag(app.data.linkData[index].adLinkAggregateModules);
+                            // $('.modal-content[data-type="link"] input[name="adLinkAggregateModules"]').val(p_data.toString(','));
+                            break;
+                    }
+                },
+                saveAd:function(index){
+                    var parame;
+                    if(!app.data.type || app.data.type == ''){
+                        return;
+                    }
+					if(app.data.type == 'campaign'){
+                        parame = tools.getParams('.dialog-create div[data-type="campaign"]');
+                        if(!parame.scopeId || !parame.campaignName || !parame.tags || !parame.comments){
+                            toastr.error('ヽ(#`Д´)ﾉ ,广告系列"*"标参数都是必填项！！！');
+    						return false;
+                        }
+                    }
+                    if(app.data.type == 'group'){
+                        parame = tools.getParams('.dialog-create div[data-type="group"]');
+                        if(!parame.campaignId || !parame.groupName || !parame.tags || !parame.comments){
+                            toastr.error('ヽ(#`Д´)ﾉ ,广告组"*"标参数都是必填项！！！');
+                            return false;
+                        }
+                    }
+                    if(app.data.type == 'link'){
+                        parame = tools.getParams('.dialog-create div[data-type="link"]');
+                        delete parame.search_commit
+                        delete parame.search_title
+                        if(!parame.groupId || !parame.linkName || !parame.tags || !parame.comments || !parame.affiliate || !parame.pixelId || !parame.linkUrl){
+                            toastr.error('ヽ(#`Д´)ﾉ ,广告"*"标参数都是必填项！！！');
+                            return false;
+                        }
+                        var adLinkAggregateModules = [];
+                        $('.dialog-create div[data-type="link"] .adLinkAggregateModule span').each(function(i){
+                            adLinkAggregateModules.push({'aggregateModuleId': $(this).text() - 0,'priority': i})
+                        })
+                        parame.adLinkAggregateModules = adLinkAggregateModules;
+                    }
+                    app.methods.saveAdAjax(parame);
+                },
+                saveAdAjax: function(parame){
+                    $.ajax({
+						type: "POST",
+						url: utils.prePath() + '/api/admin/ad/' + app.data.type,
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('保存成功...');
+								app.data.table[app.data.type].bootstrapTable('refresh');
+								$(".dialog-create").modal("hide");
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+                },
+                delPro: function(){
+                    $('.productBox').on('click', 'li', function(){
+                        var id = $(this).html().split(' - ')[0];
+                        var ids = $('.dialog-create input[name="adLinkProducts"]').val().split(',');
+                        var n_ids = [];
+                        ids.map(function(e,i){
+                            if(e != id){
+                                n_ids.push(e);
+                            }
+                        });
+                        $('.dialog-create input[name="adLinkProducts"]').val(n_ids);
+                        $(this).remove();
+                    });
+                },
+                openProduct: function(){
+                    layer.open({
+                        type: 1,
+                        title : '选择产品',
+                        area: ['80vw', '80vh'], //宽高
+                        content: '<div id="searchBar" class="form-inline">'
+                                +'  <div class="form-group"><input type="text" class="form-control" name="id" placeholder="产品ID"></div>'
+                                +'  <div class="form-group"><input type="text" class="form-control" name="title" placeholder="产品标题"></div>'
+                                +'  <div class="form-group"><select name="status" class="form-control">'
+								+'		<option value="">全部</option>'
+								+'		<option value="1">已创建</option>'
+								+'		<option value="-1">创建失败</option>'
+								+'		<option value="10">已上架</option>'
+								+'		<option value="20">已下架</option>'
+								+'	</select></div>'
+                                +'  <button class="btn btn-primary" onclick="$(\'#table-products\').bootstrapTable(\'refresh\');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>'
+                                +'</div>'
+                                +'<table id="table-products" class="img-container"></table>',
+                        btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						skin: 'addPro',
+                        yes: function(index, layero){
+                            var _selections = $('#table-products').bootstrapTable('getSelections');
+                            if(_selections.length == 0){
+                                layer.warning('未选择产品');
+                                $('.dialog-create .productBox').html('');
+                                $('input[name="adLinkProducts"]').val();
+                                return;
+                            }
+                            var ids = [];
+                            $('.dialog-create .productBox li').each(function(){
+                                ids.push($(this).html().split(' - ')[0]);
+                            });
+                            var html = '<ul>';
+                            _selections.map(function(e){
+                                var state = 0;
+                                ids.map(function(_e){
+                                    if(_e == e.id) state++;
+                                });
+                                if(state == 0){
+                                    html += '<li>' + e.id + ' - ' + e.title + '</li>';
+                                    ids.push(e.id);
+                                }else{
+                                    toastr.warning('重复选择的产品：' + e.id + ' - ' + e.title);
+                                }
+                            });
+                            $('.dialog-create .productBox').append(html);
+                            $('input[name="adLinkProducts"]').val(ids.toString());
+                            layer.closeAll();
+                        }
+                    });
+                    tools.renderSelect.organizes('#searchBar');
+					app.methods.initProductImages();
+                }, 
+                initProductImages:function(){
+                    $('#table-products').bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/product/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#searchBar'));
+                        },
+						columns: [{
+                        	checkbox : true
+					    },{
+					        field: 'id',title: 'ID',align : 'center',
+					        formatter :  function(value, row, index, field) {
+                                return '<a href="'+(row.productExt ? row.productExt.sourceUrl : '#')+'" target="_blank">'+value+'</a>';
+							}
+					    }, {
+					        field: 'productImageUrl',title: '主图',width : 100,align : 'center',
+					        formatter :  function(value, row, index, field) {
+                                return tools.formatterFunction.proImage(row.productImageUrl, row.id, row.title)
+							}
+					    }, {
+					        field: 'title',title: '标题',width : 300,
+					    }, {
+					        field: 'description',title: '描述',width : 150,
+					    }, {
+					        field: 'remark',title: '留言',width : 150,
+					    }, {
+					        field: 'minPrice',title: '售价',width : 100,
+					    }, {
+					        field: 'status',title: '状态' ,align : 'center',
+					        formatter :  function(value, row, index, field) {
+                                var html = '';
+                                $('.dialog-create .productBox li').each(function(){
+                                    var id = $(this).html().split(' - ')[0]
+                                    if(row.id == id){
+                                        html = '<span class="label label-warning" style="margin-right:6px">已绑定</span>';
+                                    }
+                                });
+					        	return html + tools.formatterFunction.proStatus(value);
+							}
+					    }]
+                    }));
+                    $('#searchBar').keyup(function(event){
+                    	if(event.keyCode ==13){
+                            $('#table-products').bootstrapTable('refresh');
+						}
+					});
+                },
+                // bindTemp: function (index) {
+                //     layer.open({
+                //         type: 1,
+                //         content: '<div class="tempBox">' + template('scrollBox', {
+                //             data: app.data.tempData,
+                //         }) + '</div>',
+                //         area: ['700px', 'auto'],
+                //         title: '修改展现形式预览图',
+                //         skin: 'moduleList'
+                //     });
+                //     var temp = $('.temp');
+                //     temp.off().click(function () {
+                //         temp.removeClass('select');
+                //         $(this).toggleClass('select');
+                //         var p_data = [];
+                //         app.data.linkData[index].adLinkProducts.map(function(e){
+                //             p_data.push({
+                //                 productId: e.product.id
+                //             });
+                //         });
+                //         var parame = {
+                //             adLinkProducts: p_data,
+                //             id: app.data.linkData[index].id,
+                //             comments: app.data.linkData[index].comments,
+                //             groupId: app.data.linkData[index].groupId,
+                //             linkName: app.data.linkData[index].linkName,
+                //             linkUrl: app.data.linkData[index].linkUrl,
+                //             presentId: $(this).data('id'),
+                //             tags: app.data.linkData[index].tags
+                //         };
+                //         $.ajax({
+                //             type: "POST",
+                //             url: utils.prePath() + "/api/admin/ad/link",
+                //             data: JSON.stringify(parame),
+                //             success: function (result) {
+                //                 if (result.statusCode == 'OK') {
+                //                     layer.closeAll();
+                //                     app.data.table.link.bootstrapTable('refresh');
+                //                 } else {
+                //                     toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                //                 }
+                //             }
+                //         });
+                //     })
+                        
+                // },
+				// showView: function(index){
+                //     layer.photos({
+                //         photos: {
+                //             "data": [{
+                //                 "src": app.data.linkData[index].present.thumb,
+                //             }]
+                //         },
+                //         anim: 5
+                //     });
+                // },
+                initTempBox: function() {
+                    var _modal = $(".dialog-create");
+                    _modal.find('.rightBox').off().on('keyup',function(e){
+                        var search_commit = $(this).find('input[name=search_commit]').val();
+                        var search_title = $(this).find('input[name=search_title]').val();
+                        if(e.keyCode == 13){
+                            if(search_commit == '' && search_title == ''){
+                                _modal.find('.moduleBox').html('').addClass('noActive');
+                            }else{
+                                $.ajax({
+                                    type: "GET",
+                                    url: utils.prePath() + "/api/admin/aggregate/module/list?size=30&page=0&name=" + search_title + '&comments=' + search_commit,
+                                    success: function (result) {
+                                        if (result.statusCode == 'OK') {
+                                            var module_data = result.body.content;
+                                            module_data.map(function(e){
+                                                if(e.tags){
+                                                    e.tags = e.tags.split(',');
+                                                }else{
+                                                    e.tags = [];
+                                                }
+                                            })
+                                            _modal.find('.moduleBox').html(template('scrollBox', {
+                                                data: module_data,
+                                            })).removeClass('noActive').find('.temp').on('click',function(){
+                                                // 旧模块
+                                                app.data.adLinkAggregateModules = [];
+                                                $('.dialog-create div[data-type="link"] .adLinkAggregateModule span').each(function(i){
+                                                    app.data.adLinkAggregateModules.push($(this).text() - 0)
+                                                })
+                                                // 原来没有
+                                                if(app.data.adLinkAggregateModules.toString(',').indexOf($(this).data('id')) != -1 && !$(this).hasClass('select')){
+                                                    $(this).addClass('select');
+                                                    return false
+                                                }
+                                                // 模板选择
+                                                var this_id = $(this).data('id');
+                                                var re_index = null;
+                                                app.data.adLinkAggregateModules.map(function(e,i){
+                                                    if(e == this_id){
+                                                        re_index = i;
+                                                        app.data.adLinkAggregateModules.splice(i,1);
+                                                    }
+                                                })
+                                                if(re_index == null){
+                                                    if(app.data.adLinkAggregateModules.length == 10){
+                                                        toastr.warning('不可以绑定10个以上的模块...');
+                                                        return false
+                                                    }else{
+                                                        app.data.adLinkAggregateModules.push(this_id);
+                                                    }
+                                                }
+                                                if(app.data.adLinkAggregateModules.length == 0){
+                                                    _modal.find('.moduleBox').addClass('noActive')
+                                                }else{
+                                                    _modal.find('.moduleBox').removeClass('noActive')
+                                                }
+                                                $(this).toggleClass('select');
+                                                // _modal.find('input[name="adLinkAggregateModules"]').val('');
+                                                app.methods.initAdLinkAggregateModulesTag(app.data.adLinkAggregateModules);
+                                            });
+                                            if(module_data.length != result.body.totalElements){
+                                                toastr.info('搜索条件太模糊，结果不完全，请修改再试...');
+                                            }
+                                        } else {
+                                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                },
+                openAddBox: function(isEdit){
+                    var _modal = $(".dialog-create");
+                    var _modal_type = _modal.find('.modal-content[data-type="' + app.data.type + '"]');
+                    _modal.find('input[name="id"]').val('');
+                    _modal.find('.modal-content').hide();
+                    _modal_type.show();
+                    switch(app.data.type){
+                        case 'group':
+                            if(!isEdit){
+                                var selections = app.data.table.campaign.bootstrapTable('getSelections');
+                                if(selections.selector || selections.length == 0){
+                                    toastr.warning('请先选择广告系列！！！');
+                                    return false;
+                                }
+                                _modal_type.find('input[name="campaignId"]').val(selections[0].id);
+                                break;
+                            }
+                        case 'link':
+                            if(!isEdit){
+                                var selections = app.data.table.group.bootstrapTable('getSelections');
+                                if(selections.selector || selections.length == 0){
+                                    toastr.warning('请先选择广告组！！！');
+                                    return false;
+                                }
+                                _modal_type.find('input[name="groupId"]').val(selections[0].id);
+                            }
+                            app.methods.initTempBox();
+                            break;
+                    }
+                    _modal.modal("show");
+                },
+                initInputTag: function(_tags){
+                    $('.dialog-create div.tags')
+                    .html('<input type="text" class="form-control tags" name="tags" />')
+                    .find('input.tags')
+                    .inputTags({tags : _tags||[] , minLength : 1 , maxLength: 10 ,max: 10});
+                },
+                initAdLinkAggregateModulesTag: function(_tags){
+                    var ids = '';
+                    (_tags || []).map(function(e){
+                        if(e.id){
+                            ids += '<span class="label label-info">'+e.aggregateModuleId+'</span>'
+                        }else{
+                            ids += '<span class="label label-info">'+e+'</span>'
+                        }
+                    })
+                    $(".dialog-create").find('.modal-content[data-type="' + app.data.type + '"] div.adLinkAggregateModule').html(ids).find('span').off().on('click', function(){
+                        $(this).remove();
+                        $(".dialog-create").find('.modal-content[data-type="' + app.data.type + '"] div.moduleBox .temp.select[data-id=' + $(this).text() + ']').trigger('click');
+                    })
+                },
+                initSelections: function(){
+                    app.data.selections.group = [];
+                    app.data.table.group.bootstrapTable('getSelections').map(function(e){
+                        if(!!e && e.id != undefined && e.id != "table-group"){
+                            app.data.selections.group.push(e.id);
+                        }
+                    });
+                    if(app.data.selections.group.length > 0){
+                        $('.custom-tabs-line ul li[data-type="link"] span').html(app.data.selections.group.length).show();
+                    }else{
+                        $('.custom-tabs-line ul li[data-type="link"] span').html('0').hide()
+                    }
+
+                    app.data.selections.campaign = [];
+                    app.data.table.campaign.bootstrapTable('getSelections').map(function(e){
+                        if(!!e && e.id != undefined && e.id != "table-campaign"){
+                            app.data.selections.campaign.push(e.id)
+                        }
+                    });
+                    if(app.data.selections.campaign.length > 0){
+                        $('.custom-tabs-line ul li[data-type="group"] span').html(app.data.selections.campaign.length).show();
+                    }else{
+                        $('.custom-tabs-line ul li[data-type="group"] span').html('0').hide()
+                    }
+                },
+                initTab: function(){
+                    $('.custom-tabs-line ul li').on('click', function(){
+                        var authority_data = authoritys.useAuthority();
+                        if(!authority_data){
+                            toastr.error("权限不足，不允许访问...")
+                            return;
+                        }
+                        var pervType = $('.custom-tabs-line ul li.active').data('type');
+                        app.data.type = $(this).data('type');
+                        app.methods.initSelections();
+                        if($(this).hasClass('active')){
+                            app.data.table[app.data.type].bootstrapTable('refresh');
+                        }else{
+                            switch(app.data.type){
+                                case 'campaign': !app.data.isInit.campaign && app.methods.initTableCampaign();break;
+                                case 'group': 
+                                    if(app.data.isInit.group && pervType == 'campaign'){
+                                        app.data.table[app.data.type].bootstrapTable('refresh');
+                                    }else{
+                                        app.methods.initTableGroup();
+                                    }
+                                    break;
+                                case 'link': 
+                                    if(app.data.isInit.link && pervType == 'group'){
+                                        app.data.table[app.data.type].bootstrapTable('refresh');
+                                    }else{
+                                        app.methods.initTableLink();
+                                    }
+                                    break;
+                            }
+                        }
+                    });
+                },
+                initSelect : function(){
+                    tools.renderSelect.scope('select[name="scopeId"]');
+                },
+                // initTemp: function () {
+                //     $.ajax({
+                //         type: "GET",
+                //         url: utils.prePath() + "/api/admin/aggregate/module/present",
+                //         success: function (result) {
+                //             if (result.statusCode == 'OK') {
+                //                 app.data.tempData = result.body;
+                //             } else {
+                //                 toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                //             }
+                //         }
+                //     });
+                // },
+			},
+			init : function(){
+                app.methods.initSelect();
+                app.methods.initInputTag();
+                app.methods.delPro();
+                app.methods.initTab();
+                app.methods.initTableCampaign();
+                tools.toolbarEnterEvent(function(){
+                    switch(app.data.type){
+                        case 'campaign': app.data.table.campaign.bootstrapTable('refresh');break;
+                        case 'group': app.data.table.group.bootstrapTable('refresh');break;
+                        case 'link': app.data.table.link.bootstrapTable('refresh');break;
+                    }
+                });
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

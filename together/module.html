@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>聚合模块管理</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- VENDOR CSS -->
+
+    <link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+    <link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+    <link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../dists/toastr/toastr.css" />
+	<link rel="stylesheet" href="../dists/linearicons/style.css">
+		<link rel="stylesheet" href="../dists/input-tags/css/inputTags.css" />
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css">
+    <!-- MAIN CSS -->
+    <link rel="stylesheet" href="../css/main.css?v=20200331">
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+    <style>
+        .tempTag::-webkit-scrollbar,.tempBox::-webkit-scrollbar{width:6px;height:6px}
+        .tempTag::-webkit-scrollbar-thumb,.tempBox::-webkit-scrollbar-thumb{border-radius:10px;background:#535353}
+        .tempTag::-webkit-scrollbar-track,.tempBox::-webkit-scrollbar-track{border-radius:10px;background:#EDEDED}
+
+        .dialog-create-model .modal-dialog{width: 800px;} 
+        .dialog-create-model .modal-body{padding: 0;display: flex;}
+        .dialog-create-model .modal-body > .leftBox{width: 300px;padding: 10px 20px;box-sizing: border-box}
+        .dialog-create-model .modal-body > .rightBox{width: 500px;padding: 10px 20px;box-sizing: border-box;background: #F4F4F4;position: relative;}
+        .dialog-create-model .modal-body > .rightBox::before{content: '';display: block;width: 28px;height: 28px;background: #F4F4F4;position: absolute;top: 30px;left: -10px;transform: rotate(45deg)}
+        .dialog-create-model .modal-body > .rightBox > input[name="tempSearch"]{width: 300px;display: inline-block;border-radius: 17px;}
+        .dialog-create-model .modal-body > .rightBox > h5{display: inline-block;}
+        .dialog-create-model .modal-body > .leftBox .tempTag{height: 320px;overflow-y: auto;}
+        .dialog-create-model .modal-body > .leftBox .tempTag ul{padding: 0;display: flex;flex-wrap: wrap;list-style: none;}
+        .dialog-create-model .modal-body > .leftBox .tempTag li{cursor: pointer;padding: 0 15px;margin-right: 10px;border: 1px solid #7b7b7b;border-radius: 14px;height: 28px;line-height: 28px;margin-bottom: 10px;}
+        .dialog-create-model .modal-body > .leftBox .tempTag li.select{background: #B4272D;color: #fff;border-color: #B4272D;}
+
+        .tempBox{margin-top: 10px;width:100%;overflow-x:auto;height: 610px;padding: 10px;}
+        .tempBox .temp{width:100%;text-align:center;margin:0 auto;}
+        .tempBox .temp p{margin: 6px 0 10px;background: #fff;display: inline-block;height: 28px;line-height: 28px;border-radius: 14px;padding: 0 16px;font-size: 12px;}
+        .tempBox .temp.select img{box-shadow: 0px 0px 12px 3px #B4272D;}
+
+        .edit,.viewImg{cursor:pointer}
+        .viewBox{height:120px;width:250px;margin:0 auto;overflow:hidden;position:relative}
+        .viewBox .viewImg{width:250px}
+        .viewBox .picTool{position:absolute;top:0;bottom:0;left:0;right:0;display:flex;opacity:0}
+        .viewBox .picTool:hover{opacity:1}
+        .viewBox .picTool a:first-child{border-right:1px solid #fff}
+        .viewBox .picTool a{width:50%;background:rgba(0,0,0,.3);color:#fff;text-align:center;line-height:120px;font-size:18px}
+        .viewBox .picTool a:hover{background:rgba(0,0,0,.6)}
+
+        .moduleList{max-width:100vw;}
+        .moduleList .layui-layer-content{padding: 0}
+        .moduleList .layui-layer-content .tempBox{background: #F4F4F4;margin-top: 0;}
+
+        .bannerList{max-width:100vw;max-height:100vh}
+        .bannerImg{max-height:80px;max-width:300px;width: auto}
+        .bannerTable{width:100%!important}
+        .bannerBox{width:300px;overflow-x:auto;overflow-y:hidden;margin:0 auto;padding: 6px 0;}
+
+        .scrollBox .bannerImgBox{position:relative}
+        .scrollBox .bannerImgBox img+span{position:absolute;top:4px;right:10px;display:block;color:#fff!important;background: #B4272D;border-radius:50%;height:20px;line-height:20px;width:20px;display:none}
+        .scrollBox .bannerImgBox:hover span{display:block}
+        .scrollBox .bannerImg{margin-right:6px}
+        .bannerBox::-webkit-scrollbar{width:10px;height:6px}
+        .bannerBox::-webkit-scrollbar-thumb{border-radius:10px;background:#535353}
+        .bannerBox::-webkit-scrollbar-track{border-radius:10px;background:#EDEDED}
+        .bannerTable .selectBanner{width:25px;margin:0 auto}
+        .bannerTable tr td:first-child{width:30px;text-align:center}
+        .bannerTable tr td:last-child{text-align:center}
+        .plan-radio input[type="radio"] + label::before {
+            content: ""; /*不换行空格*/
+            display: inline-block;
+            vertical-align: middle;
+            font-size: 12px;
+            width: 20px;
+            height: 20px;
+            margin-right: .4em;
+            border-radius: 50%;
+            border: 1px solid rgba(7, 14, 89, 0.4);
+            text-indent: .12em;
+            line-height: 1;
+        }
+
+        .plan-radio input[type="radio"]:checked + label::before {
+            background-color: #0AF;
+            background-clip: content-box;
+            padding: 4px;
+        }
+        .plan-radio input[type="radio"] {
+            position: absolute;
+            clip: rect(0, 0, 0, 0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="panel panel-headline">
+            <div class="panel-heading">
+                <div class="left">
+                    <h3 class="panel-title">聚合模块管理</h3>
+                    <div class="toolBox btn-group">
+                        <button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.addModel();"><i class="fa fa-plus-square"></i>&nbsp; 创建 </button>
+                        <button id="uploadLogo" style="display:none"></button>
+                        <button id="uploadCover" style="display:none"></button>
+                    </div>
+                </div>
+                <div class="toolBox btn-group right">
+                    <button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+           
+            <div class="panel-body">
+                <div id="toolbar" class="btn-group">
+                    <input type="text" class="form-control" name="id" placeholder="ID">
+                    <input type="text" class="form-control" name="name" placeholder="标题">
+                    <input type="text" class="form-control" name="comments" placeholder="备注">
+                    <select name="scopeId" class="selectpicker" data-live-search="true" data-title="商城"></select>
+                    <select class="selectpicker" data-live-search="true" name="isLimit">
+                        <option value="">是否限量清仓</option>
+                        <option value="1">是</option>
+                        <option value="0">否</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                </div>
+                <table id="table-main"></table>
+            </div>
+        </div>
+    </div>
+
+    <!--新增聚合模块弹框-->
+    <div class="modal fade dialog-create-model" role="dialog" data-backdrop="static">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-wrapper">
+                    <div class="modal-menu">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title">新增聚合模块</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="leftBox">
+                                <div class="form-group">
+                                    <label class="control-label">选择模板样式</label>
+                                    <div class="tempTag">
+                                        <ul></ul>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">模块标题</label>
+                                    <div>
+                                        <input class="form-control" type="text" name="name" placeholder="模块标题" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">模块链接</label>
+                                    <div>
+                                        <input class="form-control" type="text" name="link" placeholder="模块链接" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">备注</label>
+                                    <div>
+                                        <input class="form-control" type="text" name="comments" placeholder="备注" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">商城</label>
+                                    <div>
+                                        <select name="scopeIds" class="selectpicker" data-live-search="true" data-title="商城"></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rightBox">
+                                <h5>模板预览区</h5>
+                                <input class="form-control" type="text" name="tempSearch" placeholder="回车搜索模板" />
+                                <div class="tempBox"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" commit>确定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade dialog-edit-tag" role="dialog" data-backdrop="static">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-wrapper">
+                    <div class="modal-menu">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title">修改标签</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group row">
+                                <label class="control-label col-sm-2">标签<span class="text-danger">*</span></label>
+                                <div class="col-sm-10">
+                                    <div class="tags"><input type="text" class="form-control" name="tags" /></div>
+                                </div>
+                            </div>
+                            <input class="form-control" type="text" name="id" style="display:none"/>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" commit>确定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+<script type="text/javascript" src="../js/plupload-upload-icons.js"></script>
+	<script type="text/javascript" src="../dists/input-tags/js/inputTags.jquery.js" ></script>
+    <!-- <script type="text/javascript" src="../js/plupload-upload.js"></script> -->
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+<script id="scrollBox" type="text/html">
+    <div class="scrollBox">
+        <% for(var i = 0; i < data.length; i++){ %>
+            <div class="temp" data-id="<%= data[i].id %>">
+                <img class="img-responsive" src="<%= data[i].thumb %>">
+                <p class="text-length-table-col">
+                    <%= data[i].name %>
+                </p>
+            </div>
+        <% } %>
+    </div>
+</script>
+<script id="bannerList" type="text/html">
+    <table class="bannerTable  table table-striped table-bordered">
+        <thead>
+            <tr>
+                <td>状态</td>
+                <td>标题</td>
+                <td>链接</td>
+                <td>图片</td>
+                <td>绑定</td>
+            </tr>
+        </thead>
+        <tbody>
+            <% for(var i = 0; i < data.length; i++){ %>
+                <tr>
+                    <td>
+                        <% if(data[i].selectOne){ %>
+                            <label class="fancy-checkbox selectBanner" checked data-id="<%= data[i].id %>">
+                                <input type="checkbox" checked disabled>
+                                <span></span>
+                            </label>
+                        <% }else{ %>
+                            <label class="fancy-checkbox selectBanner" data-id="<%= data[i].id %>">
+                                <input type="checkbox" disabled>                                
+                                <span></span>
+                            </label>
+                        <% } %>
+                    </td>
+                    <td style="min-width: 120px;"><%= data[i].name %></td>
+                    <td><%= data[i].locationUrl %></td>
+                    <td>
+                        <img src="<%= data[i].imageUrl %>" class="img-responsive bannerImg">
+                    </td>
+                    <td>
+                        <% if(!data[i].selectOne){ %>
+                            <button type="button" class="btn btn-primary submitBtn" onclick="app.methods.bindBannerCommit(<%= id %>,<%= data[i].id %>)">绑定</button>
+                        <% } %>
+                    </td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</script>
+<script type="text/javascript">
+    var app = {
+        data: {
+            table: $("#table-main"),
+            tempData: [],
+            bannerData: []
+        },
+        methods: {
+            initTable : function(){
+                var authority_data = authoritys.useAuthority();
+                if(authority_data){
+                    app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/aggregate/module/list',
+                        columns: app.methods.optionByAuthority(),
+                        onLoadSuccess : function(data){
+                            app.data.moduleData = data.body.content;
+                            tableUi.initBootstrapTable();
+                            app.events.initEdit();
+                            authoritys.useAuthority();
+                            app.events.initDelBanner();
+                        }
+                    }));
+                }else{
+                    toastr.error("权限不足，不允许访问...")
+                }
+            },
+            // 列表配置
+            optionByAuthority: function () {
+                return [{
+                    field: 'id',title: 'ID',align: 'center',
+                }, {
+                    field: 'name',title: '标题',align: 'center',minWidth: 150,
+                    formatter: function (value, row, index, field) {
+                        return '<span authority="MODULE_WRITE" class="text-length-table-col edit" data-type="name" data-id="' + row.id + '" data-index="' + index + '">' + (value || '--') + '</span>';
+                    }
+                }, {
+                    field: 'scopeName',title: '商城',align: 'center',minWidth: 100
+                }, {
+                    field: 'presentId',title: '模板',align: 'center',width: 220,minWidth: 220,
+                    formatter: function (value, row, index, field) {
+                        return '<div class="viewBox"><img alt="' + value + '" class="img-responsive viewImg" src="' + row.present.thumb + '">'+
+                            '<div class="picTool"><a onclick="app.methods.showView('+ index + ')"><span class="lnr lnr-magnifier"></span></a>'+
+                            '<a authority="MODULE_WRITE" onclick="app.methods.bindTemp(' + row.id + ')"><span class="lnr lnr-sync"></span></a>'+
+                            '</div></div>';
+                    }
+                }, {
+                    field: 'banners',title: 'banner',align: 'center',width: 220,minWidth: 220,
+                    formatter: function (value, row, index, field) {
+                        var dom = '';
+                        value&&value.map(function (e) {
+                            dom += '<div class="bannerImgBox"><img src="' + e.imageUrl + '" class="img-responsive bannerImg" ><span authority="MODULE_WRITE" data-id="'+row.id+'" data-bannerid="'+e.id+'" class="lnr lnr-cross"></span></div>';
+                        })
+                        if(value&&value.length){
+                            return '<div class="bannerBox"><div class="scrollBox" style="display:flex;width:'+value.length * 256+'px">'+dom+'</div></div>'
+                        }else{
+                            return '<span class="text-length-table-col">--</span>';
+                        }
+                    }
+                }, {
+                    field: 'productCounts',title: '关联产品数',align: 'center',
+                    formatter: function (value, row, index, field) {
+                        return '<span class="text-length-table-col">' + value + '</span>';
+                    }
+                }, {
+                    field: 'cover',title: '覆盖层',align: 'center',minWidth: 120,
+                    formatter: function (value, row, index, field) {
+                        return value ? '<img onclick="app.methods.changeModuleCover(' + row.id + ')" class="img-responsive viewImg" style="height:120px;width:120px;margin:0 auto" src="' + value + '">' : '<button class="btn btn-primary btn-xs" authority="MODULE_WRITE" name="thumb" onclick="app.methods.changeModuleCover(' + row.id + ')">选择覆盖层</button>';
+                    }
+                }, 
+                // {
+                //     field: 'thumb',title: '菜单Icon',align: 'center',minWidth: 120,
+                //     formatter: function (value, row, index, field) {
+                //         return value ? '<img onclick="app.methods.changeModuleIcon(' + row.id + ')" class="img-responsive viewImg" style="height:40px;width:40px;margin:0 auto" src="' + value + '">' : '<button class="btn btn-primary btn-xs" authority="MODULE_WRITE" name="thumb" onclick="app.methods.changeModuleIcon(' + row.id + ')">选择预览图</button>';
+                //     }
+                // },
+                {
+                    field: 'tags',title: '标签',align: 'center',
+                    formatter: function (value, row, index, field) {
+                        var html = '';
+                        value && value.split(',').map(function(e){
+                            html += '<span class="label label-info" style="margin-right:6px">' + e + '</span>'
+                        })
+                        return '<div onclick="app.methods.openTagEdit(' + index + ')" style="cursor:pointer">' + (value ? html : '--') + '</div>'
+                    }
+                }, {
+                    field: 'comments',title: '备注',align: 'center',
+                    formatter: function (value, row, index, field) {
+                        var html = '';
+                        value.split(' ').map(function(e,i){
+                            html += e;
+                            if(i < value.split(' ').length - 1){
+                                html += '<br/>';
+                            }
+                        })
+                        row.subName && (html += row.subName);
+                        return '<span class="edit" authority="MODULE_WRITE" data-type="comments" data-id="' + row.id + '" data-index="' + index + '">' + (html || '--') + '</span>';
+                    }
+                }, {
+                    field: 'link',title: '链接',align: 'center',
+                    formatter: function (value, row, index, field) {
+                        return '<span authority="MODULE_WRITE" class="text-length-table-col edit" data-type="link"  data-id="' + row.id + '" data-index="' + index + '">' + (value || '--') + '</span>';
+                    }
+                }, {
+                    field: 'isLimit',title: '限量清仓',align: 'center',
+                    formatter: function (value, row, index, field) {
+                        return value == 0 ? '否' : '是';
+                    }
+                }, {
+                    field: 'limitStorehouseName',title: '限量仓库',align: 'center',
+                    formatter: function (value, row, index, field) {
+                        return value != undefined ? value : '--'
+                    }
+                },{
+                    title: '操作',align: 'center',minWidth: 400,
+                    formatter: function (value, row, index, field) {
+                        var selectData = [];
+                        row.banners && row.banners.map(function(e){selectData.push(e.id)});
+                        return '<div class="btn-group" role="group">'+
+                            '<a class="btn btn-info btn-xs" authority="MODULE_WRITE" onclick="app.methods.changeType(' + index + ','+ row.isLimit + ')">'+(row.isLimit == 0 ? '打开清仓' : '关闭清仓')+'</a>' +
+                            '<a class="btn btn-primary btn-xs" authority="MODULE_WRITE" onclick="app.methods.bannerEdit(' + row.id + ',' + JSON.stringify(selectData) + ')">Banner</a>' +
+                            '<a class="btn btn-primary btn-xs" authority="MODULE_WRITE" onclick="app.methods.productEdit(' + index + ')">产品</a>' +
+                            '<a class="btn btn-danger btn-xs" authority="MODULE_DELETE" onclick="app.methods.coverDelete(' + row.id + ')">删除覆盖层</a>' +
+                            '<a class="btn btn-danger btn-xs" authority="MODULE_DELETE" onclick="app.methods.modelDelete(' + row.id + ')">删除</a>' +
+                            '<a class="btn btn-info btn-xs" authority="MODULE_DELETE" onclick="app.methods.modelCopy(' + row.id + ')">复制</a>' +
+                            '</div>';
+                    }
+                }];
+            },
+            // 初始化筛选条件
+            initSelect: function(){
+                tools.renderSelect.scope('select[name="scopeId"]')
+            },
+            openTagEdit: function(index){
+                var _modal = $(".dialog-edit-tag");
+                _modal.modal({
+                    backdrop: 'static',
+                    keyboard: false,
+                    show: false
+                });
+                app.methods.initInputTag(app.data.moduleData[index].tags);
+                _modal.find('input[name=id]').val(app.data.moduleData[index].id);
+                _modal.modal("show");
+                _modal.find('button[commit]').off('click').on('click', function () {
+                    var _param = tools.getParams('.dialog-edit-tag');
+                    var data = []
+                    if(_param.tags == '' || !_param.tags){
+                        _param.tags = '';
+                    }
+                    _param.tags.trim().split(',').map(function(e){
+                        if(e != ''){data.push(e)}
+                    });
+                    _param.tags = data.toString(',');
+                    $.ajax({
+                        type: "POST",
+                        url: utils.prePath() + "/api/admin/aggregate/module",
+                        data: JSON.stringify(_param),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.data.table.bootstrapTable('refresh');
+                                _modal.modal("hide");
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                })
+            },
+            initInputTag: function(_tags){
+                console.log(_tags)
+                $('.dialog-edit-tag div.tags')
+                .html('<input type="text" class="form-control" name="tags" />')
+                .find('input[name=tags]')
+                .inputTags({tags : _tags && _tags.split(',') || [] , minLength : 1 , maxLength: 20 ,max: 10});
+            },
+            changeModuleIcon: function(id){
+                app.data.moduleId = id;
+                $('#uploadLogo').trigger('click');
+            },
+            changeModuleCover: function(id){
+                app.data.moduleId = id;
+                $('#uploadCover').trigger('click');
+            },
+            initUpload: function () {
+                var uploaderUpload = new plupload.Uploader({
+                    runtimes: 'html5,html4',
+                    browse_button: 'uploadLogo',
+                    url: utils.prePath() + "/api/admin/aggregate/module/present/image/upload",
+                    file_data_name: 'images',
+                    filters: {
+                        max_file_size: '2048kb',
+                        mime_types: [
+                            {title : "Image files", extensions : "jpg,gif,png"}
+                        ],
+                    },
+                    multipart_params: {
+                        access_token: utils.cookie.getCookie('accessToken')
+                    },
+                    init: {
+                        FilesAdded: function (up, files) {
+                            layer.load();
+                            up.start();
+                        },
+                        UploadComplete: function (up, files) {
+                            app.data.moduleId = null;
+                            layer.closeAll('loading');
+                        },
+                        Error: function (up, err) {
+                            app.data.moduleId = null;
+                            layer.closeAll('loading');
+                            toastr.error(JSON.parse(err.response).body.message);
+                        },
+                        FileUploaded:function(up,file,result){
+                            var src = JSON.parse(result.response).body;
+                            $.ajax({
+                                type: "POST",
+                                url: utils.prePath() + "/api/admin/aggregate/module",
+                                data: JSON.stringify( {
+                                    'id': app.data.moduleId,
+                                    'thumb': src
+                                }),
+                                success: function (result) {
+                                    if (result.statusCode == 'OK') {
+                                        app.data.table.bootstrapTable('refresh');
+                                    } else {
+                                        toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+                uploaderUpload.init();
+                var uploaderUpload1 = new plupload.Uploader({
+                    runtimes: 'html5,html4',
+                    browse_button: 'uploadCover',
+                    url: utils.prePath() + "/api/admin/aggregate/module/present/image/upload",
+                    file_data_name: 'images',
+                    filters: {
+                        max_file_size: '2048kb',
+                        mime_types: [
+                            {title : "Image files", extensions : "jpg,gif,png"}
+                        ],
+                    },
+                    multipart_params: {
+                        access_token: utils.cookie.getCookie('accessToken')
+                    },
+                    init: {
+                        FilesAdded: function (up, files) {
+                            layer.load();
+                            up.start();
+                        },
+                        UploadComplete: function (up, files) {
+                            app.data.moduleId = null;
+                            layer.closeAll('loading');
+                        },
+                        Error: function (up, err) {
+                            app.data.moduleId = null;
+                            layer.closeAll('loading');
+                            toastr.error(JSON.parse(err.response).body.message);
+                        },
+                        FileUploaded:function(up,file,result){
+                            var src = JSON.parse(result.response).body;
+                            $.ajax({
+                                type: "POST",
+                                url: utils.prePath() + "/api/admin/aggregate/module",
+                                data: JSON.stringify( {
+                                    'id': app.data.moduleId,
+                                    'cover': src
+                                }),
+                                success: function (result) {
+                                    if (result.statusCode == 'OK') {
+                                        app.data.table.bootstrapTable('refresh');
+                                    } else {
+                                        toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+                uploaderUpload1.init();
+            },
+            coverDelete: function(id){
+                $.ajax({
+                    type: "POST",
+                    url: utils.prePath() + "/api/admin/aggregate/module",
+                    data: JSON.stringify( {
+                        'id': id,
+                        'cover': ''
+                    }),
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.data.table.bootstrapTable('refresh');
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            unbindBanner: function(id,bannerId){
+                if(!bannerId || bannerId == '' || bannerId == 'undefined'){
+                    toastr.info('数据异常');
+                    return;
+                }
+                $.ajax({
+                    type: "DELETE",
+                    data : JSON.stringify([bannerId]),
+                    url : utils.prePath()+"/api/admin/aggregate/module/"+id+"/banner",
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.data.table.bootstrapTable('refresh');
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            bindBannerCommit: function(id, bannerId){
+                $.ajax({
+                    type: "PUT",
+                    data : JSON.stringify([bannerId]),
+                    url : utils.prePath()+"/api/admin/aggregate/module/"+id+"/banner",
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            $('.bannerTable .selectBanner[data-id="'+result.body[0].aggregateBannerId+'"]').find('input').prop('checked','true');
+                            toastr.success('绑定成功...');
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            bannerEdit: function(moduleId, selectData){
+                var state = true;
+                if(app.data.bannerData.length == 0){
+                    $.ajax({
+                        type: "get",
+                        async: false,
+                        url: utils.prePath() + '/api/admin/aggregate/banner',
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.data.bannerData = result.body;
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        },
+                        error:function(){
+                            toastr.error('系统异常,请稍候重试或联系开发人员...');
+                            state = false;
+                        }
+                    });
+                }
+                if(!state){
+                    return false;
+                }
+
+                var bannerSelectData = [];
+                app.data.bannerData.map(function(e){
+                    var one = e;
+                    delete e.selectOne;
+                    selectData.map(function(_e){
+                        if(e.id == _e){
+                            one.selectOne = true
+                        }
+                    })
+                    bannerSelectData.push(one);
+                })
+                var index = layer.open({
+                    type: 1,
+                    content: template('bannerList', {
+                        data: bannerSelectData,
+                        id: moduleId,
+                    }),
+                    area: ['900px', '660px'],
+                    title: '绑定banner',
+                    skin:'bannerList',
+                    cancel: function(){ 
+                        //右上角关闭回调
+                        app.data.table.bootstrapTable('refresh');
+                    }
+                });
+                $('.bannerTable').DataTable({
+                    language: {
+                        "sProcessing": "处理中...",
+                        "sLengthMenu": "显示 _MENU_ 项结果",
+                        "sZeroRecords": "没有匹配结果",
+                        "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                        "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                        "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                        "sInfoPostFix": "",
+                        "sSearch": "搜索:",
+                        "sUrl": "",
+                        "sEmptyTable": "表中数据为空",
+                        "sLoadingRecords": "载入中...",
+                        "sInfoThousands": ",",
+                        "oPaginate": {
+                            "sFirst": "首页",
+                            "sPrevious": "上页",
+                            "sNext": "下页",
+                            "sLast": "末页"
+                        },
+                        "oAria": {
+                            "sSortAscending": ": 以升序排列此列",
+                            "sSortDescending": ": 以降序排列此列"
+                        }
+                    }
+                });
+                app.data.openId = index;
+            },
+            productEdit: function(i){
+                var index = layer.open({
+                    type: 2,
+                    title: '给模块('+app.data.moduleData[i].name+')选择产品',
+                    content: 'moduleProduct.html?moduleId=' + app.data.moduleData[i].id,
+                    area: ['100vw' , '100vh']
+                });
+            },
+            showView: function(index){
+                layer.photos({
+                    photos: {
+                        "title": "", //相册标题
+                        "id": 0, //相册id
+                        "start": 0, //初始显示的图片序号，默认0
+                        "data": [   //相册包含的图片，数组格式
+                            {
+                                "pid": 0, //图片id
+                                "src": app.data.moduleData[index].present.thumb, //原图地址
+                            }
+                        ]
+                    },
+                    anim: 5 //0-6的选择，指定弹出图片动画类型，默认随机
+                });
+            },
+            bindTemp: function (id) {
+                // TODO
+                var index = layer.open({
+                    type: 1,
+                    content: '<div class="tempBox">' + template('scrollBox', {
+                        data: app.data.tempData,
+                    }) + '</div>',
+                    area: ['700px', 'auto'],
+                    title: '修改展现形式预览图',
+                    skin: 'moduleList'
+                });
+                app.data.openId = index;
+                var temp = $('.temp');
+                temp.off().click(function () {
+                    temp.map(function () {
+                        $(this).removeClass('select')
+                    })
+                    $(this).toggleClass('select');
+                    $.ajax({
+                        type: "POST",
+                        url: utils.prePath() + "/api/admin/aggregate/module",
+                        data: JSON.stringify({
+                            'id': id,
+                            'presentId': $(this).data('id')
+                        }),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                layer.close(index);
+                                app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                })
+                    
+            },
+            // 新增聚合模块弹框
+            addModel: function () {
+                var _this = this;
+                var _modal = $(".dialog-create-model");
+                _modal.modal({
+                    backdrop: 'static',
+                    keyboard: false,
+                    show: false
+                });
+
+                // modal初始化
+                _modal.find("input").val("");
+                
+                if (app.data.tempData.length == 0) {
+                    toastr.error('展现形式加载失败，请刷新重试...');
+                    return false;
+                }
+
+                _modal.modal("show");
+                
+                // 确认事件
+                _modal.find('button[commit]').off('click').on('click', function () {
+                    var data = {
+                        "name": _modal.find('input[name=name]').val(),
+                        "subName": _modal.find('input[name=subName]').val(),
+                        "link": _modal.find('input[name=link]').val() || '#',
+                        "presentId": _modal.find('.tempTag li.select').data('id'),
+                        "comments": _modal.find('input[name=comments]').val(),
+                        "scopeId": _modal.find('select[name="scopeIds"]').val()
+                    }
+
+                    if (!data.name) {
+                        toastr.warning('请完整填写模块信息...');
+                        return false;
+                    }
+
+                    if (!data.presentId) {
+                        toastr.warning('请选择模块展现形式...');
+                        return false;
+                    }
+                    if (!data.scopeId) {
+                        toastr.warning('请选择销售平台...');
+                        return false;
+                    }
+
+                    $.ajax({
+                        type: "POST",
+                        url: utils.prePath() + "/api/admin/aggregate/module",
+                        data: JSON.stringify(data),
+                        success: function (result) {
+                            _modal.modal("hide");
+                            if (result.statusCode == 'OK') {
+                                app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body
+                                    .message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                })
+            },
+            searchTable: function () {
+                app.data.table.bootstrapTable('refresh');
+            },
+            modelDelete: function (id) {
+                layer.confirm('确定要删除该模块吗?', {
+                    btn: ['确定', '取消']
+                }, function (index) {
+                    layer.close(index);
+                    $.ajax({
+                        type: "DELETE",
+                        url: utils.prePath() + "/api/admin/aggregate/module/" + id,
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body
+                                    .message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                });
+            },
+            modelCopy : function(id){
+            	layer.prompt(function(val, index){
+            		$.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/aggregate/module/copy",
+                        data: JSON.stringify({'id': id, 'name': val}),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body
+                                    .message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				  	layer.close(index);
+				});
+            },
+            // 初始化聚合模块
+            initTempBox: function (_modal) {
+                // 右侧图形
+                _modal.find('.tempBox').html(template('scrollBox', {
+                    data: app.data.tempData,
+                }));
+
+                // 初始化商城
+                tools.renderSelect.scope('select[name="scopeIds"]', 'no')
+
+                // 左侧tag
+                var tempTagHtml = '';
+                app.data.tempData.map(function(e){
+                    tempTagHtml += '<li data-id="'+e.id+'">'+e.name+'</li>'
+                })
+                _modal.find('.tempTag ul').html(tempTagHtml)
+
+                // 页面搜索，优化方式：延迟keyup响应
+                var searchData = [],reg;
+                $('input[name="tempSearch"]').on('keyup',function(e){
+                    if($(this).val() == ''){
+                        $('.tempBox .temp').show();
+                    }else if(e.keyCode == 13){
+                        $('.tempBox .temp').hide();
+                        searchData = [];
+                        reg = new RegExp($(this).val())
+                        app.data.tempData.map(function(e,i){
+                            if(reg.test(e.name)){
+                                searchData.push(i)
+                            }
+                        })
+                        searchData.map(function(e){
+                            $('.tempBox .temp').eq(e).show();
+                        })
+                    }
+                })
+
+                // 点击双绑定
+                $('.temp').on('click',function(){
+                    bindSelectById($(this).data('id'))
+                })
+                $('.tempTag li').on('click',function(){
+                    bindSelectById($(this).data('id'))
+                })
+
+                function bindSelectById(id){
+                    // 绑定对应dom
+                    $('.temp').removeClass('select').show();
+                    $('.tempTag li').removeClass('select');
+                    $('.temp[data-id="' + id + '"]').toggleClass('select');
+                    $('.tempTag li[data-id="' + id + '"]').toggleClass('select');
+                    // 滚动到对应位子
+                    var tempBoxHeight = 0,
+                        tempTagHeight = 0;
+                    $('.tempBox .temp').map(function(){
+                        if($(this).hasClass('select')){
+                            $('.tempBox').scrollTop(tempBoxHeight)
+                        }
+                        tempBoxHeight += $(this).height()
+                    })
+                    $('.tempTag li').map(function(){
+                        if($(this).hasClass('select')){
+                            $('.tempTag').scrollTop(tempTagHeight)
+                        }
+                        tempTagHeight += $(this).height()
+                    })
+                }
+            },
+            initTemp: function () {
+                $.ajax({
+                    type: "GET",
+                    async: false,
+                    url: utils.prePath() + "/api/admin/aggregate/module/present",
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.data.tempData = result.body;
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            // 仓库选择
+            storeChooseHouse: function(){
+                var storehouseData = cacheSessionStorage.getCache('storehouse');
+                if(!storehouseData || !storehouseData.length > 0){
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + "/api/admin/erp/storehouse",
+                        async: false,
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                cacheSessionStorage.setCache('storehouse',result.body);
+                                storehouseData = result.body;
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                };
+                let radioHtml = ''
+                console.log(storehouseData)
+                storehouseData.map(function(e,index){
+                    // optHtml += '<option value="'+e.id+'" data-subtext="' + e.comments + '">' + e.storehouseName + '</option>';
+                    radioHtml += `<div class="col-sm-6 form-checkbox" style="height:40px;margin-top:10px;">
+                                        <div class="plan-radio">
+                                            <input type="radio" id="radio-${index}" name="storeChooseHouse" data-subtext="${e.comments}" value="${e.id}"/>
+                                            <label for="radio-${index}">${e.storehouseName}- ${e.comments}</label>
+                                        </div>
+                                  </div>`
+                });
+                return radioHtml
+            },
+            changeType: function(i,isLimit){
+                // 
+                if(isLimit == 0){
+                    // 打开清仓
+                    layer.open({
+						type: 1,
+						title : '打开清仓',
+						// offset: '100px',
+						area: ['600px', '300px'], // 宽高
+						content: app.methods.storeChooseHouse(),
+						btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						yes: function(index, layero){
+                            let storeId = $('input[name="storeChooseHouse"]:checked').val()
+                            if(storeId == '' || storeId == undefined || storeId == null){
+                                toastr.error('请选择一个仓库再进行操作')
+                                return false
+                            }
+                            app.methods.ajaxAggregate(i,1,storeId)
+                            // alert($('input[name="storeChooseHouse"]:checked').val())
+							layer.close(index);
+						}
+					});
+                }else{
+                    // 关闭清仓
+                    app.methods.ajaxAggregate(i,0)
+                }
+            },
+            ajaxAggregate: function(i,isLimit,storeId){
+                $.ajax({
+                    type: "POST",
+                    url: utils.prePath() + "/api/admin/aggregate/module",
+                    data: JSON.stringify({
+                        'id': app.data.moduleData[i].id,
+                        'isLimit': isLimit,
+                        'limitStorehouseId': parseInt(storeId)
+                    }),
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.data.table.bootstrapTable('refresh');
+                            toastr.success('切换成功')
+                        } else {
+                            toastr.error((result.body && result.body.message) ?
+                                result.body.message :
+                                '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            }
+        },
+        events: {
+            initEdit: function () {
+                $('span.edit').off('click').on('click', function () {
+                    var _this = this;
+                    var type = $(_this).data('type');
+                    var index = $(_this).data('index');
+                    var layerOpt = {
+                        title: '修改',
+                        value: app.data.moduleData[index][type],
+                        formType: 0
+                    }
+                    layer.prompt(layerOpt, function (text, index) {
+                        var _param = {
+                            'id': $(_this).data('id'),
+                            [type]: text
+                        };
+                        $.ajax({
+                            type: "POST",
+                            url: utils.prePath() + "/api/admin/aggregate/module",
+                            data: JSON.stringify(_param),
+                            success: function (result) {
+                                if (result.statusCode == 'OK') {
+                                    layer.close(index);
+                                    app.data.table.bootstrapTable('refresh');
+                                } else {
+                                    toastr.error((result.body && result.body.message) ?
+                                        result.body.message :
+                                        '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+                });
+            },
+            initDelBanner:function(){
+                $('.bannerBox .bannerImg+span').on('click',function(){
+                    app.methods.unbindBanner($(this).data('id'), $(this).data('bannerid'));
+                })
+            }
+        },
+        init: function () {
+            app.methods.initTemp();
+            app.methods.initTempBox($(".dialog-create-model"));
+            app.methods.initSelect();
+            app.methods.initTable();
+            app.methods.initUpload();
+            tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+        }
+    }
+
+    $(function () {
+        app.init();
+    });
+</script>
+
+</html>

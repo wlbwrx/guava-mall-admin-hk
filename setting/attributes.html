@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>仓库管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+        <style>
+			.attr-box {overflow: auto;}
+			.attr-block {overflow: auto;border: 1px solid #ddd;}
+            .attr-key-list {padding: 10px;cursor: pointer;height: 48px;line-height: 30px;border-bottom: 1px solid #f5f5f5;}
+            .attr-key-list:hover {color: #0AF;}
+			.attr-active {background-color: #f5f5f5;color: #0AF;}
+            .btn-group {float: right;}
+			.not-data {text-align: center;padding: 200px 0;color: #999;}
+			.attr-arrow {text-align: center;padding: 200px 0;color: #999;font-size: 20px;}
+        </style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">属性管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-primary btn-sm" onclick="app.methods.openAddBox();"><i class="fa fa-plus-square"></i> 新增</button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div class="attr-box">
+                        <!--属性-->
+                        <div class="col-md-5">
+							<div class="attr-block" id="attrKeyList">
+								<div class="not-data">暂无属性</div>
+							</div>
+						</div>
+						<div class="col-md-1 attr-arrow">
+							<span class="glyphicon glyphicon-menu-right"></span>
+							<span class="glyphicon glyphicon-menu-right"></span>
+						</div>
+                        <!--属性值-->
+                        <div class="col-md-6">
+							<div class="attr-block" id="attrValueList">
+								<div class="not-data">暂无属性值</div>
+							</div>
+						</div>
+                      </div>
+				</div>
+			</div>
+        </div>
+        <!--新增/编辑属性-->
+		<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+			<div class="modal-dialog modal-md" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title">新增属性</h4>
+					</div>
+					<div class="modal-body">
+						<input style="display:none;" disabled class="form-control" type="text" name="id"/>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">属性名称<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="name"/>
+							</div>
+                        </div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">属性优先级</label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="priority"/>
+							</div>
+                        </div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">备注</label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="comments"/>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.saveAttrKey()">保存</button>
+					</div>
+				</div>
+			</div>
+        </div>
+        <!--新增/编辑属性值-->
+		<div class="modal fade dialog-create1" role="dialog" data-backdrop="static">
+            <div class="modal-dialog modal-md" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title">新增属性值</h4>
+                    </div>
+                    <div class="modal-body">
+                        <input style="display:none;" disabled class="form-control" type="text" name="id"/>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">属性值<span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <input class="form-control" type="text" name="name"/>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-2">优先级</label>
+                            <div class="col-sm-10">
+                                <input class="form-control" type="text" name="priority"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="app.methods.saveAttrValue()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+                attrKeyList: [], // 属性列表
+				attrValeList: [], // 属性值列表
+				attrId: '', // 新增属性值的属性ID
+				nowAttrId: '' // 当前查看的属性ID
+			},
+			methods : {
+                // 获取所有分类属性
+				initAttributes: function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					// 设置属性列表的高度
+					$('.attr-box').height(document.body.clientHeight - 90)
+					$('.attr-block').height(document.body.clientHeight - 100)
+                    $.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/property/list",
+						data: {
+							page: 0,
+							size: 5000
+						},
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+                                var html = ''
+                                var list = result.body.content // 属性
+								if (list.length) {
+									for (const i in list) {
+										html += `<div class="attr-key-list attr_${list[i].id}" onclick="app.methods.selectAttrValue(${list[i].id})">
+													<text>${list[i].name}</text>
+													<div class="btn-group" role="group">
+														<button class="btn btn-primary btn-xs" onclick="app.methods.saveAttrValueBox(${list[i].id})">新增属性值</button>
+														<button class="btn btn-info btn-xs" onclick="app.methods.editAttrBox(${i})">编辑</button>
+														<button class="btn btn-danger btn-xs" onclick="app.methods.deleteAttrKey(${list[i].id})">删除</button>
+													</div>
+												</div>`
+                                	}
+								} else {
+									html = `<div class="not-data">暂无属性</div>`
+								}
+                                $('#attrKeyList').html(html)
+                                app.data.attrKeyList = list
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+                },
+
+                // 获取属性值
+                selectAttrValue: function(id) {
+                    var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					// 给选中的属性加上选中
+					$('.attr-key-list').removeClass('attr-active')
+					$('.attr_' + id).addClass('attr-active')
+                    $.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/property/" + id + "/values",
+						data: '',
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+                                var html = ''
+                                var list = result.body // 属性值
+								if (list.length) {
+									for (const i in list) {
+										html += `<div class="attr-key-list">
+													<text>${list[i].name}</text>
+													<div class="btn-group" role="group">
+														<button class="btn btn-info btn-xs" onclick="app.methods.editAttrValueBox(${i})">编辑</button>
+														<button class="btn btn-danger btn-xs" onclick="app.methods.deleteAttrValue(${list[i].id})">删除</button>
+													</div>
+												</div>`
+									}
+								} else {
+									html = `<div class="not-data">暂无属性值</div>`
+								}
+								$('#attrValueList').html(html)
+								app.data.attrValeList = list
+								app.data.nowAttrId = id
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+                },
+
+                // 删除
+				deleteAttrKey: function(id) {
+					event.stopPropagation()
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						layer.close(_index);
+						$.ajax({
+							type: "DELETE",
+                            url: utils.prePath() + "/api/admin/property/" + id,
+                            data: '',
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功...');
+									app.methods.initAttributes()
+									app.methods.selectAttrValue(id)
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+                },
+                
+                // 新增属性
+                openAddBox: function(){
+                    var _modal = $(".dialog-create");
+					_modal.find(".modal-title").html('新增属性');
+                    _modal.find("input").val('').removeClass('input-warning');
+                    _modal.modal("show");
+                },
+
+                // 编辑属性
+				editAttrBox:function(index){
+					event.stopPropagation()
+					app.methods.openAddBox();
+					$(".dialog-create").find(".modal-title").html('编辑属性');
+                    app.methods.initAttrBox(index);
+                },
+
+                // 回写编辑
+                initAttrBox: function(index) {
+                    tools.initInput(".dialog-create", app.data.attrKeyList[index]);
+                },
+                
+                // 保存（属性）
+				saveAttrKey:function(){
+					var parame = tools.getParams('.dialog-create');
+					var $box = $('.dialog-create');
+					var list = app.data.attrKeyList;
+					if(!parame.name){
+						$box.find('input[name="name"]').addClass('input-warning')
+						toastr.error('ヽ(#`Д´)ﾉ ,请填写属性名称！');
+						return false;
+					}else{
+						$box.find('input[name="name"]').removeClass('input-warning')
+                    }
+                    if(!parame.priority){
+                        parame['priority'] = 0;
+						// toastr.warning('默认优先级设置为0。');
+                    }
+                    if (parame.id) {
+                        parame.id = parseInt(parame.id)
+					}
+					if (!parame.id) {
+						for (const i in list) {
+							if (parame.name == list[i].name) {
+								toastr.error('ヽ(#`Д´)ﾉ ,属性名称已存在！');
+								return false;
+							}
+						}
+					}
+					$.ajax({
+						type: parame.id ? 'PUT' : 'POST',
+						url: utils.prePath() + "/api/admin/property",
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('保存成功...');
+								app.methods.initAttributes()
+								$(".dialog-create").modal("hide");
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+                },
+                
+                // 新增属性值
+                saveAttrValueBox: function(id) {
+                    var _modal = $(".dialog-create1");
+					_modal.find(".modal-title").html('新增属性值');
+                    _modal.find("input").val('').removeClass('input-warning');
+                    _modal.modal("show");
+					app.data.attrId = id // 新增属性值的属性ID
+					app.data.nowAttrId = id
+                },
+
+				// 保存（属性值）
+				saveAttrValue: function() {
+					var dataList = []
+					var parame = tools.getParams('.dialog-create1');
+					var $box = $('.dialog-create1');
+					var list = app.data.attrValeList;
+					if(!parame.name){
+						$box.find('input[name="name"]').addClass('input-warning')
+						toastr.error('ヽ(#`Д´)ﾉ ,请填写属性值！');
+						return false;
+					}else{
+						$box.find('input[name="name"]').removeClass('input-warning')
+                    }
+                    if(!parame.priority){
+                        parame['priority'] = 0;
+						// toastr.warning('默认优先级设置为0。');
+                    }
+					if (!parame.id) {
+                        parame.propertyId = app.data.attrId
+						dataList.push(parame)
+					}
+					if (!parame.id) {
+						for (const i in list) {
+							if (parame.name == list[i].name) {
+								toastr.error('ヽ(#`Д´)ﾉ ,属性值已存在！');
+								return false;
+							}
+						}
+					}
+					$.ajax({
+						type: parame.id ? 'PUT' : 'POST',
+						url: utils.prePath() + "/api/admin/property/values",
+						data: parame.id ? JSON.stringify(parame) : JSON.stringify(dataList),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('保存成功...');
+								app.methods.selectAttrValue(app.data.nowAttrId)
+								$(".dialog-create1").modal("hide");
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+
+				// 编辑属性值
+				editAttrValueBox: function(index) {
+					app.methods.saveAttrValueBox(app.data.nowAttrId);
+					$(".dialog-create1").find(".modal-title").html('编辑属性值');
+                    app.methods.initAttrValueBox(index);
+				},
+
+				// 回写编辑
+				initAttrValueBox: function(index) {
+					tools.initInput(".dialog-create1", app.data.attrValeList[index]);
+				},
+
+				// 删除
+				deleteAttrValue: function(id) {
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						layer.close(_index);
+						$.ajax({
+							type: "DELETE",
+                            url: utils.prePath() + "/api/admin/property/values/" + id,
+                            data: '',
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功...');
+									app.methods.selectAttrValue(app.data.nowAttrId)
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				}
+			},
+			init : function(){
+                // 获取所有分类属性
+				app.methods.initAttributes()
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>仓库盈亏</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">仓库盈亏</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<button class="btn btn-success btn-sm export" authority="FINANCE_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/finance/inventory/export');"><i class="fa fa-download"></i>&nbsp;&nbsp;导出</button>
+							<span id="analysisMes"></span>
+						</div>	
+					</div>	
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="beginTime" rangeEnd="endTime" class="form-control" name="times" placeholder="选择时间" />
+						<input type="text" class="form-control" name="productId" placeholder="产品ID">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="条码">
+                        <select class="selectpicker" data-live-search="true" name="storehouseId"></select>
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+                table : $("#table-main"),
+                financeData: [],
+                storageType: cacheSessionStorage.getCache('storageType'),
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/finance/inventory',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.financeData = data.body.content
+					    },  
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'storehouse_name',title: '仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.warningDays(value, row.days);
+                        }
+					}, {
+						field: 'product_id',title: '商品ID',align: 'center',
+					},{
+						field: 'product_sku_image',title: '商品图',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.proImage(row.product_sku_image, row.product_id, row.product_title);
+						}
+					}, {
+						field: 'product_title',title: '品名',align: 'center',
+						formatter: function(value, row, index, field) {
+                            return value + '（' + row.product_sku_name + '）';
+						}
+					}, {
+						field: 'product_sku_barcode',title: '条码',align: 'center',
+					}, {
+						field: 'inventory',title: '库存',align: 'center',
+					}, {
+						field: 'before_time_inventory',title: '期初库存',align: 'center',
+					}, {
+						field: 'after_time_inventory',title: '期末库存',align: 'center',
+					}, {
+						field: 'avg_purchased_price',title: '平均采购价',align: 'center',
+					}, {
+                        field: 'profit_loss',title: '净流入额（￥）',align: 'center'
+					}];
+                    return option;
+				},
+				initSelect : function(){
+                    tools.rangeTime('input[name="times"]');
+                    tools.renderSelect.storehouse('select[name="storehouseId"]');
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

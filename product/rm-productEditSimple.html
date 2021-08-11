@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Home</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/linearicons/style.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/select2/dist/css/select2.css" />
+		<link rel="stylesheet" href="../dists/summernote/dist/summernote.css" />
+		<link rel="stylesheet" href="../dists/input-tags/css/inputTags.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.form-group .form-control.form-control-inline{width: calc(50% - 13px);}
+			.caption-info{padding: 4px 8px;color: #333;overflow: hidden;text-overflow: ellipsis;display: inline-block;width: 100%;white-space: nowrap;position: absolute;bottom: 0px;background: rgba(0,0,0,.4);color: #FAFAFA;}
+			.btn-delete{position: absolute; right: 5px; top: 5px; outline: none;color: #d9534f; font-size: 20px;cursor: pointer;}
+			.btn-delete:hover{color: #c9302c;}
+			.plupload-image-column{width: 200px; height: 200px;margin: 10px;}
+			.plupload-image-column .thumbnail>img{width: 100%; max-height: 100%;}
+			.plupload-image-column .progress-bar{position: absolute;height: 20px;top: 90px;}
+			.text-muted .form-control.input-sm{display: inline-block;width: 60px;height: 25px;}
+			#table-skus .thumbnail .caption{padding: 0px;}
+			#table-skus .thumbnail .caption h4{margin-top: 4px; margin-bottom: 8px;margin-left: 8px;}
+			#table-skus .table.table-condensed{color: #777;border: none;border-top: 1px solid #ddd;}
+			#table-skus.table td{font-size: 12px;text-align: center;}
+			#table-skus.table .edit-column{font-weight: bold;text-decoration: underline;cursor: pointer;}
+			
+			.attributes-container .panel-title{cursor: pointer;}
+			.text-length{display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;overflow: hidden;font-weight: 500;font-size: 15px;min-height: 42px;}
+			.thumbnail-checkbox{position: absolute; left: 5px; top: 5px;}
+			.purchasePrice:before{font-size: 12px;content: "￥ ";}
+			.price:before{font-size: 12px;content: "$ ";}
+			
+			.carousel-inner>.item>a>img, .carousel-inner>.item>img, .img-responsive, .thumbnail a>img, .thumbnail>img{max-height: 100%;}
+			.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th{vertical-align: middle;}
+			.example{height: initial; margin-bottom: 0px;}
+
+			@media screen and (max-width: 768px) {
+				#toolbar-skus.btn-group > button:nth-child(2){display: none;}
+				.layui-layer{max-width: 100%;}
+				.picSelect,
+				.picUpload{top: 0!important;max-height: 100vh;}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<h3 class="panel-title">产品编辑</h3>
+					<div class="right">
+						<button type="button" onclick="window.location.reload();"><i class="fa fa-refresh"></i></button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div class="row">
+						<!--tab开始-->
+						<div class="custom-tabs-line tabs-line-bottom left-aligned">
+							<ul class="nav" role="tablist">
+								<li><a href="#tab-bottom-left2" role="tab" data-type="params" data-toggle="tab">产品参数</a></li>
+								<li><a href="#tab-bottom-left3" role="tab" data-type="details" data-toggle="tab">产品详情</a></li>
+								<li><a href="#tab-bottom-left4" role="tab" data-type="images" data-toggle="tab">主/轮播图</a></li>
+								<li><a href="#tab-bottom-left7" role="tab" data-type="allImages" data-toggle="tab">商品图片</a></li>
+							</ul>
+						</div>
+						<div class="tab-content">
+							
+							<div class="tab-pane fade" id="tab-bottom-left2">
+								<div id="summernote-params"></div>
+								<button type="button" class="btn btn-primary" onclick="app.params.submitParams();"><i class="fa fa-check"></i>&nbsp;&nbsp;保存</button>
+							</div>
+							<div class="tab-pane fade" id="tab-bottom-left3">
+								<div id="summernote-details"></div>
+								<button type="button" class="btn btn-primary" onclick="app.details.submitDetails();"><i class="fa fa-check"></i>&nbsp;&nbsp;保存</button>
+							</div>
+							
+							<!-- 主图,轮播管理  -->
+							<div class="tab-pane fade" id="tab-bottom-left4">
+								<div class="panel">
+									<div class="panel-heading">
+										<h3 class="panel-title">主图</h3>
+									</div>
+									<div class="panel-body">
+										<div class="row row-flex">
+										    <div id="img-single" class="col-sm-4 col-md-3 col-lg-2">
+										        <div class="upload-container" onclick="app.images.uploadImageHander('single');">
+										        	<img src="../img/click-select-img.jpg" class="img-responsive" alt="">
+										        </div>
+										    </div>
+									   </div>
+									</div>
+								</div>
+								<div class="panel">
+									<div class="panel-heading">
+										<h3 class="panel-title">轮播图</h3>
+									</div>
+									<div class="panel-body">
+										<div class="row row-flex">
+										    <div id="img-multiple" class="col-sm-4 col-md-3 col-lg-2">
+										        <div class="upload-container" onclick="app.images.uploadImageHander('multiple');">
+										        	<img src="../img/click-select-img.jpg" class="img-responsive" alt="">
+										        </div>
+										    </div>
+									   </div>
+									</div>
+								</div>
+								<button type="button" class="btn btn-primary" onclick="app.images.submitImages();"><i class="fa fa-check"></i>&nbsp;&nbsp;保存</button>
+							</div>
+
+							
+							<!--图片管理-->
+							<div class="tab-pane fade" id="tab-bottom-left7">
+								<div id="toolbar-uploadImage" class="btn-group">
+									<button type="button" class="btn btn-primary" onclick="app.images.uploadImages();"><i class="fa fa-upload"></i>&nbsp; 上传 </button>
+								</div>
+								<table id="table-images"></table>
+							</div>
+						</div>
+						<!--tab结束-->
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../dists/select2/dist/js/select2.js"></script>
+	<script type="text/javascript" src="../dists/summernote/dist/summernote.js"></script>
+	<script type="text/javascript" src="../dists/summernote/dist/lang/summernote-zh-CN.js"></script>
+	<script type="text/javascript" src="../js/productEdit-img-selections.js"></script>
+	<script type="text/javascript" src="../dists/input-tags/js/inputTags.jquery.js" ></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/masonry.pkgd.min.js"></script>
+	<script type="text/javascript" src="../js/imagesloaded.pkgd.min.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script id="itemtpl" type="text/html">
+		<% var clickSelectImg = '../img/click-select-img.jpg'; %>
+	    <div class="col-sm-4 col-md-3 col-lg-2">
+	        <div skuId="<%=item.id%>" class="thumbnail example">
+                <label class="fancy-checkbox thumbnail-checkbox"><input type="checkbox"><span></span></label>
+	            <img skuId="<%=item.id%>" src="<%=item.productImageUrl ? item.imageUrl : clickSelectImg %>" class="img-responsive">
+	            <div class="caption">
+	            	<p class="text-muted text-length" data-toggle="tooltip" data-placement="top" title="<%=item.name%>"><%=item.name%></p>
+	            	<table class="table table-condensed">
+						<tbody>
+							<tr>
+								<td colspan="2">库存:</td><td colspan="2" _skuId="<%=item.id%>" _name="inventory" class="edit-column text-success"><%=item.inventory%></td>
+							</tr>
+							<tr>
+								<td>采购价:</td><td  _skuId="<%=item.id%>" _name="purchasePrice" class="edit-column purchasePrice"><%=item.purchasePrice%></td>
+								<td>销售价:</td><td  _skuId="<%=item.id%>" _name="price" class="edit-column text-danger price"><%= item.price ? item.price : '--' %></td>
+							</tr>
+						</tbody>
+					</table>
+	            </div>
+	        </div>
+	    </div>
+   </script>
+   <script id="imagetpl" type="text/html">
+	    <div class="col-sm-4 col-md-3 col-lg-2 image-item">
+	        <div class="thumbnail example">
+	            <img src="<%=item.url%>" class="img-responsive" id="<%=item.id%>">
+	        </div>
+	        <p class="text-info"><%=item.fileName%></p>
+	    </div>
+   </script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				productId : utils.getURLParam('id') , 
+				productInfos : null
+			},
+			params : {
+				hasInited : false , 
+				initSummernote : function(){
+					if(app.params.hasInited) return ; //已经初始化过的,不需要再次初始化
+					$('#summernote-params').summernote({
+						placeholder: '强列要求使用两列的表格展示...',
+						height: 550,
+						lang: 'zh-CN',
+						toolbar: [
+					        ['style', ['style']],
+					        ['font', ['bold', 'underline', 'clear']],
+					        ['fontname', ['fontname']],
+					        ['color', ['color']],
+					        ['table', ['table']],
+					        ['view', ['codeview', 'help']]
+					    ],
+					    buttons: {
+					    	imgSelect: ImageSelections
+					  	},
+					    dialogsFade: true,
+						callbacks: {
+						    onImageUpload: function(files) {
+						      $summernote.summernote('insertNode', imgNode);
+						    }
+						}
+					});
+					$('#summernote-params').summernote('code', app.data.productInfos.productParams ? app.data.productInfos.productParams.replace('<table>' , '<table class="table table-bordered">') : '');
+					app.params.hasInited = true ; 
+				},
+				submitParams : function(){
+					$.post(utils.prePath()+"/api/admin/product/detail/" + app.data.productInfos.id, JSON.stringify({'productParams' : $('#summernote-params').summernote('code')})).done(function(result){
+						if(result.statusCode == 'OK'){
+							app.methods.initProductInfo();
+							app.params.hasInited = false;
+							$('#summernote-params').summernote('code', app.data.productInfos.productParams.replace('<table>' , '<table class="table table-bordered">'));
+						}else{
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					});
+				}
+			},
+			details : {
+				hasInited : false,
+				initSummernote : function(){
+					if(app.details.hasInited) return ; //已经初始化过的,不需要再次初始化
+					$('#summernote-details').summernote({
+						placeholder: '强列要求使用两列的表格展示...',
+						height: 550,
+						lang: 'zh-CN',
+						toolbar: [
+					        ['style', ['style']],
+					        ['font', ['bold', 'underline', 'clear']],
+					        ['fontname', ['fontname']],
+					        ['color', ['color']],
+					        ['para', ['ul', 'ol', 'paragraph']],
+					        ['table', ['table']],
+					        ['insert', ['link', 'video' , 'imgSelect']],
+					        ['view', ['codeview', 'help']]
+					    ],
+					    buttons: {
+					    	imgSelect: ImageSelections
+					  	},
+					    dialogsFade: true,
+						callbacks: {
+						    onImageUpload: function(files) {
+						      $summernote.summernote('insertNode', imgNode);
+						    }
+						}
+					});
+					$('#summernote-details').summernote('code', app.data.productInfos.productDetails ? app.data.productInfos.productDetails.replace(/<p>/g,"<p style='text-align: center;'>") : '');
+					app.details.hasInited = true ;
+				},
+				submitDetails : function(){
+					$.post(utils.prePath()+"/api/admin/product/detail/" + app.data.productInfos.id, JSON.stringify({'productDetails' : $('#summernote-details').summernote('code')})).done(function(result){
+						if(result.statusCode == 'OK'){
+							app.methods.initProductInfo();
+							app.details.hasInited = false;
+							$('#summernote-details').summernote('code', app.data.productInfos.productDetails.replace(/<p>/g,"<p style='text-align: center;'>"));
+						}else{
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					});
+				}
+			},
+			images : {
+				hasInited : false , 
+				skuHasInited : false,
+				initSkuImages : function(){
+					if(app.images.skuHasInited)return;
+					//在这里初始化SKU的图片信息
+					
+					var primaryImage = '' , roundSowImage = '' , bannerImage = '' ;
+					$.each(app.data.productInfos.productImages, function(i, image){
+						console.log(image.productImageType);
+						if(image.type == 0){
+							primaryImage =   '<div class="col-sm-4 col-md-3 col-lg-2">'
+												+'    <div class="thumbnail example">'
+												+'	      <img id="'+image.id+'" src="'+image.url+'" class="img-responsive" alt="">'
+												+'	  </div>'
+												+'</div>';
+						}else if(image.type == 1){
+							roundSowImage   +='<div class="col-sm-4 col-md-3 col-lg-2">'
+											+'    <div class="thumbnail example">'
+											+'        <img id="'+image.id+'" src="'+image.url+'" class="img-responsive" alt="">'
+											+'    	<div class="options">'
+											+'    		<span class="pull-left">'
+											+'    			<a href="#" class="btn btn-xs" onclick="app.images.increasePosition(this);"><i class="fa fa-chevron-left"></i></a>'
+											+'    			<a href="#" class="btn btn-xs" onclick="app.images.reductionPosition(this);"><i class="fa fa-chevron-right"></i></a>'
+											+'    		</span>'
+											+'            <span class="pull-right">'
+											+'                <a href="#" class="btn btn-xs" onclick="app.images.deletePosition(this);"><i class="fa fa-trash-o"></i></a>'
+											+'            </span>'
+											+'        </div>'
+											+'    </div>'
+											+'</div>';
+						}else if(image.type == 4){
+							var _height = $('#img-banner img').outerHeight();
+							var _width = 750 * _height / 240 ; 
+							bannerImage   +='<div style="width : '+_width+'px; height:'+_height+'px;">'
+											+'    <div class="thumbnail example">'
+											+'        <img id="'+image.id+'" src="'+image.url+'" class="img-responsive" alt="">'
+											+'    </div>'
+											+'</div>';
+						}
+					});
+					$('#img-single').siblings().remove();
+					$('#img-banner').siblings().remove();
+					$('#img-multiple').siblings().remove();
+					//新增
+					$('#img-single').before(primaryImage);
+					$('#img-banner').before(bannerImage);
+					$('#img-multiple').before(roundSowImage);
+					app.images.skuHasInited = true;	
+				},
+				uploadImageHander : function(type){
+					if(type == 'single' || type == 'banner'){
+						chosenImagesSingle(app.images.chosenImagesSingleCallBack , type);
+					}else if(type == 'multiple'){
+						chosenImagesMultiple(app.images.chosenImagesMultipleCallBack);
+					}
+				},
+				chosenImagesSingleCallBack : function(imgId , imgSrc , type){
+					if(type == 'single'){
+						$('#img-single').prevAll().remove();
+						var html =  '<div class="col-sm-4 col-md-3 col-lg-2">'
+								   +'    <div class="thumbnail example">'
+								   +'        <img id="'+imgId+'" src="'+imgSrc+'" class="img-responsive" alt="">'
+								   +'    </div>'
+								   +'</div>';
+						$('#img-single').before(html);
+					}else if(type == 'banner'){
+						$('#img-banner').prevAll().remove();
+						var _height = $('#img-banner img').outerHeight();
+						var _width = 750 * _height / 240 ; 
+						var html =  '<div style="width : '+_width+'px; height:'+_height+'px;">'
+								   +'    <div class="thumbnail example">'
+								   +'        <img id="'+imgId+'" src="'+imgSrc+'" class="img-responsive" alt="">'
+								   +'    </div>'
+								   +'</div>';
+						$('#img-banner').before(html);
+					}
+				},
+				chosenImagesMultipleCallBack : function(imgId , imgSrc){
+					var html =  '<div class="col-sm-4 col-md-3 col-lg-2">'
+							   +'    <div class="thumbnail example">'
+							   +'       <img id="'+imgId+'" src="'+imgSrc+'" class="img-responsive" alt="">'
+						   	   +'		<div class="options">'
+							   +'     		<span class="pull-left">'
+						       +'    			<a href="#" class="btn btn-xs" onclick="app.images.increasePosition(this);"><i class="fa fa-chevron-left"></i></a>'
+							   +'     			<a href="#" class="btn btn-xs" onclick="app.images.reductionPosition(this);"><i class="fa fa-chevron-right"></i></a>'
+							   +'     		</span>'
+						       +'           <span class="pull-right">'
+						       +'              <a href="#" class="btn btn-xs" onclick="app.images.deletePosition(this);"><i class="fa fa-trash-o"></i></a>'
+						       +'           </span>'
+							   +'       </div>'
+							   +'    </div>'
+							   +'</div>';
+					$('#img-multiple').before(html);
+				},
+				increasePosition : function(target){//增加排名,
+					var tmpDOM = $(target).parents('.thumbnail.example').parent();
+					tmpDOM.prev().before(tmpDOM);
+				},
+				reductionPosition : function(target){//减少排名
+					var tmpDOM = $(target).parents('.thumbnail.example').parent();
+					if(tmpDOM.next().next().length == 0) return ;
+					tmpDOM.next().after(tmpDOM);
+				},
+				deletePosition : function(target){
+					$(target).parents('.thumbnail.example').parent().remove();
+				},
+				submitImages : function(){
+					var skuImages = {
+						productPrimaryImage : $('#img-single').siblings().find('.thumbnail img').eq(0).attr('src'),
+						productBannerImage : $('#img-banner').siblings().find('.thumbnail img').eq(0).attr('src'),
+						productCarouselImages : []
+					};
+					$('#img-multiple').siblings().each(function(i){
+					    skuImages.productCarouselImages.push($(this).find('.thumbnail img').eq(0).attr('src'));
+					});
+					$.post(utils.prePath()+"/api/admin/product/" + app.data.productInfos.id + "/image", JSON.stringify(skuImages)).done(function(result){
+						if(result.statusCode == 'OK'){
+							app.methods.initProductInfo();
+							app.images.hasInited = false;
+							app.images.initSkuImages();
+						}else{
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					});
+				},
+				initTableImages : function(){
+					if(app.images.hasInited) {
+						$('#table-images').bootstrapTable('refreshOptions', {data: app.data.productInfos.productImages});
+						return ; //已经初始化过的,不需要再次初始化
+					}
+					$('#table-images').bootstrapTable({
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						showColumns : false,
+						toolbar : '#toolbar-uploadImage',
+						templateView : true,
+						showHeader : false,
+						templateParentClass: "row row-flex masonry",
+						templateFormatter : 'imagetpl' , 
+						dataField : 'body',
+						queryParams : function(params){
+							return params;
+						},
+						data: app.data.productInfos.productImages
+					});
+					app.images.hasInited = true ; 
+				},
+				/*上传图片*/
+				uploadImages : function(){
+					pluploadLayer.initPanel(app.images.afterUploadImages);
+				},
+				afterUploadImages : function(){
+					//刷新表格
+					app.methods.initProductInfo();
+					$('#table-images').bootstrapTable('refreshOptions' , {data: app.data.productInfos.productImages});
+				}
+			},
+			methods : {
+				initProductInfo : function(){
+					$.ajax({
+						type:"get",
+						url : utils.prePath()+"/api/admin/product/" + app.data.productId,
+						async: false,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.productInfos = result.body;
+							}
+						}
+					});
+				}
+			},
+			events : {
+				tabShownEvent : function(){
+					$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+						console.log($(e.target).attr('data-type'));
+						$('.popover').hide();
+						switch ($(e.target).attr('data-type')){
+							case 'params':
+								app.params.initSummernote();
+								break;
+							case 'details':
+								app.details.initSummernote();
+								break;
+							case 'images':
+								app.images.initSkuImages();
+								break;
+							case 'allImages':
+								app.images.initTableImages();
+								break;
+							default:
+								break;
+						}
+					});
+					$('a[data-toggle="tab"]').first().trigger('click');
+				}
+			},
+			init : function(){
+				app.methods.initProductInfo();
+				//初始化页面加载
+				app.events.tabShownEvent();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

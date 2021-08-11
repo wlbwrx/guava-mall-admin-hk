@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>产品分析</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+            		<div class="left">
+						<h3 class="panel-title">用户分析</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<div class="btn-group" authority="LOGISTICS_EXCEPTION_IMPORT">
+								<button type="button" class="btn btn-success btn-sm" id="uploadInvoice1"><i class="fa fa-upload"></i> 导入异常物流信息</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/异常订单.xls">异常订单模板</a></li>
+								</ul>
+							</div>
+							
+						</div>	
+					</div>	
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<select class="selectpicker" data-live-search="true" name="scopeId"></select>
+						<input type="text" inputTpye="daterange" rangeStart="beginTime" rangeEnd="endTime" class="form-control" name="orderTimes" placeholder="选择时间" />
+						<input type="text" class="form-control" name="consignee" placeholder="用户名">
+						<input type="text" class="form-control" name="tel" placeholder="电话">
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/analysis/orderUser/details',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'tel',title: '电话',align: 'center',
+					}, {
+						field: 'consignee',title: '姓名',align: 'center',minWidth: 80,
+					}, {
+						field: 'address',title: '地址',minWidth: 200,
+					}, {
+						field: 'total_price',title: '总花费',align: 'center',
+						formatter: function(value, row, index, field) {
+							return '<span class="money">'+value+'</span>'	
+						}
+					}, {
+						field: 'total_order',title: '总单量',align: 'center',
+					}, {
+						field: 'total_buy_quantity',title: '总SKU数',align: 'center',
+					}, {
+						field: 'total_return_change_quantity',title: '退货数',align: 'center',
+					}, {
+						field: 'receiveCount',title: '签收数',align: 'center',
+					}, {
+						field: 'rejectCount',title: '拒收数',align: 'center',
+					}, {
+						field: 'exceptionInfo',title: '异常信息',align: 'center',
+					}, {
+						field: 'avg_order_price',title: '客单价',align: 'center',
+						formatter: function(value, row, index, field) {
+							return '<span class="money">'+value+'</span>'	
+						}
+					}, {
+						field: 'avg_sku_price',title: 'SKU均价',align: 'center',
+						formatter: function(value, row, index, field) {
+							return '<span class="money">'+value+'</span>'	
+						}
+					}];
+                    return option;
+				},
+				initSelect : function(){
+					tools.rangeTime('input[name="orderTimes"]');
+					tools.renderSelect.scope('select[name="scopeId"]');
+				},
+				initUpload: function(){
+					var uploader_uploadInvoice1 = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadInvoice1',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/logisticsException/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '2000kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								toastr.success('导入成功...');
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(err.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadInvoice1.init();
+					app.data.initUploadInvoiceState1 = true;
+				},
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initUpload();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

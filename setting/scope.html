@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>商城管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/hint/hint.css"/>
+		<link rel="stylesheet" href="../dists/select2/dist/css/select2.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">商城管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-primary btn-sm" onclick="app.methods.scopeAdd();"><i class="fa fa-plus-square"></i>&nbsp;新增</button>
+							<button type="button" id="uploadLogo" style="display: none;"></button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<table id="table-scope"></table>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="myModal"  role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">创建商城</h4>
+					</div>
+					<div class="modal-body">
+						<form id="scopeAdd">
+							<input type="hidden" name="id" value="" />
+							<input type="text" name="name" class="form-control" placeholder="商城名称..." />
+							<br/>
+							<input type="url" name="domains" class="form-control" placeholder="商城域名(eg: www.baleshop.tw)..." />
+							<br/>
+							<textarea name="comments" class="form-control" placeholder="comments..." rows="3" style="resize: none;"></textarea>
+							<textarea name="manager" class="form-control" placeholder="维护人员账号..." rows="3" style="resize: none;"></textarea>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">&nbsp;&nbsp;取&nbsp;消&nbsp;&nbsp;</button>
+						<button type="button" class="btn btn-primary" onclick="app.methods.saveAction();">&nbsp;&nbsp;保&nbsp;存&nbsp;&nbsp;</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				uploader : null, 
+				table : $("#table-scope")
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+						url: utils.prePath() + '/api/admin/scope/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+					var option = [{
+						field: 'id',
+						title: '编号',
+						align : 'center',
+						width : 50,
+						formatter :  function(value, row, index, field) {
+							return   '<a href="http://'+row.domains+'" target="_blank">'+value+'</a>';
+						}
+					},{
+						field: 'logo',
+						title: 'LOGO',
+						width : 100,
+						minWidth : 100,
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<a href="#" onclick = "app.methods.changeLogo('+row.id+');"><img style="height:30px" src="'+(value || "../img/upload-placeholder.jpg")+'" alt="'+row.title+'" class="img-responsive"></a>';
+						}
+					}, {
+						field: 'name',
+						title: '商城名称',
+						width : 100,
+						minWidth : 100,
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<a href="http://'+row.domains+'" target="_blank">'+value+'</a>';
+						}
+					}, {
+						field: 'domains',
+						title: '域名',
+						width : 150,
+						minWidth : 150,
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<a href="http://'+value+'" target="_blank">'+value+'</a>';
+						}
+					}, {
+						field: 'comments',
+						title: '备注',
+						width : 200,
+						minWidth : 200
+					},{
+						field: 'manager',
+						title: '维护人员',
+						width : 200,
+						minWidth : 200
+					}, {
+						title: '操作' , 
+						align : 'center',
+						width : 200,
+						minWidth : 160,
+						formatter :  function(value, row, index, field) {
+							return   '<div class="btn-group" role="group">'
+									+'  <a class="btn btn-info btn-xs" authority="SCOPE_WRITE" onclick="app.methods.scopeEdit('+row.id+')">编辑</a>'
+									+'  <a class="btn btn-danger btn-xs" authority="SCOPE_DELETE" onclick="app.methods.scopeDelete('+row.id+')">刪除</a>'
+									+'</div>';
+						}
+					}];
+					return option;
+				},
+				scopeAdd : function(){
+					$('#scopeAdd input[name="id"]').val('');
+					$('#scopeAdd input[name="name"]').val('');
+					$('#scopeAdd input[name="domains"]').val('');
+					$('#scopeAdd textarea[name="comments"]').val('');
+					$('#scopeAdd textarea[name="manager"]').val('');
+					$('#myModal').modal({backdrop : 'static'});
+				},
+				scopeEdit : function(id){
+					var rows = app.data.table.bootstrapTable('getData') , currentRow = null;
+					$.each(rows, function(index , row) {
+						if(row.id == id){
+							currentRow = row ; 
+							return false;
+						}
+					});
+					$('#scopeAdd input[name="id"]').val(currentRow.id);
+					$('#scopeAdd input[name="name"]').val(currentRow.name);
+					$('#scopeAdd input[name="domains"]').val(currentRow.domains);
+					$('#scopeAdd textarea[name="comments"]').val(currentRow.comments);
+					$('#scopeAdd textarea[name="manager"]').val(currentRow.manager);
+					$('#myModal').modal({backdrop : 'static'});
+				},
+				scopeDelete : function(id){
+					layer.confirm('确定删除该商城？', {
+					  	btn: ['确定','取消'] //按钮
+					}, function(index){
+					  	layer.close(index);
+					  	$.ajax({
+							type : "DELETE",
+							url : utils.prePath()+"/api/admin/scope/" + id,
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									app.data.table.bootstrapTable('refresh');
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				saveAction : function(){
+					$.ajax({
+						type : "POST",
+						url : utils.prePath()+"/api/admin/scope",
+						data : JSON.stringify($('#scopeAdd').serializeJson()),
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.table.bootstrapTable('refresh');
+								$('#myModal').modal('hide');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				changeLogo : function(scopeId){
+					app.data.scopeId = scopeId;
+					$('#uploadLogo').trigger('click');
+				},
+				initUpload: function () {
+                    var uploaderUpload = new plupload.Uploader({
+                        runtimes: 'html5,html4',
+                        browse_button: 'uploadLogo',
+                        url: utils.prePath() + "/api/admin/scope/image/upload",
+                        file_data_name: 'images',
+                        filters: {
+                            max_file_size: '1024kb',
+                            mime_types: [
+                                {title : "Image files", extensions : "jpg,gif,png"}
+                            ],
+                        },
+                        multipart_params: {
+                            access_token: utils.cookie.getCookie('accessToken')
+                        },
+                        init: {
+                        	BeforeUpload : function(up, files){
+                        		up.settings.url = utils.prePath() + "/api/admin/scope/"+ app.data.scopeId +"/image/upload";
+                        	},
+                            FilesAdded: function (up, files) {
+                            	layer.load();
+                                up.start();
+                            },
+                            UploadComplete: function (up, files) {
+                            	app.data.scopeId = null;
+                            	layer.closeAll('loading');
+                                toastr.success('LOGO更换成功...');
+                                app.data.table.bootstrapTable('refresh');
+                            },
+                            Error: function (up, err) {
+                            	app.data.scopeId = null;
+                            	layer.closeAll('loading');
+                                toastr.error(JSON.parse(err.response).body.message);
+                            }
+                        }
+                    });
+                    uploaderUpload.init();
+                },
+			},
+			init : function(){
+				app.methods.initTable();
+				app.methods.initUpload();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

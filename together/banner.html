@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>banner管理</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- VENDOR CSS -->
+    <link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+    <link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+    <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+    <link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="../dists/linearicons/style.css">
+    <link rel="stylesheet" href="../dists/toastr/toastr.css" />
+    <!-- MAIN CSS -->
+    <link rel="stylesheet" href="../css/main.css?v=20200331">
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+    <style>
+        .tempBox{width:100%;overflow-x:auto}
+        .tempBox::-webkit-scrollbar{width:10px;height:6px}
+        .tempBox::-webkit-scrollbar-thumb{border-radius:10px;background:#535353}
+        .tempBox::-webkit-scrollbar-track{border-radius:10px;background:#EDEDED}
+        .tempBox .temp{width:200px;text-align:center;margin-right:10px;border:1px solid #fff}
+        .tempBox .temp.select{border:1px solid #535353}
+        .tempBox .scrollBox{padding:6px 0}
+        .tempBox .temp img{height:120px}
+        .tempBox .temp p{line-height:30px}
+        textarea{resize:none}
+        .viewImg{cursor:pointer}
+        .moduleList{max-width:98vw}
+        #uploadImgBox{margin:10px auto}
+        #uploadImgBox img{width:250px;height:80px}
+        .viewBox{height:100px;width:250px;margin:0 auto;overflow:hidden;position:relative}
+        .viewBox .viewImg{width:250px}
+        .viewBox .picTool{position:absolute;top:0;bottom:0;left:0;right:0;display:flex;opacity:0}
+        .viewBox .picTool:hover{opacity:1}
+        .viewBox .picTool a:first-child{border-right:1px solid #fff}
+        .viewBox .picTool a{display:block;width:50%;background:rgba(0,0,0,.3);color:#fff;text-align:center;line-height:100px;font-size:18px}
+        .viewBox .picTool a:hover{background:rgba(0,0,0,.6)}
+        .red{color:red}
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="panel panel-headline">
+            <div class="panel-heading">
+                <div class="left">
+                    <h3 class="panel-title">banner管理</h3>
+                    <div class="toolBox btn-group">
+                        <button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.addModel();"><i class="fa fa-plus-square"></i>&nbsp; 创建 </button>
+                        <button id="uploadLogo" style="display:none"></button>
+                    </div>
+                </div>
+                <div class="toolBox btn-group right">
+                    <button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="toolbar" class="btn-group">
+                    <input type="text" class="form-control" name="name" placeholder="标题">
+                    <input type="text" class="form-control" name="locationUrl" placeholder="链接">
+                    <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                </div>
+                <table id="table-main"></table>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade dialog-create-banner" role="dialog" data-backdrop="static">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-wrapper">
+                    <div class="modal-menu">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title">新增banner</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form role="form">
+                                <div class="form-group">
+                                    <label class="control-label">标题</label>
+                                    <span class="red">*</span>
+                                    <div>
+                                        <input class="form-control" type="text" name="name" placeholder="请填写标题" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">链接</label>
+                                    <div>
+                                        <input class="form-control" type="text" name="locationUrl" placeholder="请填写banner链接" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label">选择预览图</label>
+                                    <div>
+                                        <div id="uploadImgBox"></div>
+                                        <a class="btn btn-primary" name="thumb" id="uploadPrev">选择预览图</a>
+                                    </div>
+                                </div>
+                            </form>
+                            <p>*当需要使用空banner时，只填写标题即可。</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" commit>确定</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-switch/bootstrap-switch.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../dists/select2/dist/js/select2.js"></script>
+<script type="text/javascript" src="../dists/summernote/dist/summernote.min.js"></script>
+<script type="text/javascript" src="../dists/summernote/dist/lang/summernote-zh-CN.js"></script>
+<script type="text/javascript" src="../dists/input-tags/js/inputTags.jquery.js"></script>
+<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+<script type="text/javascript" src="../js/plupload-upload-icons.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+<script type="text/javascript">
+    var app = {
+        data: {
+            table: $("#table-main"),
+            uploadPrevImg: '',
+            bannerId: null
+        },
+        methods: {
+            showSearchView: function () {
+                $('#toolbar .form-inline').toggle()
+                $('#toolbar > button').eq(-1).find('i').toggleClass('fa-angle-double-down')
+                $('#toolbar > button').eq(-1).find('i').toggleClass('fa-angle-double-up')
+                app.methods.initBootstrapTableStyle();
+            },
+            initBootstrapTableStyle: function(){
+                $('.panel .panel-body .bootstrap-table').css({
+                    'height':'calc(100% - '+$('#toolbar').outerHeight(true)+'px)'
+                })
+                $('.panel .panel-body .bootstrap-table .fixed-table-container').css({
+                    'height':'calc(100% - '+$('.panel .panel-body .bootstrap-table .fixed-table-container .fixed-table-pagination').outerHeight(true)+'px)'
+                })
+            },
+            initTable: function () {
+                var authority_data = authoritys.useAuthority();
+                if(!authority_data){
+                    toastr.error("权限不足，不允许访问...")
+                    return;
+                }
+                app.data.table.bootstrapTable({
+                    pagination: true,
+                    cache: false,
+                    sortable: false,
+                    sidePagination: "server",
+                    templateView: false,
+                    showHeader: true,
+                    pageNumber: 1,
+                    pageSize: 10,
+                    pageList: [10, 30, 50, 100],
+                    toolbarAlign: 'left',
+                    queryParamsType: 'page',
+                    queryParams: function (params) {
+                        params.name = $('#toolbar input[name=name]').val().trim();
+                        params.locationUrl = $('#toolbar input[name=locationUrl]').val().trim();
+                        params.size = params.pageSize;
+                        params.page = parseInt(params.pageNumber) - 1;
+                        return params;
+                    },
+                    url: utils.prePath() + '/api/admin/aggregate/banner/list',
+                    totalField: 'body.totalElements',
+                    dataField: 'body.content',
+                    columns: [{
+                        field: 'name',
+                        title: '标题',
+                        width: 200,
+                        minWidth: 200,
+                        formatter: function (value, row, index, field) {
+                            return '<span class="text-length-table-col edit" authority="BANNER_WRITE" data-type="name" data-id="' + row.id + '">' + (value || '--') + '</span>';
+                        }
+                    }, {
+                        field: 'locationUrl',
+                        title: '链接',
+                        formatter: function (value, row, index, field) {
+                            return '<span class="text-length-table-col edit" authority="BANNER_WRITE" data-type="locationUrl" data-id="' + row.id + '">' + (value || '--') + '</span>';
+                        }
+                    }, {
+                        field: 'imageUrl',
+                        title: '图片',
+                        align: 'center',
+                        minWidth: 250,
+                        formatter: function (value, row, index, field) {
+                            var thumb = "'" + value + "'";
+                            return '<div class="viewBox"><img alt="' + value + '" class="img-responsive viewImg" src="' + value + '">'+
+                                '<div class="picTool"><a onclick="app.methods.showView('+ row.id +',' + thumb + ')"><span class="lnr lnr-magnifier"></span></a>'+
+                                '<a authority="BANNER_WRITE" onclick="app.methods.changeThumb(' + row.id + ')"><span class="lnr lnr-sync"></span></a>'+
+                                '</div></div>';
+                        }
+                    }, {
+                        title: '操作',
+                        align: 'center',
+                        formatter: function (value, row, index, field) {
+                            return '<div class="btn-group" role="group"><a authority="BANNER_DELETE" class="btn btn-danger btn-xs" onclick="app.methods.bannerDelete(' + row.id + ')">删除Banner</a></div>';
+                        }
+                    }],
+                    onLoadSuccess: function (data) {
+                        app.events.initEdit();
+                        app.methods.initBootstrapTableStyle();
+                        authoritys.useAuthority();
+                    },
+                    onLoadError: function (data) {
+                        if (data == 403) {
+                            toastr.error('用户权限不足,如需操作,请联系管理员...');
+                        }
+                    }
+                });
+            },
+            changeThumb: function(bannerId){
+                app.data.bannerId = bannerId
+                $('#uploadLogo').trigger('click');
+            },
+            showView: function(id,src){
+                layer.photos({
+                    photos: {
+                        "title": "", //相册标题
+                        "id": 0, //相册id
+                        "start": 0, //初始显示的图片序号，默认0
+                        "data": [   //相册包含的图片，数组格式
+                            {
+                                "pid": 0, //图片id
+                                "src": src, //原图地址
+                            }
+                        ]
+                    },
+                    anim: 5 //0-6的选择，指定弹出图片动画类型，默认随机
+                });
+            },
+            initUpload: function () {
+                var uploaderUpload = new plupload.Uploader({
+                    runtimes: 'html5,html4',
+                    browse_button: 'uploadLogo',
+                    url: utils.prePath() + "/api/admin/aggregate/module/present/image/upload",
+                    file_data_name: 'images',
+                    filters: {
+                        max_file_size: '2048kb',
+                        mime_types: [
+                            {title : "Image files", extensions : "jpg,gif,png"}
+                        ],
+                    },
+                    multipart_params: {
+                        access_token: utils.cookie.getCookie('accessToken')
+                    },
+                    init: {
+                        FilesAdded: function (up, files) {
+                            layer.load();
+                            up.start();
+                        },
+                        UploadComplete: function (up, files) {
+                            app.data.bannerId = null;
+                            layer.closeAll('loading');
+                        },
+                        Error: function (up, err) {
+                            app.data.bannerId = null;
+                            layer.closeAll('loading');
+                            toastr.error(JSON.parse(err.response).body.message);
+                        },
+                        FileUploaded:function(up,file,result){
+                            var src = JSON.parse(result.response).body;
+                            app.data.uploadPrevImg = src;
+                            $.ajax({
+                                type: "POST",
+                                url: utils.prePath() + "/api/admin/aggregate/banner",
+                                data: JSON.stringify({
+                                    'id': app.data.bannerId,
+                                    'imageUrl': src
+                                }),
+                                success: function (result) {
+                                    if (result.statusCode == 'OK') {
+                                        toastr.success('更换成功...');
+                                        app.data.table.bootstrapTable('refresh');
+                                    } else {
+                                        toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+                uploaderUpload.init();
+            },
+            searchTable: function () {
+                app.data.table.bootstrapTable('refresh');
+            },
+            enterKey : function(){
+                $('#toolbar').keyup(function(event){
+                    if(event.keyCode ==13){
+                        app.methods.searchTable();
+                    }
+                });
+            },
+            addModel: function () {
+                var _this = this;
+                var _modal = $(".dialog-create-banner");
+                _modal.modal({
+                    backdrop: 'static',
+                    keyboard: false,
+                    show: false
+                });
+
+                //modal初始化
+                _modal.find("#uploadImgBox").hide();
+                _modal.find("#uploadImgBox img").attr('src','');
+                _modal.find("input").val("");
+                _modal.modal("show");
+
+                _modal.find('button[commit]').off('click').on('click', function () {
+                    var data = {
+                        "name": _modal.find('input[name=name]').val(),
+                        "locationUrl": _modal.find('input[name=locationUrl]').val(),
+                        "imageUrl": app.data.uploadPrevImg
+                    }
+
+                    if (!data.name || !data.locationUrl) {
+                        toastr.warning('请完整填写banner信息...');
+                        return false;
+                    }
+
+                    app.methods.addModelAjax(_modal,data)
+                })
+            },
+            addModelAjax: function(_modal,data){
+                $.ajax({
+                    type: "POST",
+                    url: utils.prePath() + "/api/admin/aggregate/banner",
+                    data: JSON.stringify(data),
+                    success: function (result) {
+                        _modal.modal("hide");
+                        if (result.statusCode == 'OK') {
+                            app.data.table.bootstrapTable('refresh');
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            bannerDelete: function (id) {
+                layer.confirm('确定要删除该Banner吗?', {
+                    btn: ['确定', '取消']
+                }, function (index) {
+                    layer.close(index);
+                    $.ajax({
+                        type: "DELETE",
+                        url: utils.prePath() + "/api/admin/aggregate/banner/" + id,
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                });
+            },
+            selectPrevPic: function(){
+                var uploaderUpload = new plupload.Uploader({
+                    runtimes: 'html5,html4',
+                    browse_button: 'uploadPrev',
+                    url: utils.prePath() + "/api/admin/aggregate/module/present/image/upload",
+                    file_data_name: 'images',
+                    filters: {
+                        max_file_size: '2048kb',
+                        mime_types: [
+                            {title : "Image files", extensions : "jpg,gif,png"}
+                        ],
+                    },
+                    multipart_params: {
+                        access_token: utils.cookie.getCookie('accessToken')
+                    },
+                    init: {
+                        FilesAdded: function (up, files) {
+                            layer.load();
+                            up.start();
+                        },
+                        UploadComplete: function (up, files) {
+                            app.data.bannerId = null;
+                            layer.closeAll('loading');
+                            toastr.success('上传成功...');
+                        },
+                        Error: function (up, err) {
+                            app.data.bannerId = null;
+                            layer.closeAll('loading');
+                            toastr.error(JSON.parse(err.response).body.message);
+                        },
+                        FileUploaded:function(up,file,result){
+                            var src = JSON.parse(result.response).body;
+                            app.data.uploadPrevImg = src;
+                            $('#uploadImgBox').html('<img src="'+src+'">').show();
+                        }
+                    }
+                });
+                uploaderUpload.init();
+            }
+        },
+        events: {
+            initEdit: function () {
+                $('span.edit').off('click').on('click', function () {
+                    var _this = this;
+                    var type = $(_this).data('type');
+                    var layerOpt = {
+                        title: '修改',
+                        value: $(_this).html(),
+                        formType: 0
+                    }
+                    
+                    layer.prompt(layerOpt, function (text, index) {
+                        var _param = {
+                            'id': $(_this).data('id'),
+                            [type]: text
+                        };
+                        $.ajax({
+                            type: "POST",
+                            url: utils.prePath() + "/api/admin/aggregate/banner",
+                            data: JSON.stringify(_param),
+                            success: function (result) {
+                                if (result.statusCode == 'OK') {
+                                    layer.close(index);
+                                    app.data.table.bootstrapTable('refresh');
+                                } else {
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+                });
+            },
+        },
+        init: function () {
+            app.methods.initTable();
+            app.methods.enterKey();            
+            app.methods.initUpload();
+            app.methods.selectPrevPic();            
+        }
+    }
+
+    $(function () {
+        app.init();
+    });
+</script>
+
+</html>

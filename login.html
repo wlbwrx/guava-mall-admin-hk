@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en" class="fullscreen-bg">
+
+<head>
+	<title>Login</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<!-- VENDOR CSS -->
+	<link rel="stylesheet" href="dists/bootstrap/css/bootstrap.min.css">
+	<!-- <link rel="stylesheet" href="dists/font-awesome/css/font-awesome.min.css"> -->
+	<!-- <link rel="stylesheet" href="dists/linearicons/style.css"> -->
+	<link rel="stylesheet" href="dists/toastr/toastr.css"></script>
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="css/main.css">
+	<!-- GOOGLE FONTS -->
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+</head>
+
+<body>
+	<!-- WRAPPER -->
+	<div id="wrapper">
+		<div class="vertical-align-wrap">
+			<div class="vertical-align-middle">
+				<div class="auth-box ">
+					<div class="content">
+						<div class="header">
+							<div style="font-size: 26px;" class="text-center">Guava Mall Manager System</div>
+						</div>
+						<form id="loginForm" class="form-auth-small">
+							<div class="form-group">
+								<label for="signin-email" class="control-label">账号</label>
+								<input type="text" name="username" class="form-control" id="signin-email" value="" placeholder="userName">
+							</div>
+							<div class="form-group">
+								<label for="signin-password" class="control-label">密码</label>
+								<input type="password" name="password" class="form-control" id="signin-password" value="" placeholder="Password">
+							</div>
+							<button type="button" class="btn btn-primary btn-lg btn-block" onclick="login();">登录</button>
+						</form>
+						<p style="margin-top: 10px;">By Guava Team</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- END WRAPPER -->
+	<!-- Javascript -->
+	<script src="dists/jquery/jquery.min.js"></script>
+	<script src="dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="dists/layer/layer.js"></script>
+	<script src="js/moment.js"></script>
+	<script src="js/klorofil-common.js"></script>
+	<script src="js/common.js"></script>
+	<script type="text/javascript">
+		
+		$(function(){
+			var username = utils.cookie.getCookie('username');
+			var password = utils.cookie.getCookie('password');
+			$('input[name="username"]').val(username);
+			$('input[name="password"]').val(password);
+
+			$('#loginForm').keyup(function(event){
+				if(event.keyCode ==13){
+					login();
+				}
+			});
+		});
+		
+		function login(){
+			var _loginForm = $('#loginForm').serializeJson();
+			if(_loginForm.username.trim() == ''){
+				layer.msg('用户名不能为空....', {offset: '30px'});
+				$('input[name="username"]').focus();
+				return;
+			}
+			if(_loginForm.password.trim() == ''){
+				layer.msg('密码不能为空....', {offset: '30px'});
+				$('input[name="password"]').focus();
+				return;
+			}
+			utils.login(_loginForm, function(){
+				window.location.href = 'index.html';
+			})
+		}
+	</script>
+</body>
+
+</html>

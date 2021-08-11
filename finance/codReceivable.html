@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>COD回款</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			ul.addressBox{cursor: default;text-decoration: none;}            
+			.trackerInfo h3{margin: 12px 0 0 0;font-size: 16px;}
+			.trackerInfo table{margin-top: 12px;}
+			.trackerInfo table th{font-size: 14px!important;}
+			.commentsList{list-style: none;padding: 0;margin: 0;}
+			.commentsList li{border-bottom: 1px solid #ddd;padding: 6px;}
+			.commentsList li:last-child{border-bottom: 0;}
+			.commentsList li span{display: block;;white-space:nowrap;float: left;}
+			.skuinfoList{
+				display:flex;
+				display:-webkit-flex;
+			}
+			.skuinfoList span{
+				display:block;flex:1;
+			}
+			tr th .skuinfoList,tr td .skuinfoList{
+				border-bottom:1px solid #eee;
+			}
+			tr th .skuinfoList:last-child,tr td .skuinfoList:last-child{
+				border-bottom:0;
+			}
+			.skuinfoList span i{
+				font-style:normal;
+				padding:5px 7px;
+				font-size:13px;
+				background:#41B314;
+				color:#fff;
+			}
+			#toolbar .dropdown,#toolbar input{
+				margin-top:5px;
+			}
+			.btn-group .dropdown,.btn-group .dropdown button{
+				float:left;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">COD回款</h3>
+						<div class="toolBox btn-group">
+							<!-- <button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button> -->
+                            <div class="btn-group">
+								<div class='dropdown'>
+									<button type="button" class="btn btn-success btn-sm" id="upload"><i class="fa fa-upload"></i> 导入回款信息</button>
+									<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										<span class="caret"></span>
+										<span class="sr-only">Toggle Dropdown</span>
+									</button>
+									<ul class="dropdown-menu">
+										<li><a href="../excel/回款信息模板.xls">下载回款信息模板</a></li>
+									</ul>
+								</div>
+								<div class='dropdown'>
+									<button type="button" class="btn btn-success btn-sm" id="upload_update"><i class="fa fa-upload"></i> 导入调整回款信息</button>
+									
+									<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										<span class="caret"></span>
+										<span class="sr-only">Toggle Dropdown</span>
+									</button>
+									<ul class="dropdown-menu">
+										<li><a href="../excel/调整回款信息模板.xls">下载调整回款信息模板</a></li>
+									</ul>
+								</div>
+								<button class="btn btn-warning btn-sm export" onclick="tools.exportByFrom('/api/admin/erp/settle/payback/export');"><i class="fa fa-download"></i>&nbsp;&nbsp;导出</button>
+							</div>
+							<span id="analysisMes"></span>
+						</div>	
+					</div>	
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="lastUpdateBeginTime" rangeEnd="lastUpdateEndTime" class="form-control" name="deliveryTimes" placeholder="物流最新时间" tostring="true"/>
+						<input type="text" inputTpye="daterange" rangeStart="trackerCreatedAtBeginTime" rangeEnd="trackerCreatedAtEndTime" class="form-control" name="trackerTimes" placeholder="发货时间" />
+						<input type="text" inputTpye="daterange" rangeStart="logisticsConfirmBeginTime" rangeEnd="logisticsConfirmEndTime" class="form-control" name="confirmTimes" placeholder="物流确认时间" />
+						<!-- <select class="selectpicker" data-live-search="true" name="storehouseId"></select> -->
+						<select class="selectpicker" data-live-search="true" name="agencyCompany"></select>   <!-- 全部貨代公司 -->
+						<select class="selectpicker" data-live-search="true" name="storehouseId"></select>   <!-- 全部仓库 -->
+						<input type="text" class="form-control" name="deliveryCode" placeholder="发货单号">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="产品sku码">
+						<input type="text" class="form-control" name="tel" placeholder="电话">
+						<select class="selectpicker" data-live-search="true" name="carrierCode"></select>   <!-- 全部快递类别 -->
+						<select class="selectpicker" data-live-search="true" name="trackerStatus" multiple  title="全部货运状态"></select>   <!-- 全部货运状态 -->
+						<input type="text" class="form-control" name="trackingNumber" placeholder="物流单号"> 
+                        <select class="selectpicker" data-live-search="true" name="paybackStatus"></select> <!-- 全部回款状态-->
+                        <select class="selectpicker" data-live-search="true" name="paybackConsistent"></select> <!-- 全部金额状态 -->
+						
+						<!-- <input type="text" class="form-control" name="orderCode" placeholder="订单号"> -->
+						<!-- <input type="text" class="form-control" name="tel" placeholder="电话"> -->
+						<!-- <input type="text" class="form-control" name="productId" placeholder="产品ID"> -->
+						<!-- <input type="text" class="form-control" name="productSkuBarcode" placeholder="条码"> -->
+                        <!-- <select class="selectpicker" data-live-search="true" name="productStatus"></select> -->
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');" style='margin-top:5px;'><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main" style='overflow:auto;'></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>   
+	<script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/js/bootstrap-editable.min.js"></script> 
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+    <script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/jquery.table2excel.js"></script>
+	<script type="text/html" id="trackerInfo">
+        <div class="trackerInfo">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>配送状态</th>
+                        <th>状态描述</th>
+                        <th>详情</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(var i = 0;i < trackinfo.length;i++){ %>
+                        <tr>
+                            <td style="text-align:center;"><%= i + 1 %></td>
+							<td>
+								<% if(trackinfo[i].checkpoint_status == 'pending'){ %>
+									查询中
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'notfound'){ %>
+									查询不到
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'transit'){ %>
+									运输途中
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'pickup'){ %>
+									到达待取
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'delivered'){ %>
+									成功签收
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'undelivered'){ %>
+									投递失败
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'exception'){ %>
+									可能异常
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'other'){ %>
+									其他状态
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'expired'){ %>
+									运输过久
+								<% } %>
+								<% if(trackinfo[i].checkpoint_status == 'null'){ %>
+									查询超时
+								<% } %>
+							</td>
+                            <td><%= trackinfo[i].StatusDescription %></td>
+                            <td><%= trackinfo[i].Details %></td>
+                            <td><%= trackinfo[i].Date %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        
+        <h4></h4>
+        <p></p>
+    </script>
+	<script type="text/javascript">
+	
+		var app = {
+			data : {
+                table : $("#table-main"),
+                financeData: [],
+                storageType: cacheSessionStorage.getCache('storageType'),
+                initUploadState: false
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					// if(!authority_data){
+					// 	toastr.error("权限不足，不允许访问...")
+					// 	return;
+					// } 
+					// console.log(tableUi.data.tableOption_page)
+					// $('#test_edit').editable({ 
+					// 	type: "text",    //编辑框的类型。支持text|textarea|select|date|checklist等 
+					// 	title: "用户名",    //编辑框的标题 
+					// 	disabled: false,    //是否禁用编辑 
+					// 	emptytext: "空文本",   //空值的默认文本 
+					// 	mode: "inline",    //编辑框的模式：支持popup和inline两种模式，默认是popup 
+					// 	validate: function (value) { //字段验证 
+					// 		if (!$.trim(value)) { 
+					// 			return '不能为空'; 
+					// 		} 
+					// 	} 
+					// }); 
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/settle/payback/list',  // 查询回款列表
+						columns: app.methods.optionByAuthority(),
+						onClickCell: function(field, value, row, $element){
+							let curRow = {};
+							curRow = row; 
+							
+							// if(field == 'remark'){
+							// 	$('#editableNo_'+ row.order_id).editable({ 
+							// 		type: "text",    //编辑框的类型。支持text|textarea|select|date|checklist等 
+							// 		title: "用户名",    //编辑框的标题 
+							// 		disabled: false,    //是否禁用编辑 
+							// 		emptytext: "空文本",   //空值的默认文本 
+							// 		mode: "inline",    //编辑框的模式：支持popup和inline两种模式，默认是popup 
+							// 		validate: function (value) { //字段验证 
+							// 			if (!$.trim(value)) { 
+							// 				return '不能为空'; 
+							// 			} 
+							// 		}
+							// 	});
+							// }
+							// $('#editableNo_'+ row.order_id).editable({ 
+							// 	type: "text",    //编辑框的类型。支持text|textarea|select|date|checklist等 
+							// 	title: "用户名",    //编辑框的标题 
+							// 	disabled: false,    //是否禁用编辑 
+							// 	emptytext: "空文本",   //空值的默认文本 
+							// 	mode: "inline",    //编辑框的模式：支持popup和inline两种模式，默认是popup 
+							// 	validate: function (value) { //字段验证 
+							// 		if (!$.trim(value)) { 
+							// 			return '不能为空'; 
+							// 		} 
+							// 	} 
+							// });
+						},
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.financeData = data.body.content
+							app.data.initUploadState == false && app.methods.initPushFile();
+							$('.editableNo_a').editable({ 
+								type: "text",    //编辑框的类型。支持text|textarea|select|date|checklist等 
+								title: "用户名",    //编辑框的标题 
+								disabled: false,    //是否禁用编辑 
+								emptytext: "空文本",   //空值的默认文本 
+								mode: "inline",    //编辑框的模式：支持popup和inline两种模式，默认是popup 
+								validate: function (value) { //字段验证 
+									if (!$.trim(value)) { 
+										return '不能为空'; 
+									} 
+								},
+								success: function(data, config){
+									let tracking = $(this).attr('tracker_id')
+									$.ajax({
+										type: "PUT",
+										url: utils.prePath() + '/api/admin/erp/settle/payback/'+ tracking +'/remark',
+										dataType:'json',
+										headers:{
+											'Content-Type': 'application/x-www-form-urlencoded'
+										},
+										data:{
+											'remark': config
+										},
+										success: function (result) {
+											console.log(result)
+											if(result.statusCode == 'OK'){
+												toastr.success('备注成功');
+											}else{
+												toastr.error('修改失败');
+											}
+										},
+										error: function (result){
+											toastr.error('修改失败');
+										}
+									})
+								}
+							}); 
+					    },  
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [ {
+                        field: 'last_update_time',title: '物流最新时间',align: 'center'
+					}, {
+                        field: 'delivery_code',title: '发货单号',align: 'center',minWidth: 150
+					}, {
+						field: 'tracker_create_at',title: '发货时间',align: 'center',minWidth: 200
+					}, {
+						field: 'sku_infos',title: '<div class="skuinfoList"><span>产品ID</span><span>品名</span><span>条码</span><span>数量</span></div>',align: 'center',minWidth:600,
+						formatter: function (value, row, index, field) {
+							if(value != "" || value == null){
+								let showInfo = eval('(' + value + ')')
+								let skuinfoHtml = ''
+								for(let i = 0;i< showInfo.length;i++){
+									skuinfoHtml += '<div class="skuinfoList"><span>'+ showInfo[i].product_id +'</span><span>'+ showInfo[i].product_title + '<br>' + showInfo[i].product_sku_name +'</span><span>' + showInfo[i].product_sku_barcode + '</span><span>'+ showInfo[i].product_quantity +'</span></div>'
+								}
+								return skuinfoHtml
+							}else{
+								return '--'
+							}
+						}
+					}, {
+						field: 'delivery_price',title: '发货单金额',align: 'center',
+					}, {
+						field: 'logistics_payback',title: '<span style="color:#CE2424 !important">实际回款金额(NT$)</span>',align: 'center',
+						formatter: function (value, row, index, field){
+							return '<span style="color:#CE2424 !important">'+ value +'</span>'
+						}
+					}, {
+						field: 'logistics_payback_status',title: '<div class="skuinfoList"><span>回款状态</span><span>金额状态</span></div>',align: 'center',minWidth:300,
+						formatter: function (value, row, index, field) {
+							// let new_payback_status ='',new_settlement_status =''
+							
+							// if(row.logistics_payback_status == 1){
+							// 	new_payback_status = '<i style="background:rgba(51, 204, 153, 1);">已回款</i>'
+							// }else if(row.logistics_payback_status == 2){
+							// 	new_payback_status =  '<i style="background:rgba(204, 51, 51, 0.8);">未回款</i>'
+							// }else{
+							// 	new_payback_status =  '--'
+							// }
+							// if(row.settlement_status == 1){
+							// 	new_settlement_status = '<i style="background:rgba(51, 204, 102, 1);">回款金额一致</i>'
+							// }else if(row.settlement_status == 2){
+							// 	new_settlement_status = '<i style="background:rgba(255, 153, 0, 1);">回款金额不一致</i>'
+							// }else{
+							// 	new_settlement_status =  '--'
+							// }
+							return '<div class="skuinfoList"><span>'+ (row.logistics_payback_status != "" ? row.logistics_payback_status : '--') +'</span><span>'+ (row.logistics_payback_consistent != "" ? row.logistics_payback_consistent : '--') +'</span></div>'
+                        }
+					}, {
+						field: 'logistics_payback_adjust',title: '<span style="color:#CE2424 !important">调整回款金额(NT$)</span>',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field){
+							return '<span style="color:#CE2424 !important">'+ (value != null ? value : '--') +'</span>'
+						}
+					}, {
+						field: 'total_payback',title: '<span style="color:rgba(51, 0, 102, 0.85) !important">最终回款金额(NT$)</span>',align: 'center',minWidth:150,
+						formatter: function (value, row, index, field){
+							return '<span style="color:rgba(51, 0, 102, 0.85) !important">'+ value +'</span>'
+						}
+					}, {
+						field: 'agency_company',title: '货代公司',align: 'center',minWidth:200
+					},
+					{
+						field: 'storehouse_id',title: '发货仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							if(value == 8){
+								return '西安仓'
+							}else if(value == 9){
+								return '台湾仓'
+							}else if(value == 10){
+								return '深圳仓'
+							}else{
+								return '未知'
+							}
+                        }
+					},
+					{
+						field: 'logistics_sign_date',title: '<span style="color:#CE2424 !important">货代反馈签收时间</span>',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field){
+							return '<span style="color:#CE2424 !important">' + (value != null ? value : "--") + '</span>'
+						}
+					},
+					{
+						field: 'logistics_sign_status',title: '<div class="skuinfoList"><span style="color:#CE2424 !important">货代反馈状态</span><span>系统操作状态</span></div>',align: 'center',minWidth:300,
+						formatter: function (value, row, index, field){
+							let new_logistics_sign = '<i style="rgba(51, 204, 153, 1)">'+ (row.logistics_sign_status != null ? row.logistics_sign_status : '--') +'</i>'
+							return '<div class="skuinfoList"><span>'+ new_logistics_sign +'</span><span>'+ (row.systemOperateStatus != null ? row.systemOperateStatus : '--') +'</span></div>'
+						}
+					},
+					{
+						field: 'logistics_confirm_time',title: '<span style="color:rgba(51, 0, 102, 0.85) !important">物流确认时间</span>',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field){
+							return '<span style="color:rgba(51, 0, 102, 0.85) !important">'+ (value != null ? value : '--') +'</span>'
+						}
+					},
+					{
+						field: 'status_last',title: '<span style="color:rgba(51, 0, 102, 0.85) !important">最终物流状态</span>',align: 'center',minWidth:120,
+
+					},
+					{
+						field: 'tracking_number',title: '物流单号',align: 'center',minWidth:120,
+
+					},
+					{
+						field: 'tracker_status',title: '货运状态',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field) {
+							switch (value) {
+								case 'pending':
+									return '查询中'
+									break
+								case 'notfound':
+									return '查询不到'
+									break;
+								case 'transit':
+									return '运输途中'
+									break;
+								case 'pickup':
+									return '到达待取'
+									break;
+								case 'delivered':
+									return '成功签收'
+									break;
+								case 'undelivered':
+									return '投递失败'
+									break;
+								case 'exception':
+									return '可能异常'
+									break;
+								case 'other':
+									return '其他状态'
+									break;
+								case 'expired':
+									return '运输过久'
+									break;
+								case 'null':
+									return '查询超时'
+									break;
+							}
+                        }
+					},
+					{
+						field: 'last_event',title: '最新物流状态',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field){
+							return '<span style="color:#169bd5 !important;text-decoration:underline;cursor:pointer;" onclick="app.methods.showTracking('+index+')">'+ value +'</span>'
+						}
+					},
+					{
+						field: 'carrier_code',title: '快递类别',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field){
+							if(value == 'hct' ){
+								return '新竹'
+							}else if(value == 'qi-eleven'){
+								return '711'
+							}else{
+								return '未知'
+							}
+						}
+					},
+					{
+						field: 'consignee',title: '收货信息',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field) {
+							return row.consignee + row.tel + row.city + row.detail
+						}
+					},
+					{
+						field: 'remark',title: '备注（点击编辑）',align: 'center',minWidth:300,
+						formatter:function(value,row,index){
+							return  '<span class="editableNo_a" tracker_id="'+ row.tracker_id +'">' +  (value != null ? value : '--') + '</span>'     
+						}
+					},
+					{
+						field: 'import_time',title: '导入操作时间',align: 'center',minWidth:120,
+
+					}];
+                    return option;
+				},
+				showTracking: function(index){
+					if(app.data.financeData[index].origin_info && app.data.financeData[index].origin_info != {}){
+						layer.open({
+							type: 1,
+							content: template('trackerInfo',  JSON.parse(app.data.financeData[index].origin_info)),
+							area: ['800px', 'auto'],
+							title: '查看货运详情',
+							skin: 'trackerInfoBox',
+							closeBtn: 1
+						});
+					}else{
+						toastr.error('查询不到货运详情...');
+					}
+				},
+				remark: function(index){
+					layer.prompt({
+                        title: '备注',
+                        value: app.data.financeData[index].remark,
+                        formType: 0
+                    }, function (text, i) {
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/tracker/remark",
+							data: JSON.stringify({
+								trackingNumber : app.data.financeData[index].tracking_number,
+								remark : text
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('操作成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+                },
+                pass: function(trackerInfoId,state){
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/finance/invoice/" + state + '/' + trackerInfoId,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('操作成功...');
+								app.data.table.bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+                initPushFile: function(){
+					// 导入回款信息
+					var uploader = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'upload',
+						url: utils.prePath() + "/api/admin/erp/settle/payback/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '10240kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+                                var mes = JSON.parse(responseObject.response);
+								layer.closeAll('loading');
+								if(mes.statusCodeValue == 200){
+									if(mes.body.length > 0){
+										let html = '<table id="errorTable" class="table"><tr><td>国际物流单号</td><td>发货单号</td><td>回款金额（NT$）</td><td>货代签收时间</td><td>货代物流状态</td></tr>'
+										let newMes = mes.body
+										newMes.map(function(e){
+											html += '<tr><td>'+e.trackingNumber+'</td><td>'+e.deliveryCode+'</td><td>'+e.logisticsPayback+'</td><td>'+ moment(e.logisticsSignDate).format('YYYY-MM-DD HH:mm:ss')  +'</td><td>'+ e.logisticsSignStatus +'</td></tr>';
+										})
+										toastr.error('导入成功，' + mes.body.length + '条数据导入失败' );
+										layer.open({
+											type: 1,
+											content: html+'</table>',
+											title: '有' + mes.body.length + '条数据导入失败',
+											area: ['85vw', '80vh'],
+											closeBtn: 1,
+											btn: ['下载'],
+											yes: function(){
+												$("#errorTable").table2excel({
+													name: "COD回款信息异常数据",
+													filename: "COD回款信息异常数据" + new Date().toISOString().replace(/[\-\:\.]/g, ""),
+													fileext: ".xls"
+												});
+											}
+										});
+									}else{
+										toastr.success('导入成功');
+									}
+								}else{
+									toastr.success('导入失败');
+								}
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader.init();
+					// 导入调整回款信息
+					var uploaderUpdate = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'upload_update',
+						url: utils.prePath() + "/api/admin/erp/settle/payback/adjust/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '10240kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+                                var mes = JSON.parse(responseObject.response);
+                                console.log(mes)
+								if(mes.statusCodeValue == 200){
+									if(mes.body.length > 0){
+										let html = '<table id="errorTable" class="table"><tr><td>国际物流单号</td><td>发货单号</td><td>调整回款金额（NT$）</td><td>货代签收时间</td><td>货代物流状态</td></tr>'
+										let newMes = mes.body
+										newMes.map(function(e){
+											html += '<tr><td>'+e.trackingNumber+'</td><td>'+e.deliveryCode+'</td><td>'+e.logisticsPaybackAdjust+'</td><td>'+ moment(e.logisticsSignDate).format('YYYY-MM-DD HH:mm:ss')+'</td><td>'+ e.logisticsSignStatus +'</td></tr>';
+										})
+										toastr.error('导入成功，' + mes.body.length + '条数据导入失败' );
+										layer.open({
+											type: 1,
+											content: html+'</table>',
+											title: '有' + mes.body.length + '条数据导入失败',
+											area: ['85vw', '80vh'],
+											closeBtn: 1,
+											btn: ['下载'],
+											yes: function(){
+												$("#errorTable").table2excel({
+													name: "调整COD回款信息异常数据",
+													filename: "调整COD回款信息异常数据" + new Date().toISOString().replace(/[\-\:\.]/g, ""),
+													fileext: ".xls"
+												});
+											}
+										});
+									}else{
+										toastr.success('导入成功');
+									}
+								}else{
+									toastr.success('导入失败');
+								}
+								layer.closeAll('loading');
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploaderUpdate.init();
+					app.data.initUploadState = true;
+				},
+
+				initSelect : function(){
+                    tools.rangeTime('input[name="deliveryTimes"]');
+					tools.rangeTime('input[name="trackerTimes"]',true);
+					tools.rangeTime('input[name="confirmTimes"]',true);
+					tools.renderSelect.trackerStatus('select[name="trackerStatus"]', true);
+					tools.renderSelect.settlementStatus('select[name="settlementStatus"]');
+					// tools.renderSelect.deliveryProductStatus('select[name="productStatus"]');
+					// 全部貨代公司
+					tools.renderSelect.agencyCompany('select[name="agencyCompany"]')
+					// 全部仓库
+					tools.renderSelect.storehouseId('select[name="storehouseId"]')
+					// 全部快递类别
+					tools.renderSelect.carrierCode('select[name="carrierCode"]')
+					// 全部回款状态
+					tools.renderSelect.paybackStatus('select[name="paybackStatus"]')
+					// 全部金额状态
+					tools.renderSelect.paybackConsistent('select[name="paybackConsistent"]')
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

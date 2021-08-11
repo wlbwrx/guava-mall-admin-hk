@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>全部订单</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.orderUpdate{cursor: pointer;}
+			.productInfoBox li > span:first-child{display: none;}
+			.splitOrder ul{list-style: none;padding-left: 0;max-height: 600px;overflow-y: auto;}
+			.splitOrder ul li{display: flex;border-bottom: 1px solid #ccc;align-items: center;}
+			.splitOrder ul li span:nth-child(1){flex: 1;}
+			.splitOrder ul li span:nth-child(2),
+			.splitOrder ul li span:nth-child(4){width: 100px;text-align: center;}
+			.splitOrder ul li span:nth-child(3){width: 200px;text-align: center;}
+			.splitOrder ul li input{width: 60px;margin: 0 auto;}
+			.trackerInfo h3{margin: 12px 0 0 0;font-size: 16px;}
+            .trackerInfo table{margin-top: 12px;}
+			.trackerInfo table th{font-size: 14px!important;}
+
+			.returnTemp .layui-layer-content{overflow-y: auto;}
+			.returnBox{margin-bottom: 20px;padding-bottom: 10px;;border-bottom: 1px solid #ededed;}
+			.returnBox table{margin-bottom: 10px;}
+			table thead th,
+			table thead td{font-size: 14px;word-break: keep-all}
+			.returnBox textarea{resize: none;width: 200px;height: 76px;}
+			.returnBox > div{margin: 10px 0;}
+			.returnBox > div input{width:220px;display:inline-block}
+			input[type="checkbox"],input[type="radio"]{width: 20px;height: 20px;}
+			.returnBox.no-return .return{display: none;}
+
+			.selectSkuBox ul{list-style: none;padding: 10px;}
+			.selectSkuBox ul li{display: inline-block;margin: 10px;border-radius: 8px;overflow: hidden;    box-shadow: 1px 1px 6px #c4c4c4;}
+			.selectSkuBox ul li span{display: block;padding: 0 3px}
+			.selectSkuBox ul li button{width: 100%;}
+			.selectSkuBox ul li img{display: block;width: 140px;height: 140px;}
+
+			/* .layui-layer-shade{z-index: 2000!important;} */
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">黑名单订单</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+							<button class="btn btn-warning btn-sm export" authority="ORDER_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/order/export');"><i class="fa fa-download"></i> 导出订单</button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="orderSubmitBeginTime" rangeEnd="orderSubmitEndTime" class="form-control" name="submitOrderTimes" placeholder="选择时间" />
+						<select class="selectpicker" data-live-search="true" name="scopeId"></select>
+						<input type="text" class="form-control" name="orderCode" placeholder="订单号">
+						<input type="text" class="form-control" name="productId" placeholder="产品ID">
+						<select class="selectpicker" data-live-search="true" name="orderStatusStr" multiple data-title="订单状态"></select>
+						<input type="text" class="form-control" name="productTitle" placeholder="品名">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+						<input type="text" class="form-control" name="affiliate" placeholder="投放">
+						<input type="text" class="form-control" name="adlk" placeholder="广告ID">
+						<input type="text" class="form-control" name="deliveryCode" placeholder="发货单号">
+						<input type="text" class="form-control" name="trackingNumber" placeholder="货运编号">
+						<select class="selectpicker" data-live-search="true" name="trackerStatus"></select>
+						<input type="text" class="form-control" name="consignee" placeholder="收件人">
+						<select class="selectpicker" data-live-search="true" name="paymentType"></select>	
+						<input type="text" class="form-control" name="tel" placeholder="收件电话">
+						<select class="selectpicker" data-live-search="true" name="storehouseId"></select>
+						<select class="selectpicker" data-live-search="true" name="mergeType">
+							<option value="">全部订单</option>
+							<option value="0">未合单</option>
+							<option value="1">自动合单</option>
+							<option value="2">人工合单</option>
+						</select>
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="customerInfo">
+        <div class="customerInfoForm">
+            <div class="form-group"><label>收件人</label><input type="text" class="form-control" name="consignee" value="<%= consignee %>"></div>
+            <div class="form-group"><label>电话</label><input type="text" class="form-control" name="tel" value="<%= tel %>"></div>
+            <div class="form-group"><label>城市</label><input type="text" class="form-control" name="city" value="<%= city %>"></div>
+            <div class="form-group"><label>区</label><input type="text" class="form-control" name="district" value="<%= district %>"></div>
+            <div class="form-group"><label>详细地址</label><input type="text" class="form-control" name="detail" value="<%= detail %>"></div>
+            <div class="form-group"><label>Email</label><input type="text" class="form-control" name="email" value="<%= email %>"></div>
+            <button class="btn btn-primary" onclick="app.methods.submitCustomInfo(<%= orderId %>)">提交更改</button>
+            <button class="btn btn-info" style="float:right" onclick="app.methods.easyBuy(<%= index %>)">快捷下单</button>
+        </div>
+	</script>
+	<script type="text/html" id="orderInfo">
+        <div class="orderInfoForm">
+			<!-- <div class="form-group"><label>总价</label><input type="text" class="form-control" name="totalPrice" value="<%= totalPrice %>"></div> -->
+            <!-- <div class="form-group"><label>运费</label><input type="text" class="form-control" name="freight" value="<%= freight %>"></div> -->
+            <div class="form-group"><label>优先级</label><input type="text" class="form-control" name="priority" value="<%= priority %>"></div>
+            <div class="form-group"><label>备注</label><textarea type="text" class="form-control" name="remark"><%= remark %></textarea></div>
+			<button class="btn btn-primary" onclick="app.methods.submitOrderInfo(<%= orderId %>)">提交更改</button>
+        </div>
+	</script>
+	<script type="text/html" id="splitOrder">
+        <div class="splitOrder">
+			<ul>
+				<li style="display:flex;">
+					<span>品名</span>
+					<span>条形码</span>
+					<span>库存/待打包/采购未达</span>
+					<span>数量</span>
+				</li>
+				<% for(var i = 0;i < sku_infos.length;i++){ %>
+					<li>
+						<span><%= sku_infos[i].product_title %>（<%= sku_infos[i].product_sku_name %>）</span>
+						<span><%= sku_infos[i].product_sku_barcode %></span>
+						<span><%= sku_infos[i].storehouse_inventory %> / <%= sku_infos[i].pendding_delivery_inventory %> / <%= sku_infos[i].purchased_quantity %></span>
+						<span><input type="number" class="form-control" name="quantity" value="<%= sku_infos[i].quantity %>"></span>
+						<input type="text" class="form-control" name="productId" value="<%= sku_infos[i].product_id %>" style="display:none">
+						<input type="text" class="form-control" name="productSkuId" value="<%= sku_infos[i].product_sku_id %>" style="display:none">
+					</li>
+				<% } %>
+			</ul>
+			<button class="btn btn-primary" onclick="app.methods.submitSplitOrder(<%= order_id %>)">确认拆单</button>
+        </div>
+	</script>
+	<script type="text/html" id="trackerInfo">
+        <div class="trackerInfo">
+            <span class="label label-success"><%= status %></span>
+            <h3>订单编号：<span><%= orderCode %></span></h3>
+            <h3>货运编号：<span><%= destinationCode %></span></h3>
+            <h3>货运公司：<span><%= carrierCode %></span></h3>
+            <h3>包裹编号：<span><%= trackingNumber %></span></h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>配送状态</th>
+                        <th>状态描述</th>
+                        <th>详情</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(var i = 0;i < trackinfo.length;i++){ %>
+                        <tr>
+                            <td style="text-align:center;"><%= i + 1 %></td>
+                            <td><%= trackinfo[i].checkpoint_status %></td>
+                            <td><%= trackinfo[i].StatusDescription %></td>
+                            <td><%= trackinfo[i].Details %></td>
+                            <td><%= trackinfo[i].Date %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <h4></h4>
+        <p></p>
+	</script>
+	<script type="text/html" id="returnBox">
+		<% for(var i = 0;i < data.length;i++){ %>
+			<div class="returnBox no-return" data-i='<%= i %>' data-code='<%= data[i][0].delivery_code %>'>
+				<h4>退货单：包裹<%= data[i][0].delivery_code %></h4>
+				<div>
+					<input class="form-control" name="lineAcount" placeholder="填写Line ID"/>
+					<input class="form-control" type="text" name="accountName" placeholder="請輸入您的戶名，如：張xx">
+					<input class="form-control" type="text" name="accountBank" placeholder="開戶行及分行名稱，如：xx銀行 xx分行">
+					<input class="form-control" type="text" name="accountNumber" placeholder="請輸入開戶行代碼，如：008">
+					<input class="form-control" type="text" name="accountInfo" placeholder="請輸入賬號，如：052526xxxxx">
+					<select class="selectpicker" name="serviceSource">
+						<option value="10">line</option>
+						<option value="20">电话</option>
+						<option value="30">message</option>
+					</select>
+					<button class="btn btn-default" onclick="app.methods.selectStype(this)"><span class="text-danger">退货</span> / <span class="text-success">换货</span> 切换</button>
+					<button class="btn btn-danger type" onclick="app.methods.postReturn(<%= i %>,this)">提交退货</button>
+				</div>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>选择</th>
+							<th>产品ID</th>
+							<th>商品图</th>
+							<th>品名</th>
+							<th>数量</th>
+							<th>类型</th>
+							<th>原因</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% for(var j = 0;j < data[i].length;j++){ %>
+							<tr data-j='<%= j %>'>
+								<td><input type="checkbox" data-skuid="<%= data[i][j].product_sku_id %>" name="select"/></td>
+								<td><%= data[i][j].product_id %></td>
+								<td><img src="<%= data[i][j].product_image_url %>" style="width:100px;height:100px"></td>
+								<td style="min-width:200px"><%= data[i][j].product_title %>（<%= data[i][j].product_sku_name %>）</td>
+								<td><input value="<%= data[i][j].quantity %>"  name="quantity" type="number" max="<%= data[i][j].quantity %>" min="1"></td>
+								<td>
+									<select class="selectpicker" name="serviceType">
+										<option value="尺碼問題">尺碼問題</option>
+										<option value="商品有瑕疵/髒污">商品有瑕疵/髒污</option>
+										<option value="商品質量問題">商品質量問題</option>
+										<option value="不好用/穿著不舒服">不好用/穿著不舒服</option>
+										<option value="與商品描述不符">與商品描述不符</option>
+										<option value="顏色不喜歡">顏色不喜歡</option>
+										<option value="材質不喜歡">材質不喜歡</option>
+										<option value="商品錯發">商品錯發</option>
+										<option value="商品漏發少發">商品漏發少發</option>
+										<option value="包裝破損">包裝破損</option>
+										<option value="發貨週期慢">發貨週期慢</option>
+										<option value="其他">其他</option>
+									</select>
+								</td>
+								<td>
+									<textarea class="mdui-textfield-input" name="serviceDesc" rows="4" placeholder="為了盡快處理您的售後申請，請填寫詳細描述(不超过300字)" maxlength="300"></textarea>
+								</td>
+								<td><div class="return"></div><button class="btn btn-info return" onclick="app.methods.selectSku(<%= i %>,<%= j %>)" class='exchange'>选择SKU</button></td>
+							</tr>
+						<% } %>
+					</tbody>
+				</table>
+			</div>
+		<% } %>
+	</script>
+	<script type="text/html" id="selectSku">
+        <div class="selectSkuBox">
+			<ul>
+				<% for(var i = 0;i < data.length;i++){ %>
+					<li data-i='<%= i %>'>
+						<img src="<%= data[i].productImageUrl %>">
+						<span>规格：<%= data[i].name %></span>
+						<span>库存：<%= data[i].inventory %></span>
+						<button class="btn btn-info" onclick="app.methods.sureSKU(<%= i %>)">确认sku</button>
+					</li>
+				<% } %>
+			</ul>
+		</div>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				orderData: [],
+				scopeData: cacheSessionStorage.getCache('scope')
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/order/blacklist',
+                        sortable: true,
+						columns: app.methods.optionByAuthority(),
+						queryParams : function(params){
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							params.sort = 'created_at,desc';
+                            params.sortName && params.sortOrder && (params.sort = params.sortName + ',' + params.sortOrder);
+							delete params['pageSize'];
+							delete params['pageNumber'];
+							return Object.assign(params, tools.getParams());
+						},
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.orderData = data.body.content
+							app.events.initEditAddress();
+							app.events.initEditOrder();
+							app.events.initCancelOrderSku();
+							// app.events.initTracker();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'order_code',title: '訂單號',align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.warningDays(value, row.days);
+                        }
+					}, {
+						field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="productInfoBox"><li><span>選擇</span><span>產品ID</span><span>商品圖</span><span>品名</span><span>條碼</span><span>數量</span><span>售價</span><span>Code減價</span><span>折扣價</span><span>商品狀態</span><span>库存/待打包/采购未达</span><span>操作</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							if(value){
+								return tools.formatterFunction.skuInfos(value);
+							}else{
+								return ''
+							}
+                        }
+					},{
+						field: 'ip_info',title: 'IP',minWidth:120,
+					}, {
+						field: 'total_price',title: '總價',align: 'center',
+						formatter: function (value, row, index, field) {
+							if(row.status > 30){
+								return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight == 0 ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight ) + '</div></div>';
+							}
+							return '<div data-index="' + index + '" authority="ORDER_WRITE" class="orderUpdateFreight useCkick"><span class="money">' + value + '</span><div class="nowarp">' + (row.freight == 0 ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight ) + '</div></div>';
+                        }
+					},{
+						field: 'random_reduction_price',title: '信用卡随机立减',align: 'center',
+					}, {
+						field: 'status',title: '訂單狀態',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.orderStatus(value);
+						}
+					}, {
+						field: 'remark',title: '備註',minWidth:150,
+						formatter: function (value, row, index, field) {
+							if(row.status > 30){
+								return (value || '--');
+							}
+							return '<div class="orderUpdateRemark useCkick" authority="ORDER_WRITE" data-index="' + index + '">' + (value || '--') + '</div>';
+                        }
+					}, {
+						field: 'payment_type',title: '付款方式',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.paymentStatus(value);
+						}
+					}, {
+						field: 'affiliate',title: '投放',align: 'center',
+					}, {
+						field: 'adlk',title: '广告ID',align: 'center',
+					}, {
+						field: 'scope_name',title: '商城',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					}, {
+						field: 'created_at',title: '下單時間',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'tel',title: '收貨人',sortable: true,
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(row.consignee, (row.tel || ''), (row.email || ''), (row.address || ''), index);
+                        }
+					}, {
+						field: 'message',title: '留言',minWidth:120,
+					}, {
+						field: 'storehouse_name',title: '發貨倉',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					}, {
+						field: 'exceptionInfo',title: '异常信息',minWidth:120,
+					},{
+                        title: '操作',minWidth:260,
+                        formatter: function (value, row, index) {
+							var html = '<div class="toolBox btn-group">';
+							html += '<button type="button" class="btn btn-info btn-xs" onclick="app.methods.showHistory(' + index + ')">查看历史</button>';
+							if(row.status != -10 && row.status <= 25){
+								html += '<button type="button" authority="ORDER_WRITE" class="btn btn-danger btn-xs" onclick="app.methods.cancelOrder(' + row.order_id + ')">取消訂單</button>';
+							}
+							if(row.status == 5 || row.status == 25){
+								html += '<button type="button" authority="ORDER_WRITE" class="btn btn-warning btn-xs" onclick="app.methods.splitOrder(' + index + ')">拆單</button>';
+								html += '<button type="button" authority="ORDER_WRITE" class="btn btn-success btn-xs" onclick="app.methods.suspendOrder(' + row.order_id + ')">掛起</button>';
+							}
+							if(row.status == -30){
+								html += '<button type="button" authority="ORDER_WRITE" class="btn btn-danger btn-xs" onclick="app.methods.backToNormal(' + row.order_id + ')">重審過</button>';
+							}
+							if(row.status == 50){
+								html += '<button type="button" class="btn btn-danger btn-xs" onclick="app.methods.openReturn(' + index + ')">申请售后</button>';
+							}
+							if(row.status == 25){
+								html += '<button type="button" class="btn btn-warning btn-xs" onclick="app.methods.creatPackage(' + index + ')">打包</button>';
+							}
+							html += '</div>';
+							return html;
+                        }
+					}, {
+						field: 'tracker_infos',title: '<span class="columnsTit">包裹信息</span><ul class="trackerInfoBox"><li><span>包裹號</span><span>打包時間</span><span>貨運公司</span><span>貨運編號</span><span>配送狀態</span><span>最新時間</span>',
+						formatter: function (value, row, index, field) {
+							if(value){
+								return tools.formatterFunction.trackerInfos(value);
+							}else{
+								return ''
+							}
+                        }
+					}, {
+						field: 'coupon_name',title: '優惠券',align: 'center',
+					},];
+                    return option;
+				},
+				creatPackage: function(index){
+					$.ajax({
+						method: 'PUT',
+						url: utils.prePath() + '/api/admin/erp/order/pack/' + app.data.orderData[index].order_id,
+						contentType : "application/json ; charset=utf-8",
+						success: function(result) {
+							if(result.statusCode == 'OK'){
+								if(result.body == true){
+									toastr.success('已处理···')
+									app.data.table.bootstrapTable('refresh');
+								}else{
+									toastr.error('失败···')
+								}
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				openReturn: function(index){
+					app.data.order_data = app.data.orderData[index]
+					var sku = tools.specialStringToArray(app.data.orderData[index].sku_infos);
+					var tracker = tools.specialStringToArray(app.data.orderData[index].tracker_infos);
+					var return_sku = [];
+					sku.map(function(e,i){
+						if(app.data.orderData[index].payment_type == 1){
+							// 到付--已完成且签收
+							if(e.order_product_status == "60"){
+								var d = Object.assign(e,{delivery_code:tracker[i].delivery_code})
+								return_sku.push(d)
+							}
+						}else{
+							// 线上付--（已完成）签收或拒收 都可以
+							var d = Object.assign(e,{delivery_code:tracker[i].delivery_code})
+							return_sku.push(d)
+						}
+					})
+					if(return_sku.length == 0){
+						toastr.success('订单中没有已签收的sku...');
+						return;
+					}
+					var delivery_data = [return_sku[0].delivery_code]
+					return_sku.map(function(e){
+						var state = 0;
+						delivery_data.map(function(_e){
+							if(_e == e.delivery_code){
+								state++
+							}
+						})
+						if(state == 0){
+							delivery_data.push(e.delivery_code)
+						}
+					})
+					var sku_data = []
+					delivery_data.map(function(e){
+						var d = []
+						return_sku.map(function(_e){
+							if(_e.delivery_code == e){
+								d.push(_e)
+							}
+						})
+						sku_data.push(d)
+					})
+					app.data.order_sku = sku_data
+					layer.open({
+						type: 1,
+						content: template('returnBox', {'data': app.data.order_sku}),
+						area: ['100vw', '100vh'],
+						title: '售后申请表',
+						skin:'returnTemp',
+						closeBtn: 1
+					});
+					$('select').selectpicker();					
+					if(app.data.order_data.payment_type != 1){
+						$('.returnTemp input[name="accountName"]').hide()
+						$('.returnTemp input[name="accountBank"]').hide()
+						$('.returnTemp input[name="accountNumber"]').hide()
+						$('.returnTemp input[name="accountInfo"]').hide()
+					}else{
+						$('.returnTemp input[name="accountName"]').show()
+						$('.returnTemp input[name="accountBank"]').show()
+						$('.returnTemp input[name="accountNumber"]').show()
+						$('.returnTemp input[name="accountInfo"]').show()
+					}
+				},
+				selectStype: function(e){
+					if($(e).next('.btn').hasClass('btn-danger')){
+						$(e).next('.btn').text('提交换货').addClass('btn-success').removeClass('btn-danger')
+						$(e).parents('.returnBox').removeClass('no-return')
+					}else if($(e).next('.btn').hasClass('btn-success')){
+						$(e).next('.btn').text('提交退货').addClass('btn-danger').removeClass('btn-success')
+						$(e).parents('.returnBox').addClass('no-return')
+					}
+				},
+				selectSku: function(i, j){
+					app.data.i = i
+					app.data.j = j
+					$.ajax({
+						method: 'GET',
+						url: utils.prePath() + '/api/product/sku/' + app.data.order_sku[i][j].product_id,
+						contentType : "application/json ; charset=utf-8",
+						success: function(req) {
+							app.data.sku = req.body.productSkus
+							app.data.layerId = layer.open({
+								type: 1,
+								content: template('selectSku', {'data': app.data.sku}),
+								area: ['60vw', '80vh'],
+								title: '选择SKU',
+								skin:'selectSku',
+								closeBtn: 1
+							});
+						}
+					});
+				},
+				sureSKU: function(i){
+					$('.returnTemp .returnBox[data-i="'+app.data.i+'"] tr[data-j="'+app.data.j+'"] div.return').text(app.data.sku[i].name).attr({
+						'data-productskuid': app.data.sku[i].id,
+						'data-productskubarcode': app.data.sku[i].barcode,
+						'data-discountprice': app.data.sku[i].depletionPrice,
+						'data-originalprice': app.data.sku[i].price,
+					})
+					layer.close(app.data.layerId)
+					app.data.layerId = null
+				},
+				postReturn: function(i, e){
+					var afterSaleServiceProducts = [];
+					var serviceType = ''
+					if($('.returnTemp .returnBox[data-i="' + i + '"]').hasClass('no-return')){
+						serviceType = '10'
+					}else{
+						serviceType = '20'
+					}
+					$('.returnTemp .returnBox[data-i="' + i + '"] table tbody tr').map(function(){
+						var j = $(this).attr('data-j');
+						if($(this).find('input[name="select"]').is(':checked')){
+							if(serviceType == '20'){
+								afterSaleServiceProducts.push({
+									productId : app.data.order_sku[i][j].product_id,
+									quantity : $(this).find('input[name="quantity"]').val(),
+									sourceProductSkuId : app.data.order_sku[i][j].product_sku_id,
+									sourceProductSkuBarcode : app.data.order_sku[i][j].product_sku_barcode,
+									serviceType : $(this).find('select[name="serviceType"]').val(),
+									serviceDesc : $(this).find('textarea[name="serviceDesc"]').val(),
+									productSkuName : app.data.order_sku[i][j].product_sku_name,
+									productSkuPrice : app.data.order_sku[i][j].discount_price,
+									
+									productSkuId: $(this).find('div.return').attr('data-productskuid'),
+									productSkuBarcode: $(this).find('div.return').attr('data-productskubarcode'),
+									discountPrice: $(this).find('div.return').attr('data-discountprice'),
+									originalPrice: $(this).find('div.return').attr('data-originalprice'),
+								})
+							}else{
+								afterSaleServiceProducts.push({
+									productId : app.data.order_sku[i][j].product_id,
+									quantity : $(this).find('input[name="quantity"]').val(),
+									sourceProductSkuId : app.data.order_sku[i][j].product_sku_id,
+									sourceProductSkuBarcode : app.data.order_sku[i][j].product_sku_barcode,
+									serviceType : $(this).find('select[name="serviceType"]').val(),
+									serviceDesc : $(this).find('textarea[name="serviceDesc"]').val(),
+									productSkuName : app.data.order_sku[i][j].product_sku_name,
+									productSkuPrice : app.data.order_sku[i][j].discount_price,
+								})
+							}
+						}
+					})
+					if(afterSaleServiceProducts.length == 0){
+						toastr.error('請选择售后的商品...');
+						return false;
+					}
+					if(serviceType == '20'){
+						var exchangeProState = 0
+						afterSaleServiceProducts.map(function(e){
+							if((!e.productSkuId || e.productSkuId == '')||(!e.productSkuBarcode || e.productSkuBarcode == '')){
+								exchangeProState++
+							}
+						})
+						if(exchangeProState > 0){
+							toastr.error('請选择要替换商品的规格...');
+							return false;
+						}
+					}
+					var parame = {
+						lineAcount : $(e).parent().find('input[name="lineAcount"]').val(),
+						serviceType : serviceType,
+						serviceSource : $(e).parents().find('select[name="serviceSource"]').val(),
+						orderCode : app.data.order_data.order_code,
+						deliveryCode : $(e).parents().parents().attr('data-code'),
+						afterSaleServiceProducts: afterSaleServiceProducts
+					}
+					if(app.data.order_data.payment_type == 1 && serviceType == '10'){
+						parame['accountName'] = $(e).parent().find('input[name="accountName"]').val()
+						parame['accountBank'] = $(e).parent().find('input[name="accountBank"]').val()
+						parame['accountNumber'] = $(e).parent().find('input[name="accountNumber"]').val()
+						parame['accountInfo'] = $(e).parent().find('input[name="accountInfo"]').val()
+
+						if(!parame.accountName || parame.accountName == ''){
+							toastr.error('請填寫您的銀行戶名...');
+							return false;
+						}
+						if(!parame.accountBank || parame.accountBank == ''){
+							toastr.error('請填寫您的開戶行及分行名稱...');
+							return false;
+						}
+						if(!parame.accountNumber || parame.accountNumber == ''){
+							toastr.error('請填寫開戶行代碼...');
+							return false;
+						}
+						if(!parame.accountInfo || parame.accountInfo == ''){
+							toastr.error('請填寫銀行賬號...');
+							return false;
+						}
+					}
+					$.ajax({
+						method: 'POST',
+						url: utils.prePath() + '/api/admin/saleservice/submit',
+						contentType : "application/json ; charset=utf-8",
+					  	data: JSON.stringify(parame),
+						success: function(req) {
+							if(req.statusCode == "OK"){
+								layer.closeAll()
+								app.data.table.bootstrapTable('refresh');
+								toastr.success('申请成功...');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				initHistory: function(data){
+					if(data && data.length > 0){
+						var historytraceContent = '<ul class="list-unstyled activity-timeline">' ; 
+						$.each(data, function(i, info){
+							var sku_info = tools.specialStringToArray(info.sku_infos);
+							var html = '<table class="table table-bordered" style="margin-left: 40px;border-left: 1px solid #eaeaea;"><thead><tr><td>发货单号</td><td>产品ID</td><td>SKU条码</td><td>产品图</td><td>数量</td><td>退换货表ID</td></tr></thead></tbody>'
+							sku_info.map(function(e){
+								html += '<tr><td>'+(e.delivery_code || '')+'</td><td>'+e.product_id+'</td><td>'+e.product_sku_barcode+'</td><td>'+tools.formatterFunction.proImage(e.product_sku_img)+'</td><td>'+e.quantity+'</td><td>'+(e.return_change_id || '')+'</td></tr>'
+							})
+							html += '</tbody></table>'
+							historytraceContent +=  '<li>'+
+								'<i class="fa fa-comment activity-icon"></i>'+
+								'<p>'+ info.opreator + ' 在 <strong>[' + moment(info.created_at).format('YYYY-MM-DD HH:mm:ss z') + ']</strong> 对 '+info.order_code+' 进行了 <strong>[' + info.event_name +']</strong> 操作 '+
+								'<span class="timestamp">SKU种类: '+info.sku_kind+' , SKU总数 : '+info.sku_amount+'</span></p>'+html+'</li>';
+						});
+						historytraceContent += '</ul>';
+						layer.open({
+							type: 1,
+							content: historytraceContent,
+							area: ['100vw' , '100vh'],
+							title: '定单记录追踪'
+						});
+					}else{
+						toastr.success('暂时没有日志记录~_~...');
+					}
+					layer.closeAll('loading');
+				},
+				showHistory : function(index){
+					layer.load();  
+					var data = [];
+					var code = app.data.orderData[index].order_code;
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/order/history/" + app.data.orderData[index].order_code,
+						async: false,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								data = data.concat(result.body);
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+					var f_code = code.split('-')[0];
+					if(f_code != code){
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/erp/order/history/" + f_code,
+							async: false,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									//data = data.concat(result.body);
+									data = result.body.concat(data);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+					app.methods.initHistory(data)
+				},
+				splitOrder: function(index){
+					var data = {
+						sku_infos: tools.specialStringToArray(app.data.orderData[index].sku_infos),
+						order_code: app.data.orderData[index].order_code,
+						order_id: app.data.orderData[index].order_id,
+					}
+					var _index = layer.open({
+						type: 1,
+						content: template('splitOrder', data),
+						area: ['800px', 'auto'],
+						title: '拆分订单' + data.order_code,
+						skin:'orderInfo',
+						closeBtn: 1
+					});
+				},
+				submitSplitOrder: function(id){
+					var data = {
+						"orderProducts" : []
+					}
+					$('.splitOrder li').each(function(i){
+						if(i!=0){
+							data.orderProducts.push(tools.getParams('.splitOrder li:nth-child(' + (i + 1) + ')'));
+						}
+					})
+					var state = 0;
+					data.orderProducts.map(function(e,i){
+						if(!e.quantity){
+							state += 1;
+						}
+						if(e.quantity == 0){
+							data.orderProducts.splice(i,1);
+						}
+					})
+					if(state != 0){
+						toastr.error('拆单数据错误，请核对')
+						return;
+					}
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/order/split/" + id,
+						data: JSON.stringify(data),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('订单已拆分...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				backToNormal: function(id){
+                    layer.confirm('是否允许订单重审通过，请确认...', {icon: 5,title:'订单重审通过提示'}, function(_index){
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/order/approval/pass/" + id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('订单已重审通过...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+				},
+				suspendOrder: function(id){
+                    layer.confirm('订单挂起会重置订单状态，请确认...', {icon: 5,title:'挂起订单提示'}, function(_index){
+                        $.ajax({
+                            type: "PUT",
+                            url: utils.prePath() + "/api/admin/erp/order/suspend/" + id,
+                            success: function (result) {
+                                if (result.statusCode == 'OK') {
+                                    toastr.success((result.body && result.body.message) ? result.body.message : '订单挂起成功...');
+                                    app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+                                } else {
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+				},
+				cancelOrder: function(id){
+                    layer.confirm('取消订单不可逆，请确认...', {icon: 5,title:'取消订单提示'}, function(_index){
+                        $.ajax({
+                            type: "PUT",
+                            url: utils.prePath() + "/api/admin/erp/order/cancel/" + id,
+                            success: function (result) {
+                                if (result.statusCode == 'OK') {
+                                    toastr.success((result.body && result.body.message) ? result.body.message : '订单取消成功...');
+                                    app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+                                } else {
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+				},
+				submitCustomInfo: function(orderId){
+					var customerInfo = Object.assign(tools.getParams('.customerInfoForm'), {
+						"province" : "臺灣",
+					});
+                    $.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/erp/order/address/update/" + orderId,
+                        data: JSON.stringify(customerInfo),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                toastr.success('收件信息修改成功...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();							
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+				submitOrderInfo: function(orderId){
+					var orderInfo = tools.getParams('.orderInfoForm');
+                    $.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/erp/order/update/" + orderId,
+                        data: JSON.stringify(orderInfo),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                toastr.success('订单修改成功...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+				easyBuy: function(index){
+                    var params = tools.jsonToParameString(tools.getParams('.customerInfoForm'));
+					var link = '172.30.30.214:5500/guava-mall-web';
+					app.data.scopeData = cacheSessionStorage.getCache('scope')
+					if(!app.data.scopeData){
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/scope/list",
+							async: false,
+							success: function(result){
+								if(result.statusCode == 'OK'){
+									cacheSessionStorage.setCache('scope',result.body.content);
+									app.data.scopeData = cacheSessionStorage.getCache('scope')
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+                    app.data.scopeData && app.data.scopeData.map(function(e){
+                        if(e.id == app.data.orderData[index].scope_id){
+                            link = e.domains.split(',')[0];
+                        }
+					});
+                    window.open('http://'+link+'/shopcart/orderConfirm.html' + params);
+                },
+				initSelect : function(){
+					tools.rangeTime('input[name="submitOrderTimes"]');
+					tools.rangeTime('input[name="logisticsTime"]',true);
+					tools.renderSelect.scope('select[name="scopeId"]');
+					tools.renderSelect.storehouse('select[name="storehouseId"]');
+					tools.renderSelect.orderStatusStr('select[name="orderStatusStr"]');
+					tools.renderSelect.trackerStatus('select[name="trackerStatus"]');
+					tools.renderSelect.payment('select[name="paymentType"]');
+				}
+			},
+			events:{
+				initEditAddress: function(){
+					$('.addressBoxEdit').off().on('click', function(){
+						var orderIndex = $(this).data('index');
+						var addressData = app.data.orderData[orderIndex].address.trim().split(' ');
+						var params = {
+							consignee: app.data.orderData[orderIndex].consignee,
+							tel: app.data.orderData[orderIndex].tel,
+							city: addressData[0],
+							district: addressData[1],
+							detail: addressData.slice(2).join(' '),
+							orderId: app.data.orderData[orderIndex].order_id,
+							email: app.data.orderData[orderIndex].email,
+							index: orderIndex
+						}
+						var _index = layer.open({
+							type: 1,
+							content: template('customerInfo', params),
+							area: ['400px', 'auto'],
+							title: '编辑' + app.data.orderData[orderIndex].order_code + '收件信息',
+							skin:'customerInfo',
+							closeBtn: 1
+						});
+					})
+				},
+				initEditOrder: function(){
+					$('.orderUpdateRemark').off().on('click', function(){
+						var orderIndex = $(this).data('index');
+						var params = {
+							// totalPrice: app.data.orderData[orderIndex].total_price,
+							priority: app.data.orderData[orderIndex].priority,
+							// freight: app.data.orderData[orderIndex].freight,
+							remark: app.data.orderData[orderIndex].remark,
+							orderId: app.data.orderData[orderIndex].order_id
+						}
+						var _index = layer.open({
+							type: 1,
+							content: template('orderInfo', params),
+							area: ['400px', 'auto'],
+							title: '编辑订单' + app.data.orderData[orderIndex].order_code + '信息',
+							skin:'orderInfo',
+							closeBtn: 1
+						});
+					});
+					$('.orderUpdateFreight').off().on('click', function(){
+						var orderIndex = $(this).data('index');
+						layer.prompt({
+							formType: 0,
+							value: app.data.orderData[orderIndex].freight,
+							title: '请输入邮费',
+						}, function(value){
+							if(!value){
+								toastr.warning('请输入运费！')
+								return;
+							}
+							$.ajax({
+								type: "PUT",
+								url: utils.prePath() + "/api/admin/erp/order/update/" + app.data.orderData[orderIndex].order_id,
+								data: JSON.stringify({
+									freight: value
+								}),
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('运费修改成功...');
+										app.data.table.bootstrapTable('refresh');
+										layer.closeAll();
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+							app.methods.submitOrderInfo()
+						});
+					});
+					$('.ediePrice').off().on('click', function(){
+						var orderProductId = $(this).data('orderproductid');
+						var price = $(this).text();
+						layer.prompt({
+							formType: 0,
+							value: price,
+							title: '请输入SKU价格',
+						}, function(value){
+							if((value - 0) == NaN){
+								toastr.warning('价格格式有误！请核查！')
+								return;
+							}
+							$.ajax({
+								type: "PUT",
+								url: utils.prePath() + "/api/admin/erp/order/product/" + orderProductId + "/price",
+								data: JSON.stringify({
+									price: value
+								}),
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('价格修改成功...');
+										app.data.table.bootstrapTable('refresh');
+										layer.closeAll();
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						});
+					})
+					$('.showTracking').off().on('click', function(){
+						var trackingNumber = $(this).text();
+						var delivery_code = $(this).attr('delivery_code');
+						if(trackingNumber == '--'){
+							toastr.warning('货运编号格式错误');
+							return
+						}
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/erp/delivery/tracker/" + trackingNumber + '/' + delivery_code,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									var data = result.body;
+									if(!data.originInfo || data.originInfo == 'null'){
+										toastr.error('查询不到物流信息！')
+										return false;										
+									}
+									data['trackinfo'] = [];
+									if(!JSON.parse(data.originInfo).trackinfo){
+										toastr.error('查询不到物流信息！')
+										return false;										
+									}
+									JSON.parse(data.originInfo).trackinfo.map(function(e){
+										e.checkpoint_status = tools.formatterFunction.trackerStatus(e.checkpoint_status);
+										data.trackinfo.push(e)
+									})
+									data.status = tools.formatterFunction.trackerStatus(data.status);
+									var index = layer.open({
+										type: 1,
+										content: template('trackerInfo', data),
+										area: ['800px', 'auto'],
+										title: '查看货运详情',
+										skin: 'trackerInfoBox',
+										closeBtn: 1
+									});
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					})
+					$('.refreshTracking').off().on('click', function(){
+						var trackingNumber = $(this).parent().find('.showTracking').text();
+						if(trackingNumber == '--'){
+							toastr.warning('货运编号格式错误');
+							return
+						}
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/tracker/update/" + trackingNumber,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('快递信息查询完成...');
+									app.data.table.bootstrapTable('refresh');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					})
+				},
+				initCancelOrderSku: function(){
+					$('.cancelOrderSku').off().on('click', function(){
+						var ordersku = $(this).data('ordersku');
+						layer.confirm('取消SKU不可逆，请确认...', {icon: 5,title:'取消SKU提示'}, function(_index){
+							$.ajax({
+								type: "PUT",
+								url: utils.prePath() + "/api/admin/erp/order/cancel/sku/" + ordersku,
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('sku取消成功...');
+										app.data.table.bootstrapTable('refresh');
+										layer.closeAll();						
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						});
+					})
+				},
+				initCatch: function(){
+					app.data.copeData = cacheSessionStorage.getCache('scope');
+					if(!app.data.copeData || !app.data.copeData.length > 0){
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/scope/list",
+							async: false,
+							success: function(result){
+								if(result.statusCode == 'OK'){
+									cacheSessionStorage.setCache('scope', result.body.content);
+									app.data.copeData = result.body.content;
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+				},
+			},
+			init: function(){
+				app.events.initCatch();
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

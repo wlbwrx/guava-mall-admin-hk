@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>待打包</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.productInfoBox li > span:last-child{display: none;}
+            .productInfoBox li > span:nth-last-child(2){display: none;}
+			.expressPrice .layui-layer-content ul{max-height: 480px;overflow-y: auto;}
+			ul.addressBox,
+			.ediePrice{cursor: default;text-decoration: none}
+			.fixed-table-toolbar .dropdown-menu li:first-child{display: none;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+							<div class="btn-group">
+								<button class="btn btn-success btn-sm" onclick="app.methods.pack();"><i class="fa fa-cube"></i> 批量打包</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a onclick="app.methods.unionPack();">合箱打包</a></li>
+								</ul>
+							</div>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+                        <select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+                        <input type="text" class="form-control" name="orderCode" placeholder="订单号">
+                        <input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+                        <input type="text" class="form-control" name="productTitle" placeholder="品名">
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="expressPrice">
+		<ul class="expressPrice">
+			<li>
+				<span>订单号</span>
+				<span>运费</span>
+			</li>
+		<% for(var i = 0; i < data.length; i++){ %>
+			<li>
+				<span><%= data[i].id %></span><span><input type="number" class="form-control" value="<%= data[i].freight %>"></span>
+			</li>
+		<% } %>
+		</ul>
+		<button class="btn btn-success btn-sm" onclick="app.methods.pack();"><i class="fa fa-cube"></i>&nbsp;批量打包</button>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                outData: [],
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/delivery/pending/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.outData = data.body.content;
+							app.events.initCheckbox();
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						title: '<label class="fancy-checkbox"><input type="checkbox" class="checkAll"><span></span></label>',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<label class="fancy-checkbox"><input type="checkbox" class="checkOrder" data-index="' + index + '"><span></span></label>';
+                        }
+					},{
+						field: 'order_code',title: '订单号',align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.warningDays(value, row.days);
+                        }
+					}, {
+						field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="productInfoBox"><li><span>選擇</span><span>產品ID</span><span>商品圖</span><span>品名</span><span>條碼</span><span>數量</span><span>售價</span><span>Code減價</span><span>折扣價</span><span>商品狀態</span><span>库存/待打包/采购未达</span><span>操作</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.skuInfos(value);
+                        }
+					}, {
+						field: 'payment_type',title: '付款方式',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.paymentStatus(value);
+						}
+					}, {
+						field: 'status',title: '订单状态',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.orderStatus(value);
+						}
+					}, {
+						field: 'total_price',title: '总价',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div class="orderUpdate" data-index="' + index + '"><span class="money">' + value + '</span><div class="nowarp">' + (row.freight == 0 ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight ) + '</div></div>';
+                        }
+					}, {
+						field: 'remark',title: '备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							return '<div class="orderUpdate" data-index="' + index + '">' + (value || '-') + '</div>';
+                        }
+					}, {
+						field: 'affiliate',title: '来源',align: 'center',
+					}, {
+						field: 'scope_name',title: '商城',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					}, {
+						field: 'created_at',title: '下单时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'consignee',title: '收货人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(value, row.tel, row.email, row.address, index);
+                        }
+					}, {
+						field: 'message',title: '留言',minWidth:120,
+					}, {
+						title: '操作',minWidth:100,
+						formatter: function (value, row, index, field) {
+							return '<div class="toolBox btn-group">'+
+										'<button type="button" authority="ORDER_ROLLBACK_STOCKING" class="btn btn-danger btn-xs" onclick="app.methods.rollbackStocking(' + row.order_id + ')">回滚至备货中</button>'+
+									'</div>';
+						}
+					}
+					];
+                    return option;
+				},
+				pack: function(){
+					if(app.data.state == 'pack'){
+						toastr.error('正在打包请稍后···')
+						return
+					}
+					var data = [];
+					$('.checkOrder').each(function(i){
+						if($(this).is(":checked")){
+							var orderProductIds = [];
+							$(this).parents('tr').find('.productInfoBox .fancy-checkbox input').each(function(){
+								if($(this).is(":checked")){
+									orderProductIds.push($(this).data('orderproid'))
+								}
+							})
+							// TODO
+							data.push({
+								"orderId": app.data.outData[$(this).data('index')].order_id, 
+								"freightPrice": 0, 
+								"orderProductIds": orderProductIds
+							})
+						}						
+					});
+					if(data.length == 0){
+						toastr.error('请选择需要打包的订单再进行操作。')
+						return;
+					}
+					app.data.state = 'pack';
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/erp/delivery/pending/pack",
+						data: JSON.stringify(data),
+						success: function (result) {
+							app.data.state = '';
+							if (result.statusCode == 'OK') {
+								toastr.success('批量打包完成...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						},
+						error: function(){
+							app.data.state = '';
+						}
+					});
+				},
+				rollbackStocking: function(orderId){
+					layer.confirm('确定要回滚至备货中？？？', {
+						btn: ['确定','取消'] //按钮
+					}, function(index, layero){
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + "/api/admin/erp/order/rollback/stocking",
+							data: JSON.stringify({orderId:orderId}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('已回滚至备货中...');
+									app.data.table.bootstrapTable('refresh');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+
+							}
+						});
+						layer.close(index);
+					});
+				},
+				unionPack : function(){
+					// 合箱打包
+					if(app.data.state == 'pack'){
+						toastr.error('正在打包请稍后···')
+						return
+					}
+					var data = [];
+					$('.checkOrder').each(function(){
+						if($(this).is(":checked")){
+							var orderProductIds = [];
+							$(this).parents('tr').find('.productInfoBox .fancy-checkbox input').each(function(){
+								if($(this).is(":checked")){
+									orderProductIds.push($(this).data('orderproid'))
+								}
+							})
+							data.push({
+								"orderId" : app.data.outData[$(this).data('index')].order_id, 
+								"freightPrice" : 0, 
+								"orderProductIds" : orderProductIds
+							})
+						}						
+					});
+					if(data.length == 0){
+						toastr.error('请选择需要打包的订单再进行操作。')
+						return;
+					}
+					app.data.state = 'pack';
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/erp/delivery/pending/union/pack",
+						data: JSON.stringify(data),
+						success: function (result) {
+							app.data.state = '';
+							if (result.statusCode == 'OK') {
+								toastr.success('合箱打包完成...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						},
+						error: function(){
+							app.data.state = '';
+						}
+					});
+				},
+                initSelect : function(){
+                    tools.renderSelect.storehouse('select[name="storehouseId"]');                    
+				}
+			},
+			events: {
+				initCheckbox:function(){
+					$('.checkOrder').on('click',function(){
+						if($(this).is(":checked")){
+							$(this).parents('tr').find('.productInfoBox .fancy-checkbox input').each(function(){
+								if(!$(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}else{
+							$(this).parents('tr').find('.productInfoBox .fancy-checkbox input').each(function(){
+								if($(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}
+					});
+					$('.checkAll').on('click',function(){
+						if($(this).is(":checked")){
+							$('.checkOrder').each(function(){
+								if(!$(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}else{
+							$('.checkOrder').each(function(){
+								if($(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}
+					});
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

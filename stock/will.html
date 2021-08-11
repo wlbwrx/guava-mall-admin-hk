@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>待采购表</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/easyui/themes/bootstrap/easyui.css">
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			*{font-size: 14px;}
+			.orderUpdate{cursor: pointer;}
+			.easyui-window , .easyui-window .panel-body{padding: 0px !important;}
+
+			#purchaseProduct{overflow-y: auto;height: 100%;font-size: 14px;}
+			#purchaseProduct ul{list-style: none;padding-left: 0;}
+			#purchaseProduct > ul > li{border-bottom: 1px solid #000000;padding: 8px;}
+			#purchaseProduct > ul > li:last-child{border-bottom: 0;padding-bottom: 0;}
+			#purchaseProduct > ul > li span{display: flex;padding-bottom: 6px;justify-content: space-between;}
+			#purchaseProduct > ul > li > span:last-child{flex-direction: column;}
+			#purchaseProduct > ul > li > span input{flex: 1}
+			#purchaseProduct > ul > li > span ul{border-top: 1px dashed #ccc;padding: 8px 0;}
+			#purchaseProduct > ul > li > span ul li{border-bottom: 1px dashed #ccc;margin-bottom: 8px;}
+			#purchaseProduct > ul > li > span ul li span{align-items: center}
+			#purchaseProduct > ul > li > span ul li span div{flex: 1;padding-left: 8px;}
+			#purchaseProduct button{display: block;margin: -10px auto 40px;}
+			.purchase_one_product div span{display: block!important;}
+
+			.text-danger{font-weight: bold;font-style: normal;}
+
+			.panel-title{height: 26px;}
+			.panel-icon, .panel-tool{height: 26px;}
+			.panel-tool a.fa{font-size: 20px;height: 20px;width: 20px;margin-right: 6px;}
+			.fa-times {cursor: pointer;}
+
+			/* .layui-layer-shade{opacity: 0.6!important;}
+			.layui-layer-shade,.layui-layer-loading{z-index: 10000!important;} */
+		</style>
+	</head>
+	<body>
+		<div id="purchaseTab" style="display: none;" class="easyui-window" title="采购辅助" data-options="
+			minimizable: false,
+			maximize: true,
+			closed: true,
+			tools: [{iconCls:'fa fa-plus',handler:app.easyui.tabAdd},{iconCls:'fa fa-shopping-cart',handler:app.easyui.cartAdd},{iconCls:'fa fa-list',handler:app.easyui.orderAdd},{iconCls:'fa fa-opencart',handler:app.easyui.cgCart}]">
+			<div class="easyui-layout" data-options="fit:true">
+				<div data-options="region:'west',split:true" style="width: 20%">
+					<div id="purchaseProduct"></div>
+				</div>
+				<div data-options="region:'center'">
+					<div id="purchaseTabInfo" class="easyui-tabs" data-options="fit:true,border:false"></div>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">待采购表</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+							<button class="btn btn-success btn-sm" onclick="app.methods.createPurchased();">批量散采</button>
+							<button class="btn btn-warning btn-sm export" authority="PURCHASED_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/purchased/pending/export');"><i class="fa fa-download"></i> 导出</button>
+							<span id="pendingTotle" style="padding-left: 10px"></span>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+<!--						<select name="storageTypeId" class="selectpicker" data-live-search="true" data-title="商品存储类型"></select>-->
+						<select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库选择"></select>
+						<input type="text" class="form-control" name="productId" placeholder="产品ID">
+						<input type="text" class="form-control" name="productTitle" placeholder="输入品名">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="输入条形码">
+						<select name="scopeId" class="selectpicker" data-live-search="true" data-title="商城"></select>
+						<input type="text" class="form-control" name="supplierNames" placeholder="多个供应商名称"/>
+						<select name="supplierId" class="selectpicker" data-live-search="true" data-title="选择缺货供应商"></select>
+<!--                        <select name="supplierType" class="selectpicker" data-live-search="true" data-title="供应商类型">-->
+<!--							<option value="">全部类型</option>-->
+<!--							<option value="1688">1688</option>-->
+<!--							<option value="taobao">淘宝</option>-->
+<!--							<option value="tmall">天猫</option>-->
+<!--						</select>						-->
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/easyui/jquery.easyui.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../dists/easyui/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				scopeData: cacheSessionStorage.getCache('scope')
+			},
+			easyui : {
+				tabAdd : function(){
+					$.messager.prompt('Prompt', '请输入一个网址...', function(r){
+						if (r){
+							$('#purchaseTabInfo').tabs('add',{
+							    title: r,
+							    content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+							    closable: true
+							});
+						}
+					});
+				},
+				orderAdd : function(){
+					var r = 'https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm'
+					$('#purchaseTabInfo').tabs('add',{
+						title: '淘宝订单',
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+						closable: true
+					});
+				},
+				cartAdd : function(){
+					var r = 'https://cart.taobao.com/cart.htm'
+					$('#purchaseTabInfo').tabs('add',{
+						title: '淘宝购物车',
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+						closable: true
+					});
+				},
+				cgCart : function(){
+					var r = 'https://cart.1688.com/cart.htm'
+					$('#purchaseTabInfo').tabs('add',{
+						title: '1688购物车',
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+						closable: true
+					});
+				}
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/purchased/pending/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/purchased/pending/text",
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								$('#pendingTotle').text('待采购总金额：' + result.body.total_price + '; 待采购总数：' + result.body.total_quantity)
+							}
+						}
+					});
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						checkbox: true
+					},{
+						field: 'product_id',title: '产品ID',align: 'center',width: 80,
+						formatter: function(value, row, index, field) {
+							return row.source_url ? '<a href="'+row.source_url+'" target="_blank">'+value+'</a>' : value;
+						}
+					}, {
+						field: 'product_image_url',title: '商品圖',align: 'center',width: 60,
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.proImage(row.product_image_url, row.product_id, row.product_title);
+						}
+					}, {
+						field: 'original_title',title: '品名',width: 200,
+						formatter: function (value, row, index, field) {
+							return value + '<span class="text-danger" style="color: #F9354C!important;">（' + row.product_sku_name + '）</span>';
+                        }
+					}, {
+						field: 'product_sku_barcode',title: '條碼',align: 'center',
+					}, {
+						field: 'purchase_price',title: '购买价格',align: 'center',
+					}, {
+						field: 'storehouse_name',title: '仓库',align: 'center',
+					}, {
+						field: 'supplier_name',title: '供应商',width:100,
+						formatter: function (value, row, index, field) {
+							return '<a target="_blank" href="' + row.supplier_url + '">' + (value || '-') + '</a>';
+                        }
+					}, {
+                        field: 'inventory',title: '库存',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return (value || '0');
+                        }
+					}, {
+                        field: 'pending_quantity',title: '采购数',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return (value || '0');
+                        }
+					}, {
+                        field: 'last_7_sale',title: '近7天销量',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return (value || '0');
+                        }
+					}];
+                    return option;
+				},
+
+				// 批量散采
+				createPurchased: function(){
+					// 关闭全部tab
+					$("#purchaseTabInfo .tabs li").each(function() {
+						$('#purchaseTabInfo').tabs('close', $(this).find('.tabs-title').text());
+					});
+					// 选中的数据
+					var selections = app.data.table.bootstrapTable('getSelections');
+					app.data.selections = selections
+					if(selections.length == 0){
+						toastr.warning('请选择后再开始采购···')
+					}
+					var p_data = ''
+					selections.map(function(e,i){
+						if(i != 0){
+							p_data += '&'
+						}else{
+							p_data += '?'
+						}
+						p_data += 'productSkuBarcodes=' + e.product_sku_barcode
+					})
+					$.ajax({
+						type: "GET",
+						async: false,
+						url: utils.prePath() + "/api/admin/erp/purchased/pending/sku/check" + p_data,
+						success: function (result) {
+							if (result.statusCode == 'OK' && result.body.length > 0) {
+								selections.map(function(e){
+									result.body.map(function(_e){
+										if(e.product_sku_barcode == _e.product_sku_barcode){
+											e['check_quantity'] = _e.check_quantity
+										}
+									})
+								})
+							}
+						}
+					});
+					// toastr.info('下单成功后再左侧表中回填单号···')
+					var url_data = [];
+					var purchase_data = [];
+					selections.map(function(e){
+						var state_url = 0;
+						for(var i = 0;i < url_data.length;i++){url_data[i] == e.source_url && state_url++}
+						if(state_url == 0){
+							url_data.push(e.source_url)
+							$('#purchaseTabInfo').tabs('add',{
+								title: e.product_id + '-' + e.original_title,
+								content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="' + e.source_url + '"></iframe>',
+								closable: true
+							});
+						}
+						var state_supplier = 0;
+						for(var j = 0;j < purchase_data.length;j++){if(purchase_data[j].supplier_name == e.supplier_name){state_supplier++}}
+						state_supplier == 0 &&purchase_data.push({
+							'supplier_name': e.supplier_name,
+							'supplier_comments': e.supplier_comments,
+							'supplier_id': e.supplier_id,
+							'product': []
+						})
+					})
+					purchase_data.map(function(e){
+						for(var i = 0;i < selections.length;i++){
+							if(e.supplier_name == selections[i].supplier_name){
+								e.product.push(selections[i])
+							}
+						}
+					})
+					var html = '<ul>';
+
+
+					purchase_data.map(function(e,i){
+						html += '<li data-i="'+i+'" class="supplierId_'+e.supplier_id+'">'
+						html += '<span>供应商：' + e.supplier_name + '<i class="fa fa-times" onclick="app.methods.deleteSupplier(' + i + ')"></i></span>'
+						html += '<span class="text-danger">' + e.supplier_comments + '</span>'
+						html += '<span><span style="width: 25%">采购单号：</span><span style="width: 75%"><input style="width: 100%" name="purchaseCode" /></span></span>'
+						html += '<span><span style="width: 25%">运费：</span><span style="width: 75%"><input name="purchaseFreight" type="number" value="0" onchange="app.methods.calcTotalPrice('+e.supplier_id+')"/></span></span>'
+						html += '<span><span style="width: 25%">优惠券：</span><span style="width: 75%"><input name="couponAmount" type="number" value="0" onchange="app.methods.calcTotalPrice('+e.supplier_id+')"/></span></span>'
+						html += '<span><span style="width: 25%">备注：</span><span style="width: 75%"><input name="comments" /></span></span>'
+
+						var pro_list_html = '';
+                        let totalPrice=0;
+						e.product.map(function(_e){
+							pro_list_html += '<li class="purchase_one_product">'
+							pro_list_html += '<span>'+
+								tools.formatterFunction.proImage(_e.product_image_url) +
+								'<div>'+
+									'<span style="text-decoration: underline;cursor:pointer" onclick="app.methods.addTab(\''+_e.source_url+ '\',\'' + _e.product_id + '-' + _e.original_title + '\')">产品ID：'+_e.product_id + ' ( '+_e.product_sku_barcode+' )' +'</span>'+
+									'<span>规格：<i class="text-danger">'+_e.product_sku_name +'</i></span>'+
+									'<span>仓库：'+_e.storehouse_name+'(七日销量:'+(_e.last_7_sale || '0')+')</span>'+
+									'<span>待审核：'+(_e.check_quantity || 0)+'</span>'+
+								'</div>'+
+							'</span>'
+							pro_list_html += '<span>数量：<input name="quantity" type="number" onchange="app.methods.calcTotalPrice('+e.supplier_id+')" skubarcode="'+_e.product_sku_barcode+'" value="'+_e.pending_quantity+'"/></span>'
+							pro_list_html += '<span>价格：<input name="purchasePrice" onchange="app.methods.calcTotalPrice('+e.supplier_id+')" value="'+_e.purchase_price+'"/></span>'
+							pro_list_html += '<button class="btn btn-info" style="margin: 6px auto" onclick="app.methods.openSupplier('+_e.product_id+');">打开全部供应地址</button>'
+							pro_list_html += '</li>'
+							totalPrice+=_e.pending_quantity*_e.purchase_price;
+						})
+						html += '<span class="supplierPurchaseProduct"><p class="text-danger">总价：'+totalPrice.toFixed(2)+'</p></span>';
+						html += '<span>商品详情：<ul>' + pro_list_html + '</ul></span>'
+						html += '</li>'
+					});
+					html += '</ul>'
+					html += '<button id="pushPurchased" class="btn btn-success" onclick="app.methods.pushPurchased();">确认采购，提交采购单</button>'
+					$('#purchaseProduct').html(html);
+					$('#purchaseTab').window('open').panel('resize',{
+						width: $(window).width() + 'px',
+						height: $(window).height() + 'px',
+						top: 0,
+						left: 0,
+					});;
+				},
+
+				calcTotalPrice:function(supplierId){
+					let quantityObj=$(".supplierId_"+supplierId+" input[name='quantity']");
+					let purchasePriceObj=$(".supplierId_"+supplierId+" input[name='purchasePrice']");
+					let purchaseFreight=$(".supplierId_"+supplierId+" input[name='purchaseFreight']")[0].value;
+					let couponAmount=$(".supplierId_"+supplierId+" input[name='couponAmount']")[0].value;
+					let count = quantityObj.length;
+					let totalPrice=Number(purchaseFreight)-couponAmount;
+					for(let i=0;i<count;i++){
+						totalPrice+=(Number(quantityObj[i].value)*100)*(Number(purchasePriceObj[i].value)*100)/10000;
+					}
+					$(".supplierId_"+supplierId+" span[class='supplierPurchaseProduct']").html("<p class=\"text-danger\">总价："+totalPrice.toFixed(2)+"</p>");
+				},
+
+				// 删除供应商
+				deleteSupplier: function (i) {
+					$('#purchaseProduct').find('[data-i="' + i + '"]').remove()
+				},
+
+				openSupplier: function(id){
+					$.ajax({
+						type:"get",
+						url : utils.prePath()+"/api/admin/product/" + id,
+						async: false,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								if(result.body.productSuppliers.length == 1){
+									toastr.info('只有一个供应商···')
+								}else{
+									result.body.productSuppliers.map(function(e){
+										app.methods.addTab(e.sourceUrl, '商品ID' + id)
+									})
+								}
+							}
+						}
+					});
+				},
+				addTab: function(url, title){
+					$('#purchaseTabInfo').tabs('add',{
+						title: title,
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="' + url + '"></iframe>',
+						closable: true
+					});
+				},
+				pushPurchased: function(){
+					$('#pushPurchased').attr('disabled', 'true')
+					var purchased_data = [];
+					var state = 0;
+					$('#purchaseProduct > ul > li').each(function(){
+						var purchaseCode = $(this).find('input[name="purchaseCode"]').val().trim(),
+							purchasePrice = $(this).find('input[name="purchasePrice"]').val(),
+							purchaseFreight = $(this).find('input[name="purchaseFreight"]').val(),
+							couponAmount = $(this).find('input[name="couponAmount"]').val(),
+							comments = $(this).find('input[name="comments"]').val();
+						if(purchaseCode == '' || purchasePrice < 0){state++;}
+						$(this).find('.purchase_one_product').each(function(){
+							var product = {
+								'skubarcode': $(this).find('input[name="quantity"]').attr('skubarcode'),
+								'number': $(this).find('input[name="quantity"]').val(),
+								'purchasePrice': $(this).find('input[name="purchasePrice"]').val(),
+							}
+							var this_product = app.methods.findProduct(product.skubarcode)
+							if(product.number != 0){
+								purchased_data.push({
+									'purchaseCode': purchaseCode,
+									'productId': this_product.product_id,
+									'originalTitle': this_product.original_title,
+									'productSkuBarcode': this_product.product_sku_barcode,
+									'productSkuName': this_product.product_sku_name,
+									'storehouseName': this_product.storehouse_name,
+									'supplierName': this_product.supplier_name,
+									'sourceUrl': this_product.supplier_url,
+									'quantity': product.number,
+									'purchasePrice': product.purchasePrice,
+									'purchaseFreight': purchaseFreight,
+									'couponAmount': couponAmount,
+									'comments': comments,
+								})
+							}
+						})
+					})
+					if(state > 0){
+						toastr.warning('请完全填写信息···')
+						$('#pushPurchased').removeAttr('disabled')
+						return
+					}
+					if(purchased_data.length == 0){
+						toastr.warning('根据数量判定，未找到采购商品···')
+						$('#pushPurchased').removeAttr('disabled')
+						return
+					}
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/erp/purchased/create",
+						data: JSON.stringify(purchased_data),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('采购单创建成功...');
+								app.data.table.bootstrapTable('refresh');
+								$('#purchaseTab').window('close');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+							$('#pushPurchased').removeAttr('disabled')
+						},
+						error: function (result) {
+							toastr.error(JSON.parse(result.responseText).body.message);
+							$('#pushPurchased').removeAttr('disabled')
+						}
+					});
+				},
+				findProduct: function(skubarcode){
+					for(var i = 0; i < app.data.selections.length; i++){
+						if(app.data.selections[i].product_sku_barcode == skubarcode){
+							return app.data.selections[i];
+						}
+					}
+				},
+				initSelect : function(){
+					tools.renderSelect.storageType('select[name="storageTypeId"]');
+					tools.renderSelect.storehouse('select[name="storehouseId"]');
+					tools.renderSelect.scope('select[name="scopeId"]');
+					// tools.renderSelect.supplier('select[name="supplierId"]');
+					tools.renderSelect.supplierOut('select[name="supplierId"]');
+				}
+			},
+			init: function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

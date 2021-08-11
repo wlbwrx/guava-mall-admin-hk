@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>合并订单</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.expressPrice .layui-layer-content ul{max-height: 480px;overflow-y: auto;}
+			ul.addressBox,
+			.ediePrice{cursor: default;text-decoration: none}
+			.fixed-table-toolbar .dropdown-menu li:first-child{display: none;}
+			.productInfoShortBox li >  span:nth-last-child(1){display: none;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">合并订单</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+							<button class="btn btn-success btn-sm" onclick="app.methods.openMerge();"><i class="fa fa-cube"></i> 合并订单</button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+                    	<input type="text" inputTpye="daterange" rangeStart="orderSubmitBeginTime" rangeEnd="orderSubmitEndTime" class="form-control" name="submitOrderTimes" placeholder="选择时间" />
+                        <input type="text" class="form-control" name="tel" placeholder="电话">
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="expressPrice">
+		<ul class="expressPrice">
+			<li>
+				<span>订单号</span>
+				<span>运费</span>
+			</li>
+		<% for(var i = 0; i < data.length; i++){ %>
+			<li>
+				<span><%= data[i].id %></span><span><input type="number" class="form-control" value="<%= data[i].freight %>"></span>
+			</li>
+		<% } %>
+		</ul>
+		<button class="btn btn-success btn-sm" onclick="app.methods.pack();"><i class="fa fa-cube"></i>&nbsp;批量打包</button>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                outData: [],
+                color: {
+                	bgColor : ['azure' , 'beige' , 'bisque'],
+                	bgColorIndex : 0,
+                	currentRow : {}
+                }
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/order/merge/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.mergeData = data.body.content;
+							app.events.initCheckbox();
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.methods.initTableBackground();							
+					    },
+					}));
+				},
+                initSelect: function(){
+                	tools.rangeTime('input[name="submitOrderTimes"]',true);
+                },
+                initTableBackground : function(){
+					if(app.data.mergeData.length == 0){
+						return
+					}
+                	$.each(app.data.mergeData, function(index, data) {
+                		var _currentRow = app.data.color.currentRow;
+                		if(data.consignee == _currentRow.consignee && data.tel == _currentRow.tel && data.scopeId == _currentRow.scopeId
+            				&& data.city == _currentRow.city && data.district == _currentRow.district && data.detail == _currentRow.detail){
+            					data['bgColor'] = _currentRow['bgColor'];
+        				}else{
+        					app.data.color.currentRow = data;
+        					app.data.color.currentRow['bgColor'] = app.data.color.bgColor[app.data.color.bgColorIndex];
+        					app.data.color.bgColorIndex = (app.data.color.bgColorIndex + 1) % 3;
+        				}
+                	});
+                	$('#table-main > tbody > tr').each(function(i){
+                		$(this).css('background',app.data.mergeData[i]['bgColor'])
+                	});
+                	
+                },
+                optionByAuthority: function () {
+                    var option = [{
+						title: '<label class="fancy-checkbox"><input type="checkbox" class="checkAll"><span></span></label>',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<label class="fancy-checkbox"><input type="checkbox" class="checkOrder" data-index="' + index + '"><span></span></label>';
+                        }
+					},{
+						field: 'code',title: '订单号',align: 'center',
+					}, {
+						field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="productInfoShortBox"><li><span>選擇</span><span>產品图片</span><span>產品ID</span><span>品名</span><span>條碼</span><span>數量</span><span>售價</span><span>商品狀態</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.skuInfoShort(value);
+                        }
+					}, {
+						field: 'status',title: '订单状态',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.orderStatus(value);
+						}
+					}, {
+						field: 'total_price',title: '总价',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight == 0 ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight ) + '</div></div>';
+                        }
+					}, {
+						field: 'storehouse_id',title: '仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							var html = ''
+							app.data.storehouseData.map(function(e){
+								if(e.id == value){
+									html = e.storehouseName
+								}
+							})
+							return '<span class="nowarp">' + html + '</span>';
+                        }
+					}, {
+						field: 'scope_id',title: '商城',align: 'center',
+						formatter: function (value, row, index, field) {
+							var html = ''
+							app.data.scopeData.map(function(e){
+								if(e.id == value){
+									html = e.name
+								}
+							})
+							return '<span class="nowarp">' + html + '</span>';
+                        }
+					}, {
+						field: 'affiliate',title: '来源',align: 'center',
+					}, {
+						field: 'adlk',title: 'adlk',align: 'center',
+					}, {
+						field: 'pixel_id',title: 'pixelId',align: 'center',
+					}, {
+						field: 'created_at',title: '下单时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'consignee',title: '收货人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(value, row.tel, row.email, row.city + row.district + row.detail);
+                        }
+					}, {
+						field: 'remark',title: '备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							return (value || '-')
+                        }
+					},];
+                    return option;
+				},
+				openMerge: function(){
+					var data = {
+						'remark': [],
+						'pixelId': [],
+						'affiliate': [],
+						'adlk': [],
+						'scopeId': [],
+						'mergeOrderRequests': [],
+					} 
+					$('.checkOrder').each(function(i){
+						var i = $(this).data('index')
+						if($(this).is(":checked")){
+							var orderSkuIds = [];
+							var sku_data = tools.specialStringToArray(app.data.mergeData[i].sku_infos)
+							$(this).parents('tr').find('.productInfoShortBox .fancy-checkbox input').each(function(){
+								if($(this).is(":checked")){
+									orderSkuIds.push({
+										'orderSkuId': sku_data[$(this).data('j')].order_product_id,
+										'quantity': sku_data[$(this).data('j')].quantity,
+									})
+								}
+							})
+							// TODO
+							data.remark.push(app.data.mergeData[i].code + '(' + ((app.data.mergeData[i].remark) ? app.data.mergeData[i].remark : '无') + ')');
+							data.pixelId.push(app.data.mergeData[i].pixel_id);
+							data.affiliate.push(app.data.mergeData[i].affiliate);
+							data.adlk.push(app.data.mergeData[i].adlk);
+							data.scopeId.push(app.data.mergeData[i].scope_id);
+							data.mergeOrderRequests.push({
+								"orderId": app.data.mergeData[i].id, 
+								"mergeSkuRequests": orderSkuIds
+							})
+						}
+					});
+					if(data.mergeOrderRequests.length == 0){
+						toastr.error('请选择需要合并的订单再进行操作。')
+						return;
+					}
+					app.data.mergeAjaxData = data
+
+					var adlk = '',
+						affiliate = '',
+						pixelId = '';
+					for(var i = 0;i < app.data.mergeAjaxData.adlk.length;i++){
+						if(app.data.mergeAjaxData.adlk[i] != '' && app.data.mergeAjaxData.affiliate[i] != '' && app.data.mergeAjaxData.pixelId[i] != ''){
+							adlk = app.data.mergeAjaxData.adlk[i]
+							affiliate = app.data.mergeAjaxData.affiliate[i]
+							pixelId = app.data.mergeAjaxData.pixelId[i]
+							break;
+						}
+					}
+					if(adlk == '' || affiliate == '' || pixelId == ''){
+						adlk = app.data.mergeAjaxData.adlk[0]
+						affiliate = app.data.mergeAjaxData.affiliate[0]
+						pixelId = app.data.mergeAjaxData.pixelId[0]
+					}
+					layer.open({
+                        type: 1,
+                        title : '选择产品',
+                        area: ['50vw', '50vh'], //宽高
+                        content: //'<div class="form-group"><label>商城：</label><input type="text" class="form-control" name="scopeId" placeholder="(eq:91up:8)" value="'+(app.data.mergeAjaxData.scopeId[0] || '')+'"></div>'
+                        		'<div class="form-group"><label>adlk：</label><input type="text" class="form-control" name="adlk" placeholder="adlk" value="'+(adlk ||  '')+'"></div>'
+                                +'<div class="form-group"><label>来源：</label><input type="text" class="form-control" name="affiliate" placeholder="来源" value="'+(affiliate || '')+'"></div>'
+                                +'<div class="form-group"><label>pixelId：</label><input type="text" class="form-control" name="pixelId" placeholder="pixelId" value="'+(pixelId || '')+'"></div>'
+                                +'<div class="form-group"><label>备注：</label><input type="text" class="form-control" name="remark" placeholder="备注" value="'+(app.data.mergeAjaxData.remark.toString() || '')+'"></div>',
+                        btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						skin: 'mergeParame',
+                        yes: function(index, layero){
+							app.data.mergeAjaxData.remark = $('.mergeParame input[name="remark"]').val();
+							if(app.data.mergeAjaxData.remark == ',') app.data.mergeAjaxData.remark = "" ; 
+							
+							app.data.mergeAjaxData.adlk = $('.mergeParame input[name="adlk"]').val();
+							app.data.mergeAjaxData.affiliate = $('.mergeParame input[name="affiliate"]').val();
+							app.data.mergeAjaxData.pixelId = $('.mergeParame input[name="pixelId"]').val();
+							$.ajax({
+								type: "POST",
+								url: utils.prePath() + '/api/admin/erp/order/merge/merge',
+								data: JSON.stringify(app.data.mergeAjaxData),
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('订单合并完成...');
+										app.data.table.bootstrapTable('refresh');
+										layer.closeAll();
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+                        }
+                    });
+				},
+				initCache: function(){
+					app.data.scopeData = cacheSessionStorage.getCache('scope');
+					if(!app.data.scopeData || !app.data.scopeData.length > 0 || app.data.scopeData[1] == null){
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/scope/list",
+							async: false,
+							success: function(result){
+								if(result.statusCode == 'OK'){
+									cacheSessionStorage.setCache('scope',result.body.content);
+									app.data.scopeData = result.body.content;
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+					app.data.storehouseData = cacheSessionStorage.getCache('storehouse');
+					if(!app.data.storehouseData || !app.data.storehouseData.length > 0){
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/erp/storehouse",
+							async: false,
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									cacheSessionStorage.setCache('storehouse',result.body);
+									app.data.storehouseData = result.body;
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+				}
+			},
+			events: {
+				initCheckbox:function(){
+					$('.checkOrder').on('click',function(){
+						if($(this).is(":checked")){
+							$(this).parents('tr').find('.productInfoShortBox .fancy-checkbox input').each(function(){
+								if(!$(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}else{
+							$(this).parents('tr').find('.productInfoShortBox .fancy-checkbox input').each(function(){
+								if($(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}
+					});
+					$('.checkAll').on('click',function(){
+						if($(this).is(":checked")){
+							$('.checkOrder').each(function(){
+								if(!$(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}else{
+							$('.checkOrder').each(function(){
+								if($(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}
+					});
+				}
+			},
+			init : function(){
+				app.methods.initCache();
+				app.methods.initTable();
+				app.methods.initSelect();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

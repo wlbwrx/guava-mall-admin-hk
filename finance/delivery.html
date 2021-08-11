@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>货代对账</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			ul.addressBox{cursor: default;text-decoration: none;}            
+			.trackerInfo h3{margin: 12px 0 0 0;font-size: 16px;}
+			.trackerInfo table{margin-top: 12px;}
+			.trackerInfo table th{font-size: 14px!important;}
+			.commentsList{list-style: none;padding: 0;margin: 0;}
+			.commentsList li{border-bottom: 1px solid #ddd;padding: 6px;}
+			.commentsList li:last-child{border-bottom: 0;}
+			.commentsList li span{display: block;;white-space:nowrap;float: left;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">货代对账</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-success btn-sm" id="upload"><i class="fa fa-upload"></i> 导入对账信息</button>
+                                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="../excel/对账模板.xls">下载对账模板</a></li>
+                                </ul>
+                            </div>
+							<span id="analysisMes"></span>
+						</div>	
+                        <button class="btn btn-warning btn-sm export" authority="FINANCE_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/finance/invoice/export');"><i class="fa fa-download"></i>&nbsp;&nbsp;导出</button>
+					</div>	
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="lastUpdateBeginTime" rangeEnd="lastUpdateEndTime" class="form-control" name="deliveryTimes" placeholder="最新状态时间" tostring="true"/>
+                        <input type="text" inputTpye="daterange" rangeStart="trackerCreatedAtBeginTime" rangeEnd="trackerCreatedAtEndTime" class="form-control" name="trackerTimes" placeholder="发货时间" />
+						<!-- <select class="selectpicker" data-live-search="true" name="storehouseId"></select> -->
+						<select class="selectpicker" data-live-search="true" name="agencyCompany"></select>
+						<input type="text" class="form-control" name="trackingNumber" placeholder="物流单号">
+                        <select class="selectpicker" data-live-search="true" name="trackerStatus"></select>
+                        <select class="selectpicker" data-live-search="true" name="settlementStatus"></select>
+						<input type="text" class="form-control" name="deliveryCode" placeholder="发货单号">
+						<!-- <input type="text" class="form-control" name="orderCode" placeholder="订单号"> -->
+						<!-- <input type="text" class="form-control" name="tel" placeholder="电话"> -->
+						<!-- <input type="text" class="form-control" name="productId" placeholder="产品ID"> -->
+						<!-- <input type="text" class="form-control" name="productSkuBarcode" placeholder="条码"> -->
+                        <!-- <select class="selectpicker" data-live-search="true" name="productStatus"></select> -->
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+    <script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/jquery.table2excel.js"></script>
+	<script type="text/html" id="trackerInfo">
+        <div class="trackerInfo">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>配送状态</th>
+                        <th>状态描述</th>
+                        <th>详情</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(var i = 0;i < trackinfo.length;i++){ %>
+                        <tr>
+                            <td style="text-align:center;"><%= i + 1 %></td>
+                            <td><%= trackinfo[i].checkpoint_status %></td>
+                            <td><%= trackinfo[i].StatusDescription %></td>
+                            <td><%= trackinfo[i].Details %></td>
+                            <td><%= trackinfo[i].Date %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        
+        <h4></h4>
+        <p></p>
+    </script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+                table : $("#table-main"),
+                financeData: [],
+                storageType: cacheSessionStorage.getCache('storageType'),
+                initUploadState: false
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					} 
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/finance/invoice',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.financeData = data.body.content
+							app.data.initUploadState == false && app.methods.initPushFile();
+					    },  
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [ {
+                        field: 'tracking_number',title: '物流单号',align: 'center'
+					}, {
+                        field: 'tracker_status',title: '物流状态',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.trackerStatus(value);
+                        }
+					}, {
+						field: 'agency_company',title: '货代公司',align: 'center',
+					}, {
+						field: 'carrier_code',title: '物流公司',align: 'center',
+					}, {
+						field: 'logistics_freight',title: '货代费用',align: 'center',
+					}, {
+                        field: 'logistics_payback',title: '实际回款',align: 'center'
+					}, {
+						field: 'accounts_receivable',title: '应收货款',align: 'center',
+					}, {
+                        field: 'settlement_status',title: '对账状态',align: 'center',
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.settlementStatus(value);
+                        }
+					}, {
+                        field: 'tracker_created_at',title: '发货时间',align: 'center',minWidth:120,
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					},{
+						field: 'delivery_remark',title: '发跟单备注',align: 'center',minWidth:150,
+						formatter : function(value, row, index, field){
+							var html = '<ul class="commentsList">';
+								html += '<li><span>发货单:' + (row.delivery_remark ? row.delivery_remark : "") + '</span><span>物&nbsp;&nbsp;&nbsp;流    :' + (row.tracker_info_remark ? row.tracker_info_remark : "") + '</span></li>';
+							html += '</ul>';
+							return html;
+						}
+					},{
+						field: 'last_event',title: '最新情况',align: 'center',minWidth:200,
+						formatter: function (value, row, index, field) {
+							return '<a class="simpleBtn" onclick="app.methods.showTracking('+index+')">' + (value || '-') + '</a>'; //+ '</br>' + (row.last_update_time || '-') 
+                        }
+					},
+					{
+						field: 'orderCode',title: '订单号',align: 'center'
+					},
+					{
+						field: 'orderCreateTime',title: '下单时间',align: 'center',minWidth:120,
+
+					},
+					{
+						field: 'delivery_infos',title: '<ul class="delivery_tracker_infos"><li><span>发货单号</span><span>地址</span><span>应收</span><span>发货单状态</span><span>打包时间</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.delivery_tracker_infos(value);
+                        }
+					}, 
+					{
+                        title: '操作',minWidth:120,
+                        formatter: function (value, row, index) {
+							var html = '<div class="toolBox btn-group">';
+                            if(row.settlement_status && row.settlement_status != 10){
+                                html += '<button type="button" class="btn btn-success btn-xs" authority="FINANCE_WRITE" onclick="app.methods.pass(' + row.tracker_info_id + ',\'pass\')">通过</button>';
+                                html += '<button type="button" class="btn btn-danger btn-xs" authority="FINANCE_WRITE" onclick="app.methods.pass(' + row.tracker_info_id + ',\'cancel\')">不通过</button>';
+                            }
+							html += '<button type="button" class="btn btn-info btn-xs" authority="FINANCE_WRITE" onclick="app.methods.remark(' + index + ')">备注</button>';
+							html += '</div>';
+							return html;
+                        }
+					},];
+                    return option;
+				},
+				showTracking: function(index){
+					if(app.data.financeData[index].origin_info && app.data.financeData[index].origin_info != {}){
+						layer.open({
+							type: 1,
+							content: template('trackerInfo',  JSON.parse(app.data.financeData[index].origin_info)),
+							area: ['800px', 'auto'],
+							title: '查看货运详情',
+							skin: 'trackerInfoBox',
+							closeBtn: 1
+						});
+					}else{
+						toastr.error('查询不到货运详情...');
+					}
+				},
+				remark: function(index){
+					layer.prompt({
+                        title: '备注',
+                        value: app.data.financeData[index].remark,
+                        formType: 0
+                    }, function (text, i) {
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/tracker/remark",
+							data: JSON.stringify({
+								trackingNumber : app.data.financeData[index].tracking_number,
+								remark : text
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('操作成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+                },
+                pass: function(trackerInfoId,state){
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/finance/invoice/" + state + '/' + trackerInfoId,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('操作成功...');
+								app.data.table.bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+                },
+                initPushFile: function(){
+					var uploader = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'upload',
+						url: utils.prePath() + "/api/admin/erp/finance/invoice/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '10240kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+                                var mes = JSON.parse(responseObject.response).body.errores;
+                                
+                                if(mes.length > 0){
+									var html = '<table id="errorTable" class="table"><tr><td>国际物流单号</td><td>发货单号</td><td>国际运费</td><td>回款金额</td><td>错误原因</td></tr>'
+									mes.map(function(e){
+										html += '<tr><td>'+e.trackingNumber+'</td><td>'+e.deliveryCode+'</td><td>'+e.logisticsFreight+'</td><td>'+e.logisticsPayback+'</td><td>'+e.message+'</td></tr>';
+									})
+									layer.open({
+										type: 1,
+										content: html+'</table>',
+										title: '导入失败的发货单',
+										area: ['80vw', '80vh'],
+										closeBtn: 1,
+										btn: ['下载'],
+										yes: function(){
+											$("#errorTable").table2excel({
+												name: "对账异常数据",
+												filename: "对账异常数据" + new Date().toISOString().replace(/[\-\:\.]/g, ""),
+												fileext: ".xls"
+											});
+										}
+									});
+                                }else{
+                                    toastr.success('导入成功');
+                                }
+								layer.closeAll('loading');
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader.init();
+					app.data.initUploadState = true;
+				},
+				initSelect : function(){
+                    tools.rangeTime('input[name="deliveryTimes"]');
+                    tools.rangeTime('input[name="trackerTimes"]',true);
+                    tools.renderSelect.agency('select[name="agencyCompany"]');
+                    // tools.renderSelect.storehouse('select[name="storehouseId"]');
+					tools.renderSelect.trackerStatus('select[name="trackerStatus"]');
+					$('select[name="trackerStatus"]').selectpicker('val','delivered');
+					// {value:'成功签收',num:'delivered'}
+					tools.renderSelect.settlementStatus('select[name="settlementStatus"]');
+                    // tools.renderSelect.deliveryProductStatus('select[name="productStatus"]');
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

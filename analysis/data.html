@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>广告管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="../dists/easyui/themes/bootstrap/easyui.css">
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/hint/hint.min.css" />
+		<link rel="stylesheet" href="../dists/input-tags/css/inputTags.css" />
+        <link rel="stylesheet" href="../dists/linearicons/style.css">
+        <!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+        <style>
+            .bootstrap-table{position: relative;}
+            .bootstrap-table .fixed-table-toolbar{top: -44px;right: 0;}
+            .container-fluid{background: #fff;}
+
+            .searchBox{padding-bottom: 10px;margin-bottom: 0;display: flex;flex-wrap: wrap}
+            .searchBox > *{max-width: 150px;width: 32.5%;margin-right: 2px;}
+            .searchBox > input[inputtpye="daterange"]{min-width: 180px;}
+            .searchBox > button{width: auto;box-shadow: none}
+            .custom-tabs-line{display: flex;justify-content: space-between;padding: 0 10px;}
+            .tab-content{height: calc(100% - 42px);}
+            .tab-content .tab-pane{height: 100%;box-sizing: border-box}
+            div.inputTags-list input.inputTags-field{margin-left: 0;}
+            .label.label-info{margin-right: 6px;}
+            .layui-layer-content{padding: 0;}
+            .layui-layer-content .bootstrap-table{height: 100%!important;}
+            .layui-layer-content .fixed-table-container{height: calc(100% - 50px)!important;padding-bottom: 0!important;}
+            .detail{list-style: none;padding-left: 0;}
+            .detail span{margin-right: 6px;}
+            .total-data {max-width: initial;font-size: 16px;width: initial;margin-left: 20px;color: #F9354C;line-height: 34px;max-width: initial!important;width: initial!important;}
+
+            .low{color: #F9354C;padding-left: 4px;}
+            .fixed-table-container tbody td .th-inner, .fixed-table-container thead th .th-inner{overflow: initial}
+            [class*=hint--]:after{background: #b5a52f;color: #e8e8e8;text-shadow: none}
+            [class*=hint--]:before{border-left-color: #b5a52f;}
+        </style>
+	</head>
+	<body>
+		<div class="container-fluid">
+            <div class="custom-tabs-line tabs-line-bottom left-aligned">
+                <ul class="nav" role="tablist">
+                    <li class="active" data-type="product"><a href="#tab-product" role="tab" data-toggle="tab">商品</a></li>
+                    <li data-type="nav_f"><a href="#tab-nav_f" role="tab" data-toggle="tab">一级导航</a></li>
+                    <li data-type="nav_s"><a href="#tab-nav_s" role="tab" data-toggle="tab">二级导航</a></li>
+                    <li data-type="ad"><a href="#tab-ad" role="tab" data-toggle="tab">广告</a></li>
+                    <li data-type="page"><a href="#tab-page" role="tab" data-toggle="tab">页面</a></li>
+                    <li data-type="banner"><a href="#tab-banner" role="tab" data-toggle="tab">BANNER</a></li>
+                    <li data-type="other"><a href="#tab-other" role="tab" data-toggle="tab">操作</a></li>
+                </ul>
+                <div class="btn-group" style="display: flex;align-items: center;">
+                    <button class="btn btn-info btn-sm refresh" onclick="window.location.reload();" style="font-size:12px"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane fade in active" id="tab-product">
+                    <div class="searchBox btn-group" id="toolbar-product">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="momStartDay" rangeEnd="momEndDay" class="form-control time" name="mom_times" placeholder="环比时间" />
+                        <input type="text" inputTpye="daterange" rangeStart="productUpdateBeginTime" rangeEnd="productUpdateEndTime" class="form-control time" name="update_times" placeholder="产品最后更新时间" />
+                        <input type="text" inputTpye="daterange" rangeStart="upDownBeginTime" rangeEnd="upDownEndTime" class="form-control time" name="shelf_times" placeholder="产品上架时间" />
+                        <input type="text" class="form-control" name="productId" placeholder="ID">
+                        <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+                        <input class="classify" name="categoryId" style="width:100%;">
+                        <select class="selectpicker" data-live-search="true" name="aggregatePageId" title="聚合页ID"></select>
+                        <select class="selectpicker" data-live-search="true" name="aggregateModuleId" title="聚合模块ID"></select>
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                        <button class="btn btn-warning export" authority="MONITOR_EXPORT" onclick="app.methods.export();"><i class="fa fa-download"></i> 导出商品监测</button>
+                        <div class="total-data"></div>
+                    </div>
+                    <table id="table-product"></table>
+                </div>
+                <div class="tab-pane fade" id="tab-nav_f">
+                    <div class="searchBox btn-group" id="toolbar-nav_f">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+                        <select class="selectpicker" data-live-search="true" name="aggregatePageId" title="聚合页ID"></select>
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+                    <table id="table-nav_f"></table>                            
+                </div>
+                <div class="tab-pane fade" id="tab-nav_s">
+                    <div class="searchBox btn-group" id="toolbar-nav_s">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+                        <select class="selectpicker" data-live-search="true" name="aggregatePageId" title="聚合页ID"></select>
+                        <select class="selectpicker" data-live-search="true" name="aggregateModuleId" title="聚合模块ID"></select>
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+                    <table id="table-nav_s"></table>
+                </div>
+                <div class="tab-pane fade" id="tab-ad">
+                    <div class="searchBox btn-group" id="toolbar-ad">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <input type="text" class="form-control" name="adlkId" placeholder="ID">
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+                    <table id="table-ad"></table>                            
+                </div>
+                <div class="tab-pane fade" id="tab-page">
+                    <div class="searchBox btn-group" id="toolbar-page">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+                    <table id="table-page"></table>                            
+                </div>
+                <div class="tab-pane fade" id="tab-banner">
+                    <div class="searchBox btn-group" id="toolbar-banner">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <input type="text" class="form-control" name="bannerId" placeholder="ID">
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+                    <table id="table-banner"></table>                            
+                </div>
+                <div class="tab-pane fade" id="tab-other">
+                    <div class="searchBox btn-group" id="toolbar-other">
+                        <input type="text" inputTpye="daterange" tostring="true" rangeStart="startDay" rangeEnd="endDay" class="form-control time" name="times" placeholder="统计时间" />
+                        <!-- <input type="text" class="form-control" name="eventAims" placeholder="事件名"> -->
+                        <button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+                    <table id="table-other"></table>                            
+                </div>
+            </div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/input-tags/js/inputTags.jquery.js" ></script>
+    <script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+    <script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/easyui/jquery.easyui.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../dists/easyui/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+    <script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+    <script id="scrollBox" type="text/html">
+        <div class="scrollBox">
+            <% for(var i = 0; i < data.length; i++){ %>
+                <div class="temp" data-id="<%= data[i].id %>">
+                    <img class="img-responsive" src="<%= data[i].thumb %>">
+                    <p class="text-length-table-col">
+                        <%= data[i].name %>
+                    </p>
+                </div>
+            <% } %>
+        </div>
+    </script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table:{
+                    product: $("#table-product"),
+                    nav_f: $("#table-nav_f"),
+                    nav_s: $("#table-nav_s"),
+                    ad: $("#table-ad"),
+                    page: $("#table-page"),
+                    banner: $("#table-banner"),
+                    other: $("#table-other"),
+                },
+                selections:{
+                    campaign: [],
+                    group: [],
+                },
+                scope: cacheSessionStorage.getCache('scope'),
+                campaignData: [],
+                groupData: [],
+                linkData: [],
+                type: 'product'
+			},
+			methods : {
+                // 加载统计数据
+                initTotalData: function () {
+                    var params = tools.getParams('#toolbar-product')
+                    $.ajax({
+						type : "GET",
+						url : utils.prePath() + "/api/admin/monitor/analysis/product/clickSettleRate",
+						data : params,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+                                $('.total-data').html(`总点击：${result.body.TOTAL_CLICK}，总结算：${result.body.TOTAL_SUBMIT}，点击结算率：${result.body.TOTAL_CLICK_SUBMIT_RATE}%`)
+							}else{
+                                $('.total-data').html('总点击：--，总结算：--，点击结算率：--')
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...')
+							}
+						}
+					})
+                },
+				initTableProduct: function(){
+                    var authority_data = authoritys.useAuthority();
+                    if(!authority_data){
+                        toastr.error("权限不足，不允许访问...")
+                        return;
+                    }
+					app.data.table.product.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        sortable: true,
+                        url: utils.prePath() + '/api/admin/monitor/analysis/product/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            params.sortName && params.sortOrder && (params.sort = params.sortName + ',' + params.sortOrder);
+                            delete params['pageSize'];
+                            delete params['pageNumber'];
+                            delete params['sortName'];
+                            delete params['sortOrder'];
+                            return Object.assign(params, tools.getParams('#toolbar-product'));
+                        },
+						columns: [{
+                            field: 'product_id',title: '商品ID',align: 'center',
+                        },{
+                            field: 'product_title',title: '标题'
+                        },{
+                            field: 'product_price',title: '商品主图',formatter: function(value, row, index, field) {
+                                return tools.formatterFunction.proImage(row.product_image, row.product_id, row.product_title);
+                            }
+                        },{
+                            field: 'product_price',title: '售卖价格',formatter: function(value, row, index, field) {
+                                return (row.min_price == row.max_price) ? row.min_price : (row.min_price + '~' +  row.max_price);
+                            }
+                        },
+                        // {
+                        //     field: 'SHOW',title: '展示(环比)',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                        //         return '<strong>' + value + '</strong>( ' + row.SHOW_MOM + ' )' 
+                        //     }
+                        // },
+                        {
+                            field: 'VIEW',title: '点击(环比)',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return '<strong>' + value + '</strong>( ' + row.VIEW_MOM + ' )' 
+                            }
+                        },
+                        // {
+                        //     field: 'SHOW_VIEW_RATE',title: '<span class="hint--left" aria-label="点击/展示">点击率(环比)</span>',align: 'center',formatter: function(value, row, index, field) {
+                        //         return (value - row.SHOW_VIEW_RATE_MOM < 0 ? '<i class="fa fa-angle-double-down low"></i>' : '') + '<strong class="' + (value - row.SHOW_VIEW_RATE_MOM < 0 ? 'low' : '') + '">' + (value * 100).toFixed(2) + '%' + '</strong>( ' + (row.SHOW_VIEW_RATE_MOM * 100).toFixed(2) + '%' + ' )' 
+                        //     }
+                        // },
+                        {
+                            field: 'ADD_TO_CART',title: '加购(环比)',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return '<strong>' + value + '</strong>( ' + row.ADD_TO_CART_MOM + ' )' 
+                            }
+                        },{
+                            field: 'CLICK_RATE',title: '<span class="hint--left" aria-label="(加购 + 立即购买)/打开落地页">加购率(环比)</span>',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return (value - row.CLICK_RATE_MOM < 0 ? '<i class="fa fa-angle-double-down low"></i>' : '') + '<strong class="' + (value - row.CLICK_RATE_MOM < 0 ? 'low' : '') + '">' + (value * 100).toFixed(2) + '%' + '</strong>( ' + (row.CLICK_RATE_MOM * 100).toFixed(2) + '%' + ' )' 
+                            }
+                        },{
+                            field: 'BUY_NOW',title: '立即购买(环比)',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return '<strong>' + value + '</strong>( ' + row.BUY_NOW_MOM + ' )' 
+                            }
+                        },{
+                            field: 'SUBMIT',title: '结算商品(环比)',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return '<strong>' + value + '</strong>( ' + row.SUBMIT_MOM + ' )' 
+                            }
+                        },{
+                            field: 'VIEW_SUBMIT_RATE',title: '<span class="hint--left" aria-label="结算/打开落地页">点击结算率(环比)</span>',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return (value - row.VIEW_SUBMIT_RATE_MOM < 0 ? '<i class="fa fa-angle-double-down low"></i>' : '') + '<strong class="' + (value - row.VIEW_SUBMIT_RATE_MOM < 0 ? 'low' : '') + '">' + (value * 100).toFixed(2) + '%' + '</strong>( ' + (row.VIEW_SUBMIT_RATE_MOM * 100).toFixed(2) + '%' + ' )' 
+                            }
+                        },{
+                            field: 'SUBMIT_RATE',title: '<span class="hint--left" aria-label="结算/(加购 + 立即购买)">加购结算率(环比)</span>',align: 'center',sortable: true,formatter: function(value, row, index, field) {
+                                return (value - row.SUBMIT_RATE_MOM < 0 ? '<i class="fa fa-angle-double-down low"></i>' : '') + '<strong class="' + (value - row.SUBMIT_RATE_MOM < 0 ? 'low' : '') + '">' + (value * 100).toFixed(2) + '%' + '</strong>( ' + (row.SUBMIT_RATE_MOM * 100).toFixed(2) + '%' + ' )' 
+                            }
+                        },{
+                            field: 'updated_at',title: '产品最后更新时间',formatter: function(value, row, index, field) {
+                                return tools.formatterFunction.time(value);
+                            }
+                        },{
+                            field: 'up_down_time',title: '产品上架时间',formatter: function(value, row, index, field) {
+                                if(row.status == 10){
+                                    return tools.formatterFunction.time(value);
+                                }else{
+                                    return '商品已下架'
+                                }
+                            }
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.product);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTableNav_f: function(){
+					app.data.table.nav_f.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/monitor/analysis/nav-f/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-nav_f'));
+                        },
+						columns: [{
+                            field: 'navigation_id',title: '一级导航ID',align: 'center',
+                        },{
+                            field: 'page_name',title: '导航名称',
+                        },{
+                            field: 'click_count',title: '点击数',align: 'center',
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.nav_f);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTableNav_s: function(){
+					app.data.table.nav_s.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/monitor/analysis/nav-s/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-nav_s'));
+                        },
+						columns: [{
+                            field: 'navigation_id',title: '二级导航ID',align: 'center',
+                        },{
+                            field: 'page_name',title: '一级名称',
+                        },{
+                            field: 'module_name',title: '二级名称',
+                        },{
+                            field: 'click_count',title: '点击数',align: 'center',
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.nav_s);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTableAd: function(){
+					app.data.table.ad.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/monitor/analysis/ad/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-ad'));
+                        },
+						columns: [{
+                            field: 'ad_id',title: '广告ID',align: 'center',
+                        },{
+                            field: 'link_name',title: '名称',
+                        },{
+                            field: 'link_url',title: '页面链接',formatter: function(value, row, index, field) {
+                                var val =  value.replace(/\$/g,'&')
+                                return val
+                            }
+                        },{
+                            field: 'affiliate',title: 'affiliate',align: 'center',
+                        },{
+                            field: 'show_count',title: '数量',align: 'center',
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.ad);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTablePage: function(){
+					app.data.table.page.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/monitor/analysis/page/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-page'));
+                        },
+						columns: [{
+                            field: 'event_aims',title: '页面链接',formatter: function(value, row, index, field) {
+                                var val =  value.replace(/\$/g,'&')
+                                return val
+                            }
+                        },{
+                            field: 'show_count',title: '打开数量',align: 'center',
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.page);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTableBanner: function(){
+					app.data.table.banner.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/monitor/analysis/banner/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-banner'));
+                        },
+						columns: [{
+                            field: 'banner_id',title: 'BANNER ID',align: 'center',
+                        },{
+                            field: 'banner_name',title: 'BANNER名称',
+                        },{
+                            field: 'click_count',title: '点击',align: 'center'
+                        },{
+                            field: 'location_url',title: '地址',
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.banner);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                initTableOther: function(){
+					app.data.table.other.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/monitor/analysis/event/list',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            params = Object.assign(params, tools.getParams('#toolbar-other'))
+                            if(params.eventAims){
+                                var val = '';
+                                switch(params.eventAims.trim()){
+                                    case '订单查询': val = 'ORDER_SEARCH';break;
+                                    case '复制订单号': val = 'COPY';break;
+                                    case '点击结账按钮': val = 'INIT_CHECKOUT';break;
+                                    case '点击确认结账按钮': val = 'CHECKOUT';break;
+                                    case '去购物车': val = 'CART_ICON';break;
+                                    case '打开包裹详情': val = 'OPEN_Packge';break;
+                                    case '点击足迹按钮': val = 'FOOT';break;
+                                    case '点击提醒发货按钮（仅第一次）': val = 'DING';break;
+                                    case '再次购买': val = 'BUY_AGAIN';break;
+                                    case '优惠券确认': val = 'COUPON';break;
+                                    case '返回主页': val = 'HOME_ICON';break;
+                                    case '确认付款方式': val = 'PAYTYPE';break;
+                                    case '确认宅配地址': val = 'ADDRESS_HOME';break;
+                                    case '确认超商地址': val = 'ADDRESS_MARKET';break;
+                                    case '联系客服': val = 'CUSTOM_SERVICE';break;
+                                    case '追踪物流': val = 'OPEN_EXPRESS';break;
+                                    case '信用卡结账（确认支付前一步骤）': val = 'STRIPE';break;
+                                    case '打开快捷方式': val = 'SHORT_CUT';break;
+                                    case '打开分享按钮': val = 'SHARE';break;
+                                    case '退換貨': val = 'RETURN_BTN';break;
+                                    case '退換貨列表-包裹': val = 'PACKAGE_RETURN';break;
+                                    case '退換貨列表-訂單': val = 'ORDER_RETURN';break;
+                                    case '退货流程': val = 'RETURN';break;
+                                    case '换货流程': val = 'EXCHANGE';break;
+                                    case '下载app': val = 'Download';break;
+                                    case 'ios下载': val = 'Download_IOS';break;
+                                }
+                            }
+                            params.eventAims = val;
+                            return params;
+                        },
+						columns: [{
+                            field: 'event_aims',title: '事件名称',formatter: function(value, row, index, field) {
+                                var val = '--';
+                                switch(value){
+                                    case 'Download': val = '下载app';break;
+                                    case 'Download_IOS': val = 'ios下载';break;
+                                    case 'ORDER_SEARCH': val = '订单查询';break;
+                                    case 'COPY': val = '复制订单号';break;
+                                    case 'INIT_CHECKOUT': val = '点击结账按钮';break;
+                                    case 'CHECKOUT': val = '点击确认结账按钮';break;
+                                    case 'CART_ICON': val = '去购物车';break;
+                                    case 'OPEN_Packge': val = '打开包裹详情';break;
+                                    case 'FOOT': val = '点击足迹按钮';break;
+                                    case 'DING': val = '点击提醒发货按钮（仅第一次）';break;
+                                    case 'BUY_AGAIN': val = '再次购买';break;
+                                    case 'COUPON': val = '优惠券确认';break;
+                                    case 'HOME_ICON': val = '返回主页';break;
+                                    case 'PAYTYPE': val = '确认付款方式';break;
+                                    case 'ADDRESS_HOME': val = '确认宅配地址';break;
+                                    case 'ADDRESS_MARKET': val = '确认超商地址';break;
+                                    case 'CUSTOM_SERVICE': val = '联系客服';break;
+                                    case 'OPEN_EXPRESS': val = '追踪物流';break;
+                                    case 'STRIPE': val = '信用卡结账（确认支付前一步骤）';break;
+                                    case 'SHORT_CUT': val = '打开快捷方式';break;
+                                    case 'SHARE': val = '打开分享按钮';break;
+                                    case 'RETURN_BTN': val = '退換貨';break;
+                                    case 'PACKAGE_RETURN': val = '退換貨列表-包裹';break;
+                                    case 'ORDER_RETURN': val = '退換貨列表-訂單';break;
+                                    case 'RETURN': val = '退货流程';break;
+                                    case 'EXCHANGE': val = '换货流程';break;
+                                }
+                                return val;
+                            }
+                        },{
+                            field: 'click_count',title: '数量',align: 'center',
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.other);
+							authoritys.useAuthority();
+					    },
+					}));
+                },
+                export: function(){
+                    tools.exportByFrom('/api/admin/monitor/analysis/product/list/export',tools.getParams('#toolbar-product'));
+                },
+                // 查询
+                refresh: function(){
+                    switch(app.data.type){
+                        case 'product': app.data.table.product.bootstrapTable('refresh');app.methods.initTotalData();;break;
+                        case 'nav_f': app.data.table.nav_f.bootstrapTable('refresh');;break;
+                        case 'nav_s': app.data.table.nav_s.bootstrapTable('refresh');;break;
+                        case 'ad': app.data.table.ad.bootstrapTable('refresh');;break;
+                        case 'page': app.data.table.page.bootstrapTable('refresh');;break;
+                        case 'banner': app.data.table.banner.bootstrapTable('refresh');;break;
+                        case 'other': app.data.table.other.bootstrapTable('refresh');;break;
+                    }
+                },
+                initTab: function(){
+                    $('.custom-tabs-line > ul li').on('click', function(){
+                        var authority_data = authoritys.useAuthority();
+                        if(!authority_data){
+                            toastr.error("权限不足，不允许访问...")
+                            return;
+                        }
+                        app.data.type = $(this).data('type');
+                        if($(this).hasClass('active')){
+                            app.data.table[app.data.type].bootstrapTable('refresh');
+                        }else{
+                            $('#toolbar input:not(.time)').val('');
+                            switch(app.data.type){
+                                case 'product': app.methods.initTableProduct();break;
+                                case 'nav_f': app.methods.initTableNav_f();break;
+                                case 'nav_s': app.methods.initTableNav_s();break;
+                                case 'ad': app.methods.initTableAd();break;
+                                case 'page': app.methods.initTablePage();break;
+                                case 'banner': app.methods.initTableBanner();break;
+                                case 'other': app.methods.initTableOther();break;
+                            }
+                        }
+                    });
+                },
+                initSelect : function(){
+                    var scopeData = cacheSessionStorage.getCache('scope');
+                    tools.rangeTime('input[name="times"]','thisDay',true);
+                    tools.rangeTime('input[name="mom_times"]','yesterday',true,'yesterday');
+                    tools.rangeTime('input[name="update_times"]',true);
+                     tools.rangeTime('input[name="shelf_times"]',true); //新增产品上架时间
+                    tools.renderSelect.scope('select[name="scopeId"]');
+                    tools.renderSelect.organizes('#toolbar-product');
+                    tools.renderSelect.categoryTree('.classify');
+                    // 三级
+                    $('select[name="scopeId"]').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+                        var scopeId = $('select[name="scopeId"]').val()
+                        if(!scopeId || scopeId == ''){
+                            $('select[name="aggregatePageId"]').html('').selectpicker('destroy').selectpicker();
+                            $('select[name="aggregateModuleId"]').html('').selectpicker('destroy').selectpicker();
+                            return
+                        }
+                        app.methods.initAggregatePageSelect(scopeId);
+                    });
+                },
+                initAggregatePageSelect: function(pageId){
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + "/api/admin/aggregate/page/" + pageId,
+                        success: function(result){
+                            if(result.statusCode == 'OK'){
+                                var optHtml = '<option value="">全部聚合页</option>';
+                                result.body.map(function(e,i){
+                                    if(e.parentId == 0){
+                                        optHtml += '<option value="'+e.id+'">' + e.name + '</option>';
+                                    }
+                                })
+                                $('select[name="aggregatePageId"]').html(optHtml).selectpicker('destroy').selectpicker().on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+                                    var aggregatePageId = $('select[name="aggregatePageId"]').val()
+                                    if(!aggregatePageId || aggregatePageId == ''){
+                                        $('select[name="aggregateModuleId"]').html('').selectpicker('destroy').selectpicker();
+                                    }else{
+                                        app.methods.initAggregatePageModuleSelect(aggregatePageId);
+                                    }
+                                });
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+                initAggregatePageModuleSelect: function(aggregatePageId){
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + "/api/admin/aggregate/page/module/" + aggregatePageId,
+                        success: function(result){
+                            if(result.statusCode == 'OK'){
+                                var optHtml = '<option value="">全部聚合模块</option>';
+                                result.body.map(function(e,i){
+                                    optHtml += '<option value="'+e.id+'">' + e.name + '</option>';
+                                })
+                                $('select[name="aggregateModuleId"]').html(optHtml).selectpicker('destroy').selectpicker();
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                }
+			},
+			init : function(){
+                app.methods.initSelect();
+                app.methods.initTab();
+                app.methods.initTotalData(); // 加载统计数据
+                app.methods.initTableProduct();
+                $('body').keyup(function(event){
+                    event.keyCode ==13 && app.methods.refresh();
+                });
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

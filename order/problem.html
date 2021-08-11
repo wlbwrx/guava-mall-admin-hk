@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>问题件订单</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.commentsList{list-style: none;padding: 0;margin: 0;}
+			.commentsList li{border-bottom: 1px solid #ddd;padding: 6px;display: block;}
+			.commentsList li:last-child{border-bottom: 0;}
+			.commentsList li span{display: block;white-space:nowrap;}
+
+			.checkReturnInfoForm ul{list-style: none;padding: 0;}
+			.checkReturnInfoForm ul li{display: flex;align-items: center;justify-content: center;border-bottom: 1px solid #ddd;background: #fff;}
+			.checkReturnInfoForm ul li *{display: block;}
+			.checkReturnInfoForm ul li *:nth-child(1){width: 200px;}
+			.checkReturnInfoForm ul li *:nth-child(2){width: 60px;}
+			.checkReturnInfoForm ul li *:nth-child(3){width: 60px;}
+			.checkReturnInfoForm ul li *:nth-child(4){width: 180px;}
+
+			.col-sm-10{display: flex;justify-content: center;align-items: center;}
+			
+			.refreshTracking{display: block;}
+			ul.addressBox{cursor: default;text-decoration: none}
+
+			.errBox td{padding: 6px 12px;}
+
+			.trackerInfo h3{margin: 12px 0 0 0;font-size: 16px;}
+            .trackerInfo table{margin-top: 12px;}
+			.trackerInfo table th{font-size: 14px!important;}
+
+			.sms_models_check{background-color: rgba(255, 204, 204, 1);}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+						</div>
+					</div>
+                    <div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="trackerLastUpdateTimeBeginTime" rangeEnd="trackerLastUpdateTimeEndTime" class="form-control" name="trackerLastUpdateTime" placeholder="物流更新时间" />
+                        <input type="text" class="form-control" name="deliveryCode" placeholder="发货单号">
+                        <input type="text" class="form-control" name="trackingNumber" placeholder="物流单号">
+                        <input type="text" class="form-control" name="consignee" placeholder="收货人姓名">
+                        <input type="text" class="form-control" name="tel" placeholder="收货人电话">
+                        <input type="text" class="form-control" name="customerServiceFeedback" placeholder="反馈内容">
+						<select name="scopeId" class="selectpicker" data-live-search="true" data-title="商城"></select>
+						<select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+						<!-- <select class="selectpicker" data-live-search="true" name="ifFeedBack">
+							<option value="">全部反馈状态</option>
+							<option value="0">未反馈</option>
+							<option value="1">已反馈</option>
+						</select> -->
+						<select class="selectpicker" data-live-search="true" name="solveType">
+							<option value="">全部处理类型</option>
+							<option value="1">已处理</option>
+							<option value="2">待处理</option>
+						</select>
+
+						<select class="selectpicker" data-live-search="true" name="undeliveredOrderType"  id="undeliveredOrderType">
+						
+						</select>
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+						
+						<button class="btn btn-danger" onclick="app.methods.oneClickSend()">一键发送</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="trackerInfo">
+        <div class="trackerInfo">
+            <span class="label label-success"><%= status %></span>
+            <h3>订单编号：<span><%= orderCode %></span></h3>
+            <h3>货运编号：<span><%= destinationCode %></span></h3>
+            <h3>货运公司：<span><%= carrierCode %></span></h3>
+            <h3>包裹编号：<span><%= trackingNumber %></span></h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>配送状态</th>
+                        <th>状态描述</th>
+                        <th>详情</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(var i = 0;i < trackinfo.length;i++){ %>
+                        <tr>
+                            <td style="text-align:center;"><%= i + 1 %></td>
+                            <td><%= trackinfo[i].checkpoint_status %></td>
+                            <td><%= trackinfo[i].StatusDescription %></td>
+                            <td><%= trackinfo[i].Details %></td>
+                            <td><%= trackinfo[i].Date %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <h4></h4>
+        <p></p>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                deliveryData: [],
+				state: utils.getURLParam('status'),
+				smsList:[],
+				checkModelId:null
+			},
+			methods : {
+				exportData : function(){
+					var param = tools.getParams();
+					if(app.data.state){
+						param['status'] = app.data.state;
+					}
+					tools.exportByFrom('/api/admin/erp/delivery/way/export', param);
+				},
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/delivery/undelivered/list',
+						columns: app.methods.optionByAuthority(),
+						clickToSelect:false,
+						onLoadSuccess : function(data){
+							app.data.deliveryData = data.body.content;
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: '',title: '',align: 'center', checkbox: true,
+					},{
+						field: 'tracking_number',title: '貨運編號',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span style="text-decoration: underline" onclick="app.methods.showTracking(\''+value+'\',\''+row.delivery_code+'\')">'+value+'</span>'
+                        }
+					},{
+						field: 'delivery_code',title: '发货单号',align: 'center',
+					}, {
+						field: 'created_at',title: '打包時間',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					},{
+						field: 'agency_company',title: '貨運公司',align: 'center',
+					},{
+						field: 'tracker_status',title: '物流资讯',
+						formatter: function (value, row, index, field) {
+							return '<div onclick="app.methods.refreshTracking(\''+row.tracking_number+'\')"><p class="label label-default">' + tools.formatterFunction.trackerStatus(row.tracker_status) + '</p><p class="label label-info">'+tools.formatterFunction.time(row.last_update_time)+'</p></div>'
+                        }
+					},{
+						field: 'tracker_created_at',title: '物流创建时间',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value)
+                        }
+					},{
+						field: 'order_sku_info',title: '<span class="columnsTit">订单信息</span><ul class="orderProductInfoBox"><li><span>订单号</span><span><ul class="orderProductInfo"><li><span>商品图</span><span>商品ID</span><span>产品标题</span><span>条码</span><span>数量</span><span>价格</span></li></ul></span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return '<div data-index="' + index + '">' + tools.formatterFunction.orderSkuInfos1(value) + '</div>';
+                        }
+					},{
+						field: 'delivery_price',title: '待收金额',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight_price == 0 || row.freight_price == null ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight_price ) + '</div></div>';
+						},
+					},{
+						field: 'undeliveredOrderTypeDesc',title: '问题类型',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span style="text-decoration: underline" onclick="app.methods.showParamsTable({tel : \''+ row.tel +'\'})">'+ (row.undeliveredOrderTypeDesc || '--')+'</span>'
+                        }
+					}, {
+						field: '',title: '操作',align: 'center',minWidth:180,
+						formatter: function (value, row, index) {
+							return row.sendCustomerSms == 1 ? '<button type="button" class="btn btn-success btn-xs" onclick="app.methods.sendMes(' + index + ')">发送短信</button>' : ''
+						}
+					},{
+						field: 'consignee',title: '收货人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(value, row.tel, row.email, row.address, index);
+                        }
+					},{
+						field: 'direct_cancel',title: '用户信用',minWidth:80,
+						formatter: function (value, row, index, field) {
+							if(value){
+								return '<p style="padding: 1px 4px;margin-left: 5px; background: #0c1312; color: #fff; display: inline-block;  border-radius:4px; font-size: 12px;">黑名单</p>';
+							}else if(value==false){
+								return'<p style="padding: 1px 4px;margin-left: 5px; background: #7b7b7b; color: #fff; display: inline-block;  border-radius:4px; font-size: 12px;">灰名单</p>';
+							}else if(value==null){
+								return'<p style="padding: 1px 4px;margin-left: 5px; background: orange; color: #fff; display: inline-block;  border-radius:4px; font-size: 12px;">信用良好</p>';
+							}
+						}
+					},{
+						field: 'customer_service_feedback',title: '客服处理反馈',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span style="text-decoration: underline" onclick="app.methods.customerFeedback(' + index + ')">'+ (value || '--')+'</span>'
+                        }
+					},{
+						field: 'comments',title: '订单备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							var html = '<ul class="commentsList">'
+							value.split(' &,& ').map(function(e){
+								html += '<li><span>' + e.split(';')[0] + '</span><span>' + e.split(';')[1] + '</span></li>'
+							})
+							html += '</ul>'
+							return html;
+                        }
+					},{
+						field: 'exceptionInfo',title: '异常信息',align: 'center',
+					},{
+						field: 'storehouse_name',title: '发货仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + value + '</span>';
+						}
+					}];
+                    return option;
+				},
+
+				subSms:function(){
+					var checkList = $("tbody .selected")
+					if(checkList.length>0){
+						var deliveryCodes = []
+						for(var i=0;i<checkList.length;i++){
+							deliveryCodes.push(app.data.deliveryData[checkList[i].rowIndex - 1].delivery_code)
+						}
+
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + "/api/admin/erp/delivery/undelivered/batchSendSmsByTemplate",
+							data: JSON.stringify({
+								deliveryCodes : deliveryCodes,
+								smsTemplateId : app.data.checkModelId
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('操作成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}else{
+						toastr.error('请勾选需要发送短信的问题件...');
+					}
+				},
+				checkSmsModel:function(id){
+					$(".sms_models").removeClass('sms_models_check');
+					$("#sms_models_"+id).addClass('sms_models_check');
+					app.data.checkModelId = id
+				},
+				oneClickSend:function(code){
+				
+					var checkList = $('tbody .selected')
+					var smsList = app.data.smsList
+					var modelHtml = ""
+					if(checkList.length>0){
+						app.data.checkModelId = smsList[0].templateId
+						for(var i=0;i<smsList.length;i++){
+							if(i==0){
+								modelHtml+='<div id="sms_models_'+smsList[i].templateId+'" onclick="app.methods.checkSmsModel(' + smsList[i].templateId + ')" class="sms_models sms_models_check" style="padding:10px"><div style="font-size:14px;font-weight:600;line-height:20px">'+smsList[i].remark+':</div><div   style="font-size:12px;padding:10px;">'+smsList[i].templateContent+'</div></div>'
+							}else{
+								modelHtml+='<div id="sms_models_'+smsList[i].templateId+'" onclick="app.methods.checkSmsModel(' + smsList[i].templateId + ')" class="sms_models" style="padding:10px"><div style="font-size:14px;font-weight:600;line-height:20px">'+smsList[i].remark+':</div><div   style="font-size:12px;padding:10px;">'+smsList[i].templateContent+'</div></div>'
+							}
+						}
+						modelHtml +='<button class="btn btn-success" style="margin:20px 81px 5px 81px;width:80px" onclick="app.methods.subSms()">发送</button>'
+						layer.open({
+							type: 1,
+							title: '选择短信模板',
+							shadeClose: true,
+							shade: false,
+							area: ['300px', 'auto'],
+							content: modelHtml
+						});
+					}else{
+						toastr.error('请勾选需要发送短信的问题件...');
+					}
+				},
+				refreshTracking: function(code){
+					if(code == '--'){
+						toastr.warning('货运编号格式错误');
+						return
+					}
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/delivery/tracker/update/" + code,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('快递信息查询完成...');
+								app.data.table.bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				showParamsTable : function(_params){
+					layer.open({
+						type: 1,
+						title: '历史订单数据',
+						shadeClose: true,
+						shade: false,
+						maxmin: true, //开启最大化最小化按钮
+						area: ['1200px', '650px'],
+						content: '<table id="table-params"></table>'
+					});
+					
+					$('#table-params').bootstrapTable({
+						pagination : true , 
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						templateView : false,
+						pageNumber : 1, 
+						pageSize : 30, 
+						pageList : [30 , 60 , 100],
+						toolbarAlign : 'left',
+						queryParamsType : 'page' ,
+						queryParams : function(params){
+							Object.assign(params , _params);
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							return params;
+						},
+						url: utils.prePath() + '/api/admin/erp/analysis/order',
+						totalField: 'body.totalElements',
+						dataField: 'body.content',
+						columns: [{
+							field: 'order_code',title: '订单号',align: 'center',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.warningDays(value, row.days);
+							}
+						}, {
+							field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="analysisSkuBox"><li><span>產品ID</span><span>品名</span><span>條碼</span><span>數量</span><span>折扣总价</span><span>商品狀態</span></li></ul>',
+							formatter: function (value, row, index, field) {
+								var skuData = tools.specialStringToArray(value);
+								var html = '<ul class="analysisSkuBox">';
+								skuData.map(function(e){
+									html += '<li>'+
+										'<span>' + e.product_id + '</span>'+
+										'<span style="text-align:left;">' + e.product_title + '（'+e.product_sku_name+'）</span>'+
+										'<span>' + e.product_sku_barcode  + '</span>'+
+										'<span>' + e.product_quantity + '</span>'+
+										'<span class="money">' + e.product_discount_total_price + '</span>'+
+										'<span>' + tools.formatterFunction.orderProStatus(e.order_product_status) + '</span>'+
+									'</li>';
+								});
+								html += '</ul>';
+								return html;
+							}
+						},{
+							field: 'payment_type',title: '付款方式',align: 'center',
+							formatter: function(value, row, index, field) {
+								return tools.formatterFunction.paymentStatus(value);
+							}
+						}, {
+							field: 'order_status',title: '订单状态',align: 'center',
+							formatter: function(value, row, index, field) {
+								return tools.formatterFunction.orderStatus(value);
+							}
+						}, {
+							field: 'order_total_price',title: '折扣总价',align: 'center',
+							formatter: function (value, row, index, field) {
+								return '<span class="money">' + value + '</span>';
+							}
+						},{
+							field: 'remark',title: '备注',minWidth:200,
+						},{
+							field: 'exceptionInfo',title: '异常信息',minWidth:120,
+						},{
+							field: 'ip_info',title: 'IP',minWidth:120,
+						}, {
+							field: 'created_at',title: '下单时间',align: 'center',minWidth:90,
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.time(value);
+							}
+						}, {
+							field: 'consignee',title: '收貨人',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.addressText(row.consignee, row.tel, row.city, row.district, row.detail);
+							}
+						}],
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+						}
+					});
+				},
+				showHistory : function(code){
+					layer.load();  
+					var data = [];
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/order/history/" + code,
+						async: false,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								data = data.concat(result.body);
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+					var f_code = code.split('-')[0];
+					if(f_code != code){
+						$.ajax({
+							type: "GET",
+							url: utils.prePath() + "/api/admin/erp/order/history/" + f_code,
+							async: false,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									//data = data.concat(result.body);
+									data = result.body.concat(data);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					}
+					app.methods.initHistory(data)
+				},
+				initHistory: function(data){
+					if(data && data.length > 0){
+						var historytraceContent = '<ul class="list-unstyled activity-timeline">' ; 
+						$.each(data, function(i, info){
+							var sku_info = tools.specialStringToArray(info.sku_infos);
+							var html = '<table class="table table-bordered" style="margin-left: 40px;border-left: 1px solid #eaeaea;"><thead><tr><td>发货单号</td><td>产品ID</td><td>SKU条码</td><td>产品图</td><td>数量</td><td>退换货表ID</td></tr></thead></tbody>'
+							sku_info.map(function(e){
+								html += '<tr><td>'+(e.delivery_code || '')+'</td><td>'+e.product_id+'</td><td>'+e.product_sku_barcode+'</td><td>'+tools.formatterFunction.proImage(e.product_sku_img)+'</td><td>'+e.quantity+'</td><td>'+(e.return_change_id || '')+'</td></tr>'
+							})
+							html += '</tbody></table>'
+							historytraceContent +=  '<li>'+
+								'<i class="fa fa-comment activity-icon"></i>'+
+								'<p>'+ info.opreator + ' 在 <strong>[' + moment(info.created_at).format('YYYY-MM-DD HH:mm:ss z') + ']</strong> 对 '+info.order_code+' 进行了 <strong>[' + info.event_name +']</strong> 操作 '+
+								'<span class="timestamp">SKU种类: '+info.sku_kind+' , SKU总数 : '+info.sku_amount+'</span></p>'+html+'</li>';
+						});
+						historytraceContent += '</ul>';
+						layer.open({
+							type: 1,
+							content: historytraceContent,
+							area: ['100vw' , '100vh'],
+							title: '定单记录追踪'
+						});
+					}else{
+						toastr.success('暂时没有日志记录~_~...');
+					}
+					layer.closeAll('loading');
+				},
+				sendMes: function(index){
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/delivery/undelivered/store/template/" + app.data.deliveryData[index].delivery_code,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								layer.prompt({
+									title: '发送短信',
+									value: result.body.templateContent,
+									formType: 2
+								}, function (text, i) {
+									$.ajax({
+										type: "POST",
+										url: utils.prePath() + "/api/admin/erp/delivery/undelivered/sendSmsByTemplate",
+										data: JSON.stringify({
+											deliveryCode : app.data.deliveryData[index].delivery_code,
+											smsTemplateId : result.body.templateId,
+											smsContent : text
+										}),
+										success: function (result) {
+											if (result.statusCode == 'OK') {
+												toastr.success('发送成功...');
+												layer.closeAll();
+											} else {
+												toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+											}
+										}
+									});
+								});
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				customerFeedback: function(index){
+					layer.prompt({
+                        title: '客服反馈',
+                        value: app.data.deliveryData[index].customer_service_feedback,
+                        formType: 2
+                    }, function (text, i) {
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + "/api/admin/erp/delivery/undelivered/customerServiceFeedback",
+							data: JSON.stringify({
+								deliveryCode : app.data.deliveryData[index].delivery_code,
+								customerServiceFeedback : text
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('操作成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+				},
+				getSms: function(){
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/delivery/undelivered/templateList",
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								app.data.smsList = result.body
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				showTracking: function(trackingNumber,delivery_code){
+					if(trackingNumber == '--'){
+						toastr.warning('货运编号格式错误');
+						return
+					}
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/erp/delivery/tracker/" + trackingNumber + '/' + delivery_code,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								var data = result.body;
+								if(!data.originInfo || data.originInfo == 'null'){
+									toastr.error('查询不到物流信息！')
+									return false;										
+								}
+								data['trackinfo'] = [];
+								if(!JSON.parse(data.originInfo).trackinfo){
+									toastr.error('查询不到物流信息！')
+									return false;										
+								}
+								JSON.parse(data.originInfo).trackinfo.map(function(e){
+									e.checkpoint_status = tools.formatterFunction.trackerStatus(e.checkpoint_status);
+									data.trackinfo.push(e)
+								})
+								data.status = tools.formatterFunction.trackerStatus(data.status);
+								var index = layer.open({
+									type: 1,
+									content: template('trackerInfo', data),
+									area: ['800px', 'auto'],
+									title: '查看货运详情',
+									skin: 'trackerInfoBox',
+									closeBtn: 1
+								});
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				initSelect : function(){
+					tools.renderSelect.storehouse('select[name="storehouseId"]');    
+					tools.renderSelect.scope('select[name="scopeId"]');    
+					tools.renderSelect.undeliveredType('select[name="undeliveredOrderType"]')     
+					tools.rangeTime('input[name="trackerLastUpdateTime"]');
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				app.methods.getSms();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

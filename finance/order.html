@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>月訂單</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			ul.addressBox{cursor: default;text-decoration: none;}            
+			.trackerInfo h3{margin: 12px 0 0 0;font-size: 16px;}
+			.trackerInfo table{margin-top: 12px;}
+			.trackerInfo table th{font-size: 14px!important;}
+			.commentsList{list-style: none;padding: 0;margin: 0;}
+			.commentsList li{border-bottom: 1px solid #ddd;padding: 6px;}
+			.commentsList li:last-child{border-bottom: 0;}
+			.commentsList li span{display: block;;white-space:nowrap;float: left;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">月訂單</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+                            <div class="btn-group">
+                        		<button class="btn btn-warning btn-sm export" authority="FINANCE_EXPORT" onclick="tools.exportByFrom('/api/admin/order-finance/export');"><i class="fa fa-download"></i>&nbsp;&nbsp;导出</button>
+                            </div>
+							<span id="analysisMes"></span>
+						</div>	
+					</div>	
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="orderSubmitBeginTime" rangeEnd="orderSubmitEndTime" class="form-control" name="submitOrderTimes" placeholder="选择时间" />
+						<input type="text" class="form-control" name="orderCode" placeholder="订单号">
+						<select class="selectpicker" data-live-search="true" name="orderStatus"></select>
+						<select class="selectpicker" data-live-search="true" name="orderProductStatus"></select>
+						<select class="selectpicker" data-live-search="true" name="isOrderProductStatusChange">
+							<option value="">sku状态变化</option>
+							<option value="0">无变化</option>
+							<option value="1">有变化</option>
+						</select>
+						<select class="selectpicker" data-live-search="true" name="scopeId"></select>
+						<input type="text" class="form-control" name="productId" placeholder="产品ID">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+						<input type="text" class="form-control" name="deliveryCode" placeholder="发货单号">
+						<input type="text" class="form-control" name="trackingNumber" placeholder="货运编号">
+						<select class="selectpicker" data-live-search="true" name="paymentType"></select>	
+						<select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/jquery.table2excel.js"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+                table : $("#table-main"),
+                financeData: [],
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					} 
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/order-finance/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.financeData = data.body.content
+							app.data.initUploadState == false && app.methods.initPushFile();
+					    },  
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'order_code',title: '訂單號',align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.warningDays(value, row.days);
+                        }
+					}, {
+						field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="productInfoFinanceBox"><li><span>產品ID</span><span>品名</span><span>條碼</span><span>數量</span><span>折扣总价</span><span>平均采购价</span><span>系统采购价</span><span>sku状态(旧)</span><span>sku状态(当前)</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							if(value){
+								return tools.formatterFunction.skuInfosFinance(value);
+							}else{
+								return ''
+							}
+                        }
+					},{
+						field: 'payment_type',title: '付款方式',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.paymentStatus(value);
+						}
+					}, {
+						field: 'order_status',title: '訂單狀態',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.orderStatus(value);
+						}
+					},{
+						field: 'order_total_price',title: '總價',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight == 0 ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.order_freight ) + '</div></div>';
+                        }
+					}, {
+						field: 'storehouse_name',title: '發貨倉',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					}, {
+						field: 'scope_name',title: '商城',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					}, {
+						field: 'order_created_at',title: '下單時間',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'tel',title: '收貨人',sortable: true,
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(row.consignee, (row.tel || ''), (row.email || ''), ((row.city + row.district + row.detail) || ''), index);
+                        }
+					},{
+						field: 'tracker_infos',title: '<span class="columnsTit">包裹信息</span><ul class="trackerInfosShortBox"><li><span>包裹號</span><span>貨運編號</span><span>配送狀態</span><span>最新情况</span>',
+						formatter: function (value, row, index, field) {
+							if(value){
+								return tools.formatterFunction.trackerInfosShort(value);
+							}else{
+								return ''
+							}
+                        }
+					} ];
+                    return option;
+				},
+				initSelect : function(){
+					tools.renderSelect.orderProStatus('select[name="orderProductStatus"]');
+					tools.rangeTime('input[name="submitOrderTimes"]');
+					tools.renderSelect.scope('select[name="scopeId"]');
+					tools.renderSelect.storehouse('select[name="storehouseId"]');
+					tools.renderSelect.orderStatus('select[name="orderStatus"]');
+					tools.renderSelect.trackerStatus('select[name="trackerStatus"]');
+					tools.renderSelect.payment('select[name="paymentType"]');
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

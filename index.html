@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>Guava Mall Manager System</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<link rel="shortcut icon" href="./img/favicon.ico" type="image/x-icon" />
+	<!-- VENDOR CSS -->
+	<link rel="stylesheet" href="dists/bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="dists/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="dists/linearicons/style.css">
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="css/main.css">
+	<!-- GOOGLE FONTS -->
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	<style>
+		body,html{overflow:hidden}
+		.layui-layer-content{padding:20px}
+		.navbar-nav>li {width: auto;float: right;}
+
+		#sidebar-nav::-webkit-scrollbar{width:4px;height:4px}
+		#sidebar-nav::-webkit-scrollbar-thumb{border-radius:5px;-webkit-box-shadow:inset 0 0 5px rgba(0,0,0,.2);background:rgba(0,0,0,.2)}
+		#sidebar-nav::-webkit-scrollbar-track{-webkit-box-shadow:inset 0 0 5px rgba(0,0,0,.2);border-radius:0;background:rgba(0,0,0,.1)}
+		#sidebar-nav{-webkit-overflow-scrolling:touch}
+
+		.btn-toggle-fullwidth{border:0;background: transparent;display:flex;align-items: center;margin: 0 auto;}
+		.btn-toggle-fullwidth i{font-size:20px;margin-left: 12px;}
+		
+		.navbar-default{display: flex;align-items: center;}
+		.navbar-default .custom-tabs-line{overflow-x: auto;flex: 1}
+		.navbar-default .custom-tabs-line ul li.active i{display: none;}
+		.navbar-default .custom-tabs-line.tabs-line-bottom li a + i{font-size: 12px;padding: 3px}
+		.navbar-default .custom-tabs-line.tabs-line-bottom li a + i:hover{color: #ffffff;background: #ddd;border-radius: 50%;}
+		.main .tab-content .tab-pane{padding: 0}
+
+		iframe{width: 100%; width: 1px; min-width: 100%; height: 100%; border: none;overflow: hidden;}
+		.main .tab-content,
+		.main .tab-pane{height: 100%;}
+
+	</style>
+</head>
+
+<body class="layout-fullwidth">
+	<div id="wrapper">
+		<nav class="navbar navbar-default navbar-fixed-top">
+			<div class="brand">
+				<button type="button" class="btn-toggle-fullwidth">
+					<span style="font-size:28px ; line-height: 30px;">香港站</span>
+					<i class="lnr lnr-arrow-left-circle"></i>	
+				</button>
+			</div>
+			<div class="custom-tabs-line tabs-line-bottom left-aligned">
+				<ul class="nav" role="tablist"></ul>
+			</div>
+			<div id="navbar-menu">
+				<ul class="nav navbar-nav navbar-right">
+					<li class="dropdown" id="userBox">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><i class="lnr lnr-mustache"></i> <span>User</span> <i class="icon-submenu lnr lnr-chevron-down"></i></a>
+						<ul class="dropdown-menu">
+							<li><a href="#changePwd">修改密码</a></li>
+							<li><a href="#clearCache">清除缓存</a></li>
+							<li><a href="#logout">退出</a></li>
+						</ul>
+					</li>
+					<li class="dropdown" id="timeBox">
+						<a href="#" style="line-height: 24px;">登陆时间</a>
+					</li>
+				</ul>
+			</div>
+		</nav>
+		<div id="sidebar-nav" class="sidebar">
+			<div class="sidebar-scroll">
+				<nav>
+					<ul class="nav"></ul>
+				</nav>
+			</div>
+		</div>
+		<div class="main">
+			<div class="tab-content"></div>
+			<!-- <div class="main-content full-height">
+				<iframe id="body-iframe" scrolling="no" frameborder="0" style="*width: 100%; width: 1px; min-width: 100%; height: 100%; border: none;overflow: hidden;" src=""></iframe>
+			</div> -->
+		</div>
+	</div>
+	<script src="dists/jquery/jquery.min.js"></script>
+	<script src="dists/bootstrap/js/bootstrap.min.js"></script>
+	<script src="dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="dists/layer/layer.js"></script>
+	<script src="js/klorofil-common.js"></script>
+	<script src="js/common.js"></script>
+	<script type="text/javascript" src="js/moment.js"></script>
+	<script>
+		$(function() {
+			window.iframeIndex = 0;
+			// window.onbeforeunload = function(){if(window.outState != 'direct'){return "确认要离开页面吗？";}}
+			stopSroll();
+			// 加载菜单 
+			initMenu();
+			$('#timeBox a').html('登录时间：'+(utils.cookie.getCookie('loginTime')||'登陆超时'));
+			// 右上角用户名
+			$('#navbar-menu #userBox > a span').html(utils.cookie.getCookie('username'));
+			// 左侧导航操作支持
+			$('.sidebar .nav a').click(function(e){
+				e.preventDefault();
+				$('.nav a').removeClass('active');
+				$(this).addClass('active');
+				if(!$(this).attr('data-toggle')){
+					openChildPage($(this).attr('href'),$(this).text());
+					$(this).parents(".collapse").length > 0 && $(this).parents(".collapse").prev('a').addClass('active');
+				}
+			});
+			// 右上工具栏操作支持
+			$('.navbar-nav .dropdown-menu').on('mouseleave',function(){
+				clearInterval(time);
+				var _this = $(this);
+				_this.animate({'opacity':'0'});
+				var time = setTimeout(function(){
+					_this.css({'opacity':'1'}).parent().removeClass('open').find('a').attr('aria-expanded','false');
+				},500);
+			}).find('li a').on('click',function(){
+				var _href = $(this).attr('href');
+				switch (_href){
+					case '#logout':		logoutAjax();break;
+					case '#changePwd':	changePwdFunc();break;
+					case '#clearCache':	clearCache();break;
+					default:	 		openChildPage(_href,$(this).text());return false;break;
+				}
+			});
+			// tab
+			$('.custom-tabs-line ul.nav').on('click','li a',function(){
+				$('.main .tab-content .tab-pane').removeClass('active').removeClass('in');
+				$($(this).attr('href')).addClass('active').addClass('in');
+			});
+			$('.custom-tabs-line ul.nav').on('click','li i',function(){
+				$(this).parent('li').remove();
+				$($(this).prev('a').attr('href')).remove();
+			});
+			// 加载上次所在页面
+			var lastPage = utils.cookie.getCookie('last-page');
+			if(lastPage && lastPage.trim() != ''){
+				$('.nav a[href="'+lastPage+'"]').trigger('click').addClass('active');
+				$('#sidebar-nav .nav a[href="'+lastPage+'"]').parents('li').parents('li').children('a').trigger('click');
+			}else{
+				$('.nav a[href="storehouse/proList.html"]').trigger('click');
+			}
+			function openChildPage(href, title){ 
+				window.iframeIndex = window.iframeIndex + 1;
+				var addHtml = {
+					tabContent: '<div class="tab-pane fade active in" id="tab-iframe-'+window.iframeIndex+'"><iframe scrolling="no" frameborder="0" src="'+href+'" name="pageChild"></iframe></div>',
+					tabTit: '<li class="active"><a href="#tab-iframe-'+window.iframeIndex+'" role="tab" data-toggle="tab" aria-expanded="false">'+title+'</a><i class="lnr lnr-cross"></i></li>',
+				};
+				utils.cookie.setCookie('last-page' , href , 1);
+				var havNavShow = 0;
+				var navTitle = $('.custom-tabs-line ul.nav'),
+					navContent = $('.main .tab-content');
+				var ed_tab_nav;
+				navTitle.find('li').length > 0 && navTitle.find('li').map(function(e){
+					if($(this).text() == title || $(this).attr('href') == href){
+						havNavShow++;
+						ed_tab_nav = $(this);
+					}
+				});
+				if(havNavShow == 0){
+					navTitle.find('li').removeClass('active');
+					navTitle.append(addHtml.tabTit);
+					navContent.find('.tab-pane').removeClass('active').removeClass('in');
+					navContent.append(addHtml.tabContent);
+				}else{
+					ed_tab_nav.find('a').trigger('click');
+				}
+			}
+			function initMenu(){
+				var userMenus = cacheLocalstorage.getCache('userMenus');
+				(!userMenus || userMenus.length == 0) && (window.location.href = './login.html')
+				// 左侧菜单
+				$('#sidebar-nav > .sidebar-scroll > nav > .nav').append(initMenuDom(userMenus))
+			}
+			function initMenuDom(data){
+				var html = '';
+				data.map(function(e){
+					if(e.data){
+						var html_2 = '';
+						// 有二级菜单
+						html += '<li><a href="#' + e.value + '" data-toggle="collapse" class="collapsed"><i class="lnr lnr-' + e.icon + '"></i> <span>' + e.name + '</span> <i class="icon-submenu lnr lnr-chevron-left"></i></a><div id="' + e.value + '" class="collapse"><ul id="' + e.value + 'Container" class="nav">';
+						e.data.map(function(_e){
+							html_2 += '<li><a href="' + _e.url + '">' + _e.name + '</a></li>';
+						});
+						html += html_2 + '</ul></div></li>';
+					}else if(e.url){
+						// 只有一级菜单						
+						if(e.icon){
+							html += '<li><a href="' + e.url + '"><i class="lnr lnr-' + e.icon + '"></i> <span>' + e.name + '</span></a></li>';
+						}else{
+							html += '<li><a href="' + e.url + '"><span>' + e.name + '</span></a></li>';
+						}
+					}
+				});
+				return html;
+			}
+			function clearCache(){
+				for(var i in sessionStorage){
+					cacheSessionStorage.removeCache(i);
+				}
+				window.location.reload();
+			}
+			function logoutAjax(){
+				window.outState = 'direct';
+				try{
+					pageChild.window.outState = 'direct'
+				}catch(e){}
+				if(!utils.cookie.getCookie('accessToken') || utils.cookie.getCookie('accessToken') == ''){
+					// 登录失败，强制登出
+					if(top.location.href.indexOf('guava-mall-admin') > 0){
+						top.location.href = '/guava-mall-admin/login.html';
+					}else{
+						top.location.href = '/login.html';
+					}
+				}
+				$.ajax({
+					type:"get",
+					url:utils.prePath()+"/api/user/logout",
+					data : {access_token : utils.cookie.getCookie('accessToken')},
+					success : function(result){
+						if(result.statusCode == 'OK'){
+							utils.cookie.setCookie('accessToken' , '' , -1);
+							utils.cookie.setCookie('refreshToken' , '' , -1);
+							if(top.location.href.indexOf('guava-mall-admin') > 0){
+								top.location.href = '/guava-mall-admin/login.html';
+							}else{
+								top.location.href = '/login.html';
+							}
+						}
+					}
+				});
+			}
+			function changePwdFunc(){
+				layer.open({
+					type: 1,
+					content: '<div class="form-group"><input type="password" class="form-control" placeholder="旧密码" id="oldPassword"></div><div class="form-group"><input type="password" class="form-control" placeholder="新密码" id="newPassword"></div><button type="button" class="btn btn-success" id="submitPwd">确定</button>',
+					area: ['300px', 'auto'],
+					title: '请输入新旧密码',
+				});
+				$('#submitPwd').on('click',function(){
+					var data = {
+						'username':utils.cookie.getCookie('username'),
+						'oldPassword':$('#oldPassword').val(),
+						'newPassword':$('#newPassword').val()
+					};
+					if(data.oldPassword && data.newPassword){
+						$.ajax({
+							type:"put",
+							url:utils.prePath()+"/api/admin/user/password",
+							data: JSON.stringify(data),
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									toastr.success((result.body && result.body.message) ? result.body.message : '修改成功...');
+									window.outState = 'direct';
+									pageChild.window.outState = 'direct';
+									setTimeout(function(){
+										utils.cookie.setCookie('accessToken' , '' , -1);
+										utils.cookie.setCookie('refreshToken' , '' , -1);
+										if(top.location.href.indexOf('guava-mall-admin') > 0){
+											top.location.href = '/guava-mall-admin/login.html';
+										}else{
+											top.location.href = '/login.html';
+										}
+									},1000);
+								}
+							},
+							error: function(result){
+								var resultJson = JSON.parse(result.responseText);
+								layer.alert((resultJson.body && resultJson.body.message) ? resultJson.body.message : '系统异常,请稍候重试或联系开发人员...',function(){window.location.reload();});
+							}
+						});
+					}
+				})
+			}
+			function stopSroll(){
+				/**
+				 * 禁止浏览器下拉回弹
+				 */
+					var lastY;//最后一次y坐标点
+				$(document.body).on('touchstart', function(event) {
+					lastY = event.originalEvent.changedTouches[0].clientY;//点击屏幕时记录最后一次Y度坐标。
+				});
+				$(document.body).on('touchmove', function(event) {
+					var y = event.originalEvent.changedTouches[0].clientY;
+					var st = $(this).scrollTop(); //滚动条高度
+					if (y >= lastY && st <= 0) {//如果滚动条高度小于0，可以理解为到顶了，且是下拉情况下，阻止touchmove事件。
+						lastY = y;
+						event.preventDefault();
+					}
+					lastY = y;
+				});
+			}
+		});
+	</script>
+</body>
+
+</html>

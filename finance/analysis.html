@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>财务分析</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<!-- VENDOR CSS -->
+	<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+	<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+	<link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+	<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="../dists/linearicons/style.css">
+	<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+	<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="../css/main.css?v=20200331">
+	<!-- GOOGLE FONTS -->
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	<style>
+		progress{border-radius: 3.5px;height: 7px;display: block;width: 100%}
+		progress::-webkit-progress-bar{background-color:#F2F3F4;border-radius: 3.5px;}
+		progress::-webkit-progress-value{background-color: #4F4F4F;border-radius: 3.5px;}
+		body{color: #000}
+		.blue{color: #2267B0;}
+		.red{color: #CE2424;}
+		.gu::before{content: '';background: url(../img/icon-gu.png);height: 14px;width: 14px;background-size: cover;display: inline-block;margin-right: 3px;position: relative;top: 2px;}
+		.container-fluid{overflow: hidden;}
+		.scroll{overflow-y: auto;}
+		.tip{font-size: 12px;color: #777777;line-height: 18px;margin: 0;margin-top: 6px;}
+		.paramesBox p{display: inline-block;margin: 0;line-height: 14px;padding-bottom: 6px;}
+		.paramesBox p button{border: 0;background: transparent;margin: 0 20px 0 4px;padding: 0;}
+		.paramesBox p button img{width: 14px;}
+		#toolbar{margin-top: 18px;display: flex;flex-wrap: wrap;align-items: center}
+		#toolbar > input,#toolbar > select{width: 150px;color: #000!important}
+		#toolbar > input[inputTpye="daterange"]{width: 280px}
+		#toolbar > *{margin-right: 3px;margin-bottom: 3px;}
+		.change{padding: 12px 15px;display: flex;align-items: center}
+		.change img{width: 14px;margin: 0 16px}
+		.change button{width: 120px;border: 1px solid #007AFF;color: #007AFF;text-align: center;border-radius: 4px;font-size: 12px;background: #fff;}
+		.change button.active{opacity: .5;}
+		.tableBox{padding: 0 15px;display: flex;align-items: flex-start;flex-wrap: wrap;}
+		.tableBox .card{padding: 0 15px;background: #fff;border-radius: 6px;margin: 0 15px 15px 0;width: 400px;}
+		.tableBox .card header{border-bottom: 1px dashed #DFDEDB;padding: 16px 0;}
+		.tableBox .card header:last-child{border-bottom: 0;}
+		.tableBox .card header h3{font-size: 20px;margin: 0;font-weight: bold;}
+		.tableBox .card header h3 div{float: right;}
+		.tableBox .card header h3 div i{font-size: 14px;padding-right: 6px;font-style: normal}
+		.tableBox .card article ul{border-bottom: 1px dashed #DFDEDB;}
+		.tableBox .card article ul:last-child{border-bottom: none;padding: 0;}
+		.tableBox .card ul{list-style: none;padding-left: 0;padding: 11px 0;}
+		.tableBox .card ul li{line-height: 32px;display: flex;align-items: center;flex-wrap: wrap}
+		.tableBox .card ul li > span:nth-child(1){flex: 1;text-align: left;}
+		.tableBox .card ul li > span:nth-child(2){width: 50px;text-align: right;}
+		.tableBox .card ul li > span:nth-child(3){width: 100px;text-align: right;font-weight: bold;}
+		.tableBox .card ul li > span:nth-child(4){width: 40px;text-align: right;}
+		.tableBox .card ul li p.tip{width: 100%;}
+		.tableBox .card ul li p.tip:last-child{margin-top: 0;}
+		.havIcon{padding-left: 40px}
+		.havIcon.purchasedIcon{background: url(../img/icon-stock.png) 4px 22px no-repeat;background-size: 20px;}
+		.havIcon.adIcon{background: url(../img/icon-ad.png) 4px 22px no-repeat;background-size: 20px;}
+		.havIcon.expressIcon{background: url(../img/icon-express.png) 4px 22px no-repeat;background-size: 20px;}
+		.havIcon > span{flex: 1;font-weight: bold}
+		.havIcon p{margin-bottom: 0;line-height: 58px;display: flex;align-items: center}
+		.havIcon progress{margin-bottom: 20px;}
+		.havIcon p span:first-child{width: 68px}
+		.havIcon p span:nth-child(2){width: 12px;font-weight: bold}
+		.havIcon p span:nth-child(3){flex: 1;font-weight: bold}
+		.havIcon p i img{height: 14px;width: 14px;margin-left: 2px;position: relative;top: -1px;}
+		.topBox,.topMes{background: #fff;}
+		.topBox{padding: 15px;z-index: 10;}
+		.topMes{display: none;justify-content: space-between;align-items: center;padding: 12px;z-index: 1;}
+		.topMes span:first-child{font-size: 16px;font-weight: bold}
+		.topMes span:nth-child(2){font-size: 12px;flex: 1;overflow: hidden;padding-left: 3px;}
+		.topMes button{color: #007AFF;background: transparent;border: none}
+		.lnr-chevron-left {transform: rotate(-90deg);display: inline-block;}
+		.pageType{opacity: 0;}
+		.mesFz{color: #777;font-weight: 500}
+		.bold{font-weight: 700;}
+		@media screen and (max-width: 415px) {
+			.refresh{margin-top: 16px!important;}
+			.mesFzMT{margin-top: 18px;}
+			.change{justify-content: space-around;padding: 12px 30px}
+			.change button{padding: 3px 8px;}
+			.topBox{display: none;height: 100%;}
+			.topMes{display: flex;}
+			#toolbar > *{display: inline-block;margin-right: 6px;margin-bottom: 8px;}
+			#toolbar,#toolbar > label{display: block;}
+			#toolbar label{margin-left: 0!important;}
+			.tableBox .card{margin: 0;width: 100%;margin-bottom: 15px;}
+			.tableBox .card:last-child{margin-bottom: 100px;}
+			.pageType{display: none;}
+			.btn.refresh{font-size: 14px;width: 200px}
+		}
+	</style>
+</head>
+
+<body>
+	<i class="pageType"></i>
+	<div class="container-fluid">
+		<div class="topBox">
+			<div class="paramesBox">
+				<p class="mesFz">平均汇率：$ = <span class="usd_rmb">6.88</span>¥<button onclick="app.methods.edit('usd_rmb','美元兑人民币汇率');"><img src="../img/icon-edit.png" alt="" srcset=""></button>¥ = <span class="exchangeRate">4.5</span>NT$<button onclick="app.methods.edit('exchangeRate','人民币兑台币汇率');"><img src="../img/icon-edit.png" alt="" srcset=""></button></p>
+				<p class="mesFz">基础运费(RMB)：<span class="basicFreight">43</span><button onclick="app.methods.edit('basicFreight','基础运费');"><img src="../img/icon-edit.png" alt="" srcset=""></button></p>
+				<p class="mesFz">天鸟管理费(RMB)：<span class="basicSkuCosts">2</span><button onclick="app.methods.edit('basicSkuCosts','天鸟管理费');"><img src="../img/icon-edit.png" alt="" srcset=""></button></p>
+			</div>
+			<div id="toolbar">
+				<label class="mesFz">搜索条件：</label>
+				<select class="selectpicker" data-live-search="true" name="scopeId"></select>
+				<input type="text" inputTpye="daterange" rangeStart="beginTime" rangeEnd="endTime" class="form-control" name="orderTimes"
+				 placeholder="选择时间" />
+				<input type="text" class="form-control" name="affiliate" placeholder="输入投放人姓名">
+				<label class="mesFz mesFzMT" style="margin-left:30px">回填数据：</label>
+				<input type="text" class="form-control" name="adCost" placeholder="广告花费($)">
+				<input type="text" class="form-control" name="roiFb" placeholder="FB平均ROI">
+				<button class="btn btn-primary refresh" onclick="app.methods.searchData();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				<input type="text" class="form-control" name="exchangeRate" style="display:none" value="4.5">
+				<input type="text" class="form-control" name="basicFreight" style="display:none" value="43">
+				<input type="text" class="form-control" name="basicSkuCosts" style="display:none" value="2">
+			</div>
+		</div>
+		<div class="topMes" onclick="app.methods.toggleTopBox();">
+			<span class="scope"></span>
+			<span class="time"></span>
+			<button>更改<i class="lnr lnr-chevron-left"></i></button>
+		</div>
+		<div class="scroll">
+			<div class="change">
+				<button onclick="app.methods.moneyTo('rmb')" class="toRMB">统一货币(¥)</button>
+				<img src="../img/icon-change.png" alt="">
+				<button class="active toNormal" onclick="app.methods.moneyTo('normal')">原始货币(NT$,$)</button>
+			</div>
+			<div class="tableBox">
+				<div class="card">
+					<header>
+						<h3>估算收入 <div><i>¥</i><span class="order_total_price_rmb clear">--</span></div>
+						</h3>
+						<p class="tip">*有效销售额，含运费</p>
+					</header>
+					<article>
+						<ul>
+							<li><span>系统销售额</span><span></span><span class="system_order_total_price_rmb blue clear">--</span><span  class="bold">¥</span></li>
+							<li><span>有效订单数</span><span></span><span class="order_total_count blue clear">--</span><span>单</span></li>
+							<li><span>有效sku</span><span></span><span class="total_sku_quantity blue clear">--</span><span>件</span></li>
+							<li style="height: 22px"></li>
+							<li><span>独立客户</span><span></span><span class="independent_user_number blue clear">--</span><span>人</span></li>
+							<li><span>复购人数</span><span class="re_independent_user_number_proportion clear" isPercentage='true'>--</span><span class="re_independent_user_number blue clear">--</span><span>人</span></li>
+							<li><span>人均sku</span><span></span><span class="independent_user_sku_num clear">--</span><span>件</span></li>
+							<li><span>客单价</span><span></span><span class="independent_user_price toRmb clear" data-type="independent_user_price">--</span><span class="bold">NT$</span></li>
+						</ul>
+						<ul>
+							<li><span>非投放转化</span><span class="noaffiliate_order_total_price_proportion clear" isPercentage='true'>--</span><span class="noaffiliate_order_total_price blue toRmb clear" data-type="noaffiliate_order_total_price">--</span><span class="bold">NT$</span></li>
+							<li><span>在线支付</span><span class="paypal_order_total_price_proportion clear" isPercentage='true'>--</span><span class="paypal_order_total_price blue toRmb clear" data-type="paypal_order_total_price">--</span><span class="bold">NT$</span></li>
+							<li>
+								<p class="tip">*各个比率分母均为销售额；</p>
+								<p class="tip">*非投放转化 = 客服+粉丝页+其他自然流量。</p>
+							</li>
+						</ul>
+						<ul>
+							<li><span>取消</span><span class="cancel_total_price_proportion clear" isPercentage='true'>--</span><span class="cancel_total_price blue toRmb clear" data-type="cancel_total_price">--</span><span class="bold">NT$</span></li>
+							<li><span>拒收</span><span class="real_reject_total_price_proportion clear" isPercentage='true'>--</span><span class="real_reject_total_price blue toRmb clear" data-type="real_reject_total_price">--</span><span class="bold">NT$</span></li>
+							<li><span></span><span></span><span class="estimate_reject_total_price toRmb gu clear" data-type="estimate_reject_total_price">--</span><span class="bold">NT$</span></li>
+							<!-- <li><span>退货</span><span class="return_total_price_proportion clear" isPercentage='true'>--</span><span class="return_total_price blue toRmb clear" data-type="return_total_price">--</span><span class="bold">NT$</span></li> -->
+							<!-- <li><span></span><span></span><span class="estimate_return_total_price toRmb gu clear" data-type="estimate_return_total_price">--</span><span class="bold">NT$</span></li> -->
+							<li>
+								<p class="tip">*拒收为所选时间上推一个月的数据统计；</p>
+							</li>
+						</ul>
+					</article>
+				</div>
+				<div class="card">
+					<header>
+						<h3>估算支出 <div><i>¥</i><span class="expenditure_money clear">--</span></div>
+						</h3>
+						<p class="tip">*估算支出 = 采购+物流+广告支出+仓库管理费</p>
+					</header>
+					<article>
+						<ul>
+							<li class="purchasedIcon havIcon">
+								<p><span>采购支出</span><span>¥</span><span class="order_sku_purchased_price clear">--</span><i><img src="../img/icon-gu.png"></i></p><span class="order_sku_purchased_price_proportion clear" isPercentage='true'>--</span><progress value="0" max="1"></progress>
+							</li>
+							<li class="adIcon havIcon">
+								<p><span>广告支出</span><span>¥</span><span class="ad_cost blue clear">--</span></p><span class="ad_cost_proportion clear" isPercentage='true'>--</span><progress value="0" max="1"></progress>
+							</li>
+							<li class="expressIcon havIcon">
+								<p><span>物流支出</span><span>¥</span><span class="estimate_tracking_number_total_price clear">--</span><i><img src="../img/icon-gu.png"></i></p><span class="estimate_tracking_number_total_price_proportion clear" isPercentage='true'>--</span><progress value="0" max="1"></progress>
+							</li>
+							<li class="purchasedIcon havIcon">
+								<p><span>仓储管理</span><span>¥</span><span class="sku_quantity_costs_storehouse clear">--</span><i><img src="../img/icon-gu.png"></i></p>
+							</li>
+							<li>
+								<p class="tip">*物流支出为所选时间上推一个月的数据统计；</p>
+							</li>
+						</ul>
+					</article>
+				</div>
+				<div class="card">
+					<header>
+						<h3>估算净利润 <div><i class="red">¥</i><span class="estimate_money red clear">--</span></div>
+						</h3>
+						<p class="tip">*估算净利润= 估算收入-估算支出</p>
+					</header>
+					<header>
+						<h3>估算毛利润 <div><i class="red">¥</i><span class="gross_profit_monney red clear">--</span></div>
+						</h3>
+						<p class="tip">*估算毛利润= 估算收入-估算物流-估算采购</p>
+					</header>
+					<header>
+						<h3>毛利率 <div><span class="gross_profit_monney_proportion red clear" isPercentage='true'>--</span></div>
+						</h3>
+						<p class="tip">*毛利率= 估算毛利润/估算收入</p>
+					</header>
+					<header>
+						<h3>仓库周转率 <div><span class="storehouse_flow red clear" isPercentage='true'>--</span></div>
+						</h3>
+						<p class="tip">*周转率 = 总订单采购金额/净余存金额</p>
+					</header>
+					<header>
+						<h3>FB统计ROI <div><span class="roi_fb red clear">--</span></div>
+						</h3>
+					</header>
+				</div>
+				<div class="card">
+					<header>
+						<h3>资产负债</h3>
+					</header>
+					<article>
+						<ul>
+							<li><span>订单应收</span><span></span><span class="asset_order_receivable toRmb clear" data-type="asset_order_receivable">--</span><span  class="bold">NT$</span></li>
+							<li><span>天鸟应收</span><span></span><span class="asset_agency_receivable_0 toRmb clear" data-type="asset_agency_receivable_0">--</span><span  class="bold">NT$</span></li>
+							<li><span>森鸿应收</span><span></span><span class="asset_agency_receivable_1 toRmb clear" data-type="asset_agency_receivable_1">--</span><span  class="bold">NT$</span></li>
+						</ul>
+						<ul>
+							<li><span>订单应付</span><span></span><span class="asset_purchase_assets clear">--</span><span  class="bold">¥</span></li>
+							<li><span>天鸟货代应付</span><span></span><span class="asset_tracker_pay_0 clear">--</span><span  class="bold">¥</span></li>
+							<li><span>森鸿货代应付</span><span></span><span class="asset_tracker_pay_1 clear">--</span><span  class="bold">¥</span></li>
+						</ul>
+						<ul>
+							<li><span>仓库资产</span><span></span><span class="asset_storehouse_assets clear">--</span><span  class="bold">¥</span></li>
+						</ul>
+					</article>
+				</div>
+				<div class="card">
+					<header>
+						<h3>现金流量</h3>
+					</header>
+					<article>
+						<ul>
+							<li><span>在线支付金额</span><span></span><span class="cash_paypal_total_price toRmb clear" data-type="cash_paypal_total_price">--</span><span  class="bold">NT$</span></li>
+							<li><span>货代回款</span><span></span><span class="cash_logistics_total_payback toRmb clear" data-type="cash_logistics_total_payback">--</span><span  class="bold">NT$</span></li>
+							<li><span>采购取消</span><span></span><span class="cash_purchase_cancel_total_price clear">--</span><span  class="bold">¥</span></li>
+						</ul>
+						<ul>
+							<li><span>采购花费</span><span></span><span class="cash_purchase_total_price clear">--</span><span  class="bold">¥</span></li>							
+							<li><span>货代服务费用</span><span></span><span class="cash_logistics_total_freight clear">--</span><span  class="bold">¥</span></li>
+						</ul>
+					</article>
+				</div>
+				<div class="card">
+					<header>
+						<h3>库存估值</h3>
+					</header>
+					<article>
+						<ul id="stockValuation">
+
+						</ul>
+						<ul id="stockValuationAll">
+
+						</ul>
+					</article>
+				</div>
+				<div class="card">
+					<header>
+						<h3>拒收明细</h3>
+					</header>
+					<article>
+						<ul id="rejectionDetails">
+
+						</ul>
+						<ul id="rejectionDetailsAll">
+
+						</ul>
+					</article>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+<script type="text/javascript">
+	var app = {
+		invoiceData: [],
+		methods: {
+			initView: function () {
+				if($('.topBox').css('display') != 'none'){
+					$('.scroll').css('height', 'calc(100% - ' + $('.topBox').outerHeight() + 'px)');
+				}else{
+					$('.scroll').css('height', 'calc(100% - ' + $('.topMes').outerHeight() + 'px)');
+				}
+				var authority_data = authoritys.useAuthority();
+				if(!authority_data){
+					toastr.error("权限不足，不允许访问...")
+					return;
+				}
+				var params = tools.getParams();
+				params.adCost = ((params.adCost - 0) * ($('.usd_rmb').text() - 0)) || 0;
+				$.ajax({
+					type: "GET",
+					url: utils.prePath() + '/api/admin/erp/finance/invoice/analysis' + tools.jsonToParameString(params),
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							$('.clear').text('--');
+							app.invoiceData = result.body;
+							var data = {};
+							app.invoiceData.map(function (e) {
+								if(e.value){
+									$('.' + e.key).text(tools.formatNumberType(e.value, $('.' + e.key).attr('isPercentage')));
+									$('.' + e.key + ' + progress').val(e.value);
+								}
+							});
+							$('.roi_fb').text(params.roiFb || 0);
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+				var scopeVal = '';
+				cacheSessionStorage.getCache('scope').map(function (e) {
+					e.id == params.scopeId && (scopeVal = e.name);
+				});
+				$('.layui-layer-shade').remove();
+				$('.topMes .scope').text(scopeVal);
+				$('.topMes .time').text(moment.unix(params.beginTime).format('YYYY-MM-DD HH:mm:ss') + ' - ' + moment.unix(params.endTime).format('YYYY-MM-DD HH:mm:ss'));
+			},
+			moneyTo: function (type) {
+				if (type == 'normal') {
+					app.methods.initView();
+					$('.toRmb').map(function () {
+						$(this).next().text('NT$');
+					});
+					$('.toRMB').removeClass('active')
+					$('.toNormal').addClass('active')
+				} else if (type == 'rmb') {
+					var param = (tools.getParams().exchangeRate - 0) || 4.5;
+					$('.toRmb').map(function () {
+						var type = $(this).data('type');
+						var val = 0;
+						app.invoiceData.map(function (e) {
+							if (e.key == type) {
+								val = e.value;
+							}
+						});
+						$(this).text(tools.formatNumberType(val / param)).next().text('¥');
+					});
+					$('.toNormal').removeClass('active')
+					$('.toRMB').addClass('active')
+				}
+			},
+			edit: function (type, tit) {
+				layer.closeAll();
+				layer.prompt({
+					title: tit || '请修改',
+					value: $('.' + type).text()
+				}, function (text, _index) {
+					$('input[name=' + type + ']').val(text);
+					$('.' + type).text(text);
+					layer.close(_index);
+				});
+			},
+			initDom: function (data) {
+				var html = '';
+				data.map(function (e) {
+					var ulhtml = '';
+					e.data.map(function (_e) {
+						ulhtml += '<li><div class="metric" onclick="' + (_e.func || '') + '" style="' + (_e.func ?
+								'cursor: pointer;' : '') + '">' +
+							'<span class="icon"><i class="fa fa-line-chart"></i></span>' +
+							'<p>' +
+							'<span class="number">' + tools.formatNumber(_e.value) + '</span>' +
+							'<span class="title">' + _e.comments + '</span>' +
+							'</p>' +
+							'</div></li>';
+					});
+					html += '<div class="panel"><div class="panel-heading"><h3 class="panel-title">' + e.title +
+						'</h3></div><div class="panel-body"><ul>' + ulhtml + '</ul></div></div>';
+				});
+				return html;
+			},
+			toggleTopBox: function () {
+				$('.topBox').show();
+			},
+			searchData: function () {
+				if ($('.pageType').css('display') == 'none') {
+					$('.topMes').show();
+					$('.topBox').hide();
+				}
+				$('.toRmb').map(function () {
+					$(this).next().text('NT$');
+				});
+				$('.toRMB').removeClass('active')
+				$('.toNormal').addClass('active')
+				app.methods.initView();
+			},
+			shouReBuy: function () {
+				layer.open({
+					type: 1,
+					content: '<table id="table-user"></table>',
+					title: '查看复购详情',
+					area: ['100vw', '100vh'],
+					closeBtn: 1
+				});
+				$('#table-user').bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+					url: utils.prePath() + '/api/admin/erp/analysis/order/users',
+					queryParams: function (params) {
+						params.size = params.pageSize;
+						params.page = parseInt(params.pageNumber) - 1;
+						return Object.assign(params, tools.getParams());
+					},
+					columns: [{
+						field: 'tel',
+						title: '电话',
+						align: 'center',
+					}, {
+						field: 'consignee',
+						title: '收件曾用名',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return value.split('&,&').join('<br>');
+						}
+					}, {
+						field: 'status_count',
+						title: '有效订单数（不包含取消单）',
+						formatter: function (value, row, index, field) {
+							var html = '';
+							value.split('&,&').map(function (e) {
+								var data = e.split(':');
+								html += '<div style="margin-right:12px;display: inline-block;color: #fff">' + tools.formatterFunction
+									.orderStatus(data[0].trim()) + ' <span class="badge" style="background: #5bc0de;">' + data[1].trim() +
+									'</span></div>';
+							});
+							return html;
+						}
+					}, {
+						title: '操作',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<button type="button" class="btn btn-info btn-xs" onclick="app.methods.showUserOrder(' + row.tel + ')">订单详情（包含取消单）</button>';;
+						}
+					}],
+				}));
+			},
+			showUserOrder: function (tel) {
+				layer.open({
+					type: 1,
+					content: '<table id="table-order"></table>',
+					title: '查看复购订单详情（包含取消单）',
+					area: ['100vw', '100vh'],
+					closeBtn: 1
+				});
+				$('#table-order').bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+					url: utils.prePath() + '/api/admin/erp/analysis/order',
+					queryParams: function (params) {
+						params.size = params.pageSize;
+						params.page = parseInt(params.pageNumber) - 1;
+						return Object.assign(params, {
+							'tel': tel,
+							'beginTime': 1483200000,
+							'endTime': tools.getParams().beginTime
+						});
+					},
+					columns: [{
+						field: 'order_code',
+						title: '订单号',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.warningDays(value, row.days);
+						}
+					}, {
+						field: 'sku_infos',
+						title: '<span class="columnsTit">商品信息</span><ul class="analysisSkuBox"><li><span>產品ID</span><span>品名</span><span>條碼</span><span>數量</span><span>折扣总价</span><span>平均采购价</span><span>系统采购价</span><span>商品狀態</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.analysisSku(value);
+						}
+					}, {
+						field: 'discount_total_coupon_price',
+						title: '优惠额度',
+						align: 'center',
+					}, {
+						field: 'payment_type',
+						title: '付款方式',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.paymentStatus(value);
+						}
+					}, {
+						field: 'order_status',
+						title: '订单状态',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.orderStatus(value);
+						}
+					}, {
+						field: 'order_total_price',
+						title: '折扣总价',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="money">' + value + '</span>';
+						}
+					}, {
+						field: 'affiliate',
+						title: '来源',
+						align: 'center',
+					}, {
+						field: 'pixel_id',
+						title: 'pixel ID',
+						align: 'center',
+					}, {
+						field: 'storehouse_id',
+						title: '发货仓',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							var html = '';
+							cacheSessionStorage.getCache('storehouse').map(function (e) {
+								if (value == e.id) {
+									html = e.storehouseName
+								}
+							})
+							return '<span class="nowarp">' + html + '</span>';
+						}
+					}, {
+						field: 'scope_id',
+						title: '商城',
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							var html = '';
+							cacheSessionStorage.getCache('scope').map(function (e) {
+								if (value == e.id) {
+									html = e.name
+								}
+							})
+							return '<span class="nowarp">' + html + '</span>';
+						}
+					}, {
+						field: 'created_at',
+						title: '下单时间',
+						align: 'center',
+						minWidth: 90,
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+						}
+					}, {
+						field: 'consignee',
+						title: '收貨人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.addressText(row.consignee, row.tel, row.city, row.district, row.detail);
+						}
+					}],
+				}));
+			},
+			initSelect: function () {
+				tools.rangeTime('input[name="orderTimes"]');
+				tools.renderSelect.scope('select[name="scopeId"]');
+			},
+
+			// 库存估值
+			stockValuation: function () {
+				$.ajax({
+					type: "GET",
+					url: utils.prePath() + '/api/admin/erp/finance/invoice/analysis/group',
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							var list = result.body // 数据
+							var html = ''
+							var html1 = ''
+							var allStock = 0 // 总库存
+							var allPrice = 0 // 总估值
+							for (const i in list) {
+								html += `<li>
+											<span>${list[i].name}</span>
+											<span>${list[i].inventory}</span>
+											<span>${list[i].storehouse_assets}</span>
+											<span class="bold">NT$</span>
+										</li>`
+								allStock += list[i].inventory
+								allPrice += list[i].storehouse_assets
+							}
+							// 汇总
+							html1 = `<li>
+										<span>库存总额</span>
+										<span>${allStock}</span>
+										<span>${allPrice}</span>
+										<span class="bold">NT$</span>
+									</li>`
+
+							$('#stockValuation').html(html)
+							$('#stockValuationAll').html(html1)
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+			},
+
+			// 拒收明细
+			rejectionDetails: function () {
+				$.ajax({
+					type: "GET",
+					url: utils.prePath() + '/api/admin/erp/finance/invoice/analysis/reject/group',
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							var list = result.body // 数据
+							var html = ''
+							var html1 = ''
+							var allCnt = 0 // 拒收总数
+							var allPrice = 0 // 拒收总值
+							for (const i in list) {
+								html += `<li>
+											<span>${list[i].name}</span>
+											<span>${list[i].cnt}</span>
+											<span>${list[i].purchase_price.toFixed(2)}</span>
+											<span class="bold">NT$</span>
+										</li>`
+								allCnt += list[i].cnt
+								allPrice += list[i].purchase_price
+							}
+							// 汇总
+							html1 = `<li>
+										<span>拒收总额</span>
+										<span>${allCnt}</span>
+										<span>${allPrice.toFixed(2)}</span>
+										<span class="bold">NT$</span>
+									</li>`
+
+							$('#rejectionDetails').html(html)
+							$('#rejectionDetailsAll').html(html1)
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+			}
+		},
+		init: function () {
+			app.methods.initSelect();
+			app.methods.stockValuation(); // 库存估值
+			app.methods.rejectionDetails(); // 拒收明细
+			if ($('.pageType').css('display') != 'none') {
+				app.methods.initView();
+			} else {
+				$('.topMes').trigger('click');
+			}
+		}
+	}
+	$(function () {
+		app.init();
+	});
+</script>
+
+</html>

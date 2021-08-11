@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Home</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/hint/hint.css"/>
+		<link rel="stylesheet" href="../dists/select2/dist/css/select2.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.modal{z-index: 2;}
+			.modal-backdrop{z-index: 1;}
+			.addPromotion .layui-layer-content,
+			.skuSelect .layui-layer-content{padding: 0 10px;}
+			.panel-body .bootstrap-table{margin-top: 40px;}
+			/* 移动化 */
+			@media screen and (max-width: 768px) {
+				.addPromotion,
+				.skuSelect{top: 0!important;left: 0!important;max-height: 100vh;}
+				.addPromotion .layui-layer-content{padding: 10px;}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-body">
+					<div id="toolbar-promotion" class="btn-group">
+					    <button type="button" class="btn btn-primary" onclick="app.methods.createPromotion();"><i class="fa fa-plus-square"></i>&nbsp; 新增 </button>
+					</div>
+					<table id="table-products"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../dists/select2/dist/js/select2.full.min.js"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				campaignId : utils.getURLParam('campaignId') , 
+				table : $("#table-products")
+			},
+			methods : {
+				initTable : function(){
+					app.data.table.bootstrapTable({
+						cache: false,
+						sortable: false,
+						clickToSelect : true,
+						sidePagination: "server",
+						// showColumns : true,
+						toolbar : '#toolbar-promotion',
+						toolbarAlign : 'left',
+						url: utils.prePath() + '/api/admin/campaign/' + app.data.campaignId,
+        				dataField: 'body.productSkus',
+					    columns: [{
+					        field: 'productId',
+					        title: '产品ID',
+					        align : 'center',
+					        width : 50,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="'+row.productSourceUrl+'" target="_blank">'+value+'</a>';
+							}
+					    }, {
+					        field: 'productImageUrl',
+					        title: 'SKU图',
+					        width : 100,
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="#" onclick = "app.methods.preview('+row.productId+');"><img src="'+value+'" class="img-responsive" style="max-width: 80px;  max-height: 80px; margin: 0px auto;"></a>';
+							}
+					    }, {
+					        field: 'productTitle',
+					        title: '产品名称',
+					        width : 300,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'productSkuName',
+					        title: 'SKU名称',
+					        width : 300,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'originalPrice',
+					        title: '原销售价',
+					        align : 'center',
+					        width : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'discountPrice',
+					        title: '换购价',
+					        align : 'center',
+					        width : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span _skuId="'+row.id+'" class="edit-column">'+(Number.isInteger(value) ? value : '--')+'</span>';
+							}
+					    }, {
+					        title: '操作' , 
+					        align : 'center',
+					        width : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<div class="btn-group" role="group">'
+										+'  <a class="btn btn-danger btn-xs" onclick="app.methods.productDelete('+row.id+')">刪除</a>'
+										+'</div>';
+							}
+					    }],
+					    onLoadSuccess : function(data){
+					    	$.each($('#table-products td'), function (j, column) {
+					    		$(this).css('max-width' , $(this).css("width"));
+					    	});
+					    	//处理图片显示
+							$('#table-products .thumbnail img').height($('#table-products .thumbnail img').width());
+							$('[data-toggle="tooltip"]').tooltip();
+							
+							$('#table-products.table .edit-column').click(function(){
+								var _that = this , _skuid = $(this).attr('_skuId');
+								layer.prompt({title: '修改', value : $(_that).html() , formType: 3}, function(text, index){
+									
+									var _tableDatas = app.data.table.bootstrapTable('getData');
+									var currentRows = {};
+									$.each(_tableDatas, function(index , tableData) {
+										if(tableData.id == _skuid){
+											currentRows = tableData ; 
+											return false;
+										}
+									});
+									if(parseInt(currentRows.originalPrice) < parseInt(text)){
+										toastr.error('折扣价不应超过销售价...');
+										return;
+									}
+								    currentRows.discountPrice = text ; 
+								    $.ajax({
+										type : "PUT",
+										url : utils.prePath()+"/api/admin/campaign/product",
+										data : JSON.stringify(currentRows),
+										success : function(result){
+											if(result.statusCode == 'OK'){
+												app.data.table.bootstrapTable('refresh');
+												layer.close(index);
+											}else{
+												toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+											}
+										}
+									});
+							  	});
+							});
+					    }
+					});
+				},
+				searchTable : function(){
+					app.data.table.bootstrapTable('refresh');
+				},
+				productDelete : function(productId){
+					$.ajax({
+						type:"DELETE",
+						url : utils.prePath()+"/api/admin/campaign/product/"+productId,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.table.bootstrapTable('refresh');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				createPromotion : function(){
+					layer.open({
+                        type: 1,
+                        title : '营销关联产品',
+						offset: '100px',
+						skin: 'addPromotion',
+                        area: ['900px', '650px'], //宽高
+                        content: '<div id="searchBar" class="form-inline" style="padding: 8px 0;">'
+                                +'  <div class="form-group"><input type="text" class="form-control" name="id" placeholder="产品ID"></div>'
+                                +'  <div class="form-group"><input type="text" class="form-control" name="title" placeholder="产品标题"></div>'
+                                +'  <div class="form-group"><select type="text" class="form-control" name="organize" style="width: 150px;"></select></div>'
+                                +'  <button class="btn btn-primary" onclick="app.methods.searchPromotionTable();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>'
+                                +'</div>'
+                                +'<table id="promotion-table"></table>',
+                        btn: ['确定', '取消'] ,
+                        btnAlign: 'c',
+                        yes: function(index, layero){
+                        	var _selections = $('#promotion-table').bootstrapTable('getSelections');
+                            if(_selections.length > 0){
+                            	var _selectionProduct = _selections[0];
+                            	app.sku.chosenSKU(_selectionProduct);
+                            }else{
+                        		toastr.error('关联产品不能为空...');
+                        		return;
+                        	}
+                        }
+                    });
+                    $.ajax({
+						type:"get",
+						url:utils.prePath()+"/api/admin/product/organizes",
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								var _data = [{id:'#',text:'全部'}];
+								$.each(result.body, function(index , organize) {
+									_data.push({id:organize,text:organize});
+								});
+								$('select[name="organize"]').select2({
+									placeholder: '产品集合',
+									data : _data
+								});
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+					app.methods.initPromotionTable();
+				},
+				initPromotionTable : function(){
+					$('#promotion-table').bootstrapTable({
+                        pagination : true ,
+                        cache: false,
+                        sortable: false,
+                        clickToSelect : true,
+                        sidePagination: "server",
+                        showColumns : false,
+                        pageNumber : 1 ,
+                        pageSize : 15 ,
+                        pageList : [15 , 30 , 45 , 90],
+                        queryParamsType : 'page' ,
+                        queryParams : function(params){
+                            params.status = 10;
+                            params.id = $('#searchBar input[name=id]').val();
+                            params.title = $('#searchBar input[name=title]').val();
+                            params.organize = ($('select[name="organize"]').val() == '#') ? '' : $('select[name="organize"]').val();
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return params;
+                        },
+                        url: utils.prePath() + '/api/admin/product/list',
+                        totalField: 'body.totalElements',
+                        dataField: 'body.content',
+                        columns: [{
+                        	radio : true
+					    },{
+					        field: 'id',
+					        title: 'ID',
+					        align : 'center',
+					        width : 50,
+					        minWidth : 50,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="'+row.productExt.sourceUrl+'" target="_blank">'+value+'</a>';
+							}
+					    }, {
+					        field: 'productImageUrl',
+					        title: '主图',
+					        width : 60,
+					        minWidth : 60,
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="#" onclick = "app.methods.preview('+row.id+');"><img src="'+value+'" alt="'+row.title+'" class="img-responsive proImage"></a>';
+							}
+					    }, {
+					        field: 'title',
+					        title: '标题',
+					        width : 200,
+					        minWidth : 200,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span>'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'keywords',
+					        title: '关键词',
+					        width : 150,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'description',
+					        title: '描述',
+					        width : 100,
+					        minWidth : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span>'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'remark',
+					        title: '留言',
+							width : 100,
+					        minWidth : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(row.productExt.remark || '--')+'</span>';
+							}
+					    }]
+                    });
+				},
+				searchPromotionTable : function(){
+                    $('#promotion-table').bootstrapTable('refresh');
+                },
+				preview : function(id){
+					layer.open({
+					  	type: 2,
+					  	title: '产品预览',
+					  	maxmin : true,
+					  	shadeClose: true,
+					  	resize : false,	
+					  	shade: 0.8,
+					  	area: ['392px', '710px'],
+					  	content: utils.perviewPath(id)
+					});
+				}
+			},
+			sku : {
+           		chosenSKU : function(product){
+           			layer.open({
+                        type: 1,
+                        title : '关联产品SKU',
+                        offset: ['150px', '150px'],
+                        area: ['850px', '600px'], //宽高
+                        content: '<table id="promotionSKU-table"></table>',
+                        btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						skin: 'skuSelect',
+                        yes: function(index, layero){
+                        	var _selections = $('#promotionSKU-table').bootstrapTable('getSelections');
+                            if(_selections.length > 0){
+                            	var _selectionProduct = _selections[0];
+                            	var params = {
+                            		campaignId : app.data.campaignId,
+                            		productId : product.id,
+                            		productTitle : product.title,
+                            		productSkuId : _selectionProduct.id,
+                            		productSkuName : _selectionProduct.name,
+                            		originalPrice : _selectionProduct.price,
+                            		productImageUrl : _selectionProduct.productImageUrl
+                            	};
+                            	$.ajax({
+									type:"POST",
+									url : utils.prePath()+"/api/admin/campaign/product",
+									data : JSON.stringify(params),
+									success : function(result){
+										if(result.statusCode == 'OK'){
+											app.data.table.bootstrapTable('refresh');
+											layer.close(index);
+										}else{
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+                            	
+                            }else{
+                        		toastr.error('关联产品SKU不能为空...');
+                        		return;
+                        	}
+                        }
+                    });
+                    app.sku.initPromotionSKUTable(product);
+           		},
+           		initPromotionSKUTable : function(product){
+					$('#promotionSKU-table').bootstrapTable({
+                        pagination : false ,
+                        cache: false,
+                        sortable: false,
+                        clickToSelect : true,
+                        sidePagination: "server",
+                        showColumns : false,
+                        pageNumber : 1 ,
+                        pageSize : 15 ,
+                        pageList : [15 , 30 , 45 , 90],
+                        queryParamsType : 'page' ,
+                        url: utils.prePath() + '/api/admin/product/' + product.id,
+                        dataField: 'body.productSkus',
+                        columns: [{
+                        	radio : true
+					    },{
+					        field: 'productImageUrl',
+					        title: 'SKU图',
+					        width : 100,
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="#" onclick = "app.methods.preview('+row.id+');"><img src="'+value+'" alt="'+row.title+'" class="img-responsive" style="max-width: 80px; max-height: 80px;  margin: 0px auto;"></a>';
+							}
+					    }, {
+					        field: 'name',
+					        title: 'SKU名称',
+					        width : 200,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'barcode',
+					        title: '条形码',
+					        align : 'center',
+					        width : 150,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'inventory',
+					        title: '库存',
+					        align : 'center',
+					        width : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'purchasePrice',
+					        title: '采购价',
+					        align : 'center',
+					        width : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'price',
+					        title: '销售价',
+					        align : 'center',
+					        width : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }]
+                    });
+				}
+           },
+			init : function(){
+				app.methods.initTable();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

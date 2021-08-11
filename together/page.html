@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Home</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- VENDOR CSS -->
+    <link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+    <link rel="stylesheet" href="../dists/bootstrap-switch/bootstrap-switch.css" />
+    <link rel="stylesheet" href="../dists/toastr/toastr.css" />
+    <link rel="stylesheet" href="../dists/hint/hint.css" />
+    <link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+    <link rel="stylesheet" href="../dists/input-tags/css/inputTags.css" />
+    <link rel="stylesheet" href="../dists/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" media="screen">
+	<link rel="stylesheet" href="../dists/linearicons/style.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css">
+    <!-- MAIN CSS -->
+    <link rel="stylesheet" href="../css/main.css?v=20200331">
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+    <style>
+        .moduleList{max-width:100vw;max-height:100vh}
+        .moduleList .moduleTable{width:100%!important}
+        .moduleList .moduleText{display:block}
+
+        .pageModuleBox{overflow-x:auto;padding:0;border: 1px solid rgb(230, 230, 230);color: #333;height: auto;}
+        .pageModuleBox::-webkit-scrollbar{width:10px;height:6px}
+        .pageModuleBox::-webkit-scrollbar-thumb{border-radius:10px;background:#535353}
+        .pageModuleBox::-webkit-scrollbar-track{border-radius:10px;background:#EDEDED}
+        .pageModuleBox .tempImg{width:180px;min-width:180px;display:block;margin:0 auto}
+        .pageModuleBox ul{padding: 0;list-style: none;}
+        .pageModuleBox .pagemodule-row-title,
+        .pageModuleBox .pagemodule-row{margin-bottom: 0;}
+        .pageModuleBox .pagemodule-row > li:hover{background: rgb(250, 250, 250);}
+        .pageModuleBox .pagemodule-row > li:nth-child(n+1) li{border-top: 1px solid rgb(230, 230, 230);}
+        .pageModuleBox .pagemodule-col{display: flex;}
+        .pageModuleBox .pagemodule-col li{display: block;text-align: center;padding: 6px;}
+        .pageModuleBox .pagemodule-col li:nth-child(1){text-align: left;min-width: 260px}
+        .pageModuleBox .pagemodule-col li:nth-child(2){min-width: 400px;flex: 1}
+        .pageModuleBox .pagemodule-col li:nth-child(3){min-width: 160px;}
+        .pageModuleBox .pagemodule-col li:nth-child(4){min-width: 100px;}
+        .pageModuleBox .pagemodule-col li:nth-child(n+2){border-left: 1px solid rgb(230, 230, 230);}
+        .pageModuleBox .pagemodule-col li:nth-child(1) span:nth-child(2){font-size: 12px;}
+
+        .fancy-checkbox{height:18px;line-height:18px;display: flex;align-items: center;justify-content: center;}
+        .fancy-checkbox input[type=checkbox]{margin-top:0}
+        .fancy-checkbox input[type=checkbox]+span{margin-left: 4px;}
+        .fancy-checkbox input[type=checkbox]+span:before{width:16px;height:16px;}
+        .fancy-checkbox input[type=checkbox]:checked+span:before{line-height:14px;font-size:12px}
+
+        .btnBox .fancy-checkbox input[type=checkbox]+span:before{background: transparent;color: #fff}
+        .btnBox .fancy-checkbox input[type=checkbox]:checked+span:before{background: transparent;color: #fff}
+
+        .panel .panel-body{padding: 10px 16px;}
+        .panel .panel-heading .toolBox.right{padding: 0} 
+
+        .page{display: flex;height: calc(100% - 54px);margin-bottom: 10px;margin-right: 6px;}
+        .page > div{width: 500px;height: 100%;overflow-y: auto;box-shadow:0 2px 6px rgba(0,0,0,.08);margin-right: 10px;padding: 10px;}
+        .page > div > ul{padding-left: 0;list-style: none;margin-bottom: 0;}
+        .page > div > ul li{padding-left: 6px;box-shadow:0 2px 6px rgba(0,0,0,.08);margin-bottom: 10px;display: flex;justify-content: space-between;align-items: center}
+        .page > div > ul li .left{flex: 1;}
+        .page > div > ul li h3{font-size: 22px;margin: 0;padding: 6px 0;border-bottom: 1px dotted #ccc}
+        .page > div > ul li .btnBox{display: flex;align-items: center;padding: 6px 0;}
+        .page > div > ul li .right{padding: 0 6px;font-size: 22px;height: 100%;display: block;cursor: pointer;}
+        .page .pageSub{width: 300px;}
+        .page .pageContent{flex: 1;overflow-y: auto;box-shadow:0 2px 6px rgba(0,0,0,.08);padding: 10px;}
+        .page .pageBox.active{border: 1px solid #000;}
+        .page .subBox.active{border: 1px solid #000;}
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="panel panel-headline">
+            <div class="panel-heading">
+                <div class="left">
+                    <h3 class="panel-title">聚合页管理</h3>
+                </div>
+                <div class="toolBox btn-group right">
+                    <button class="btn btn-info btn-sm refresh" onclick="app.methods.initPage();"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="toolbar" class="btn-group">
+                    <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+                    <button class="btn btn-primary btn-sm" onclick="app.methods.pageCreate();"><i class="fa fa-plus-square"></i> 新增聚合页</button>
+                    <button id="uploadPic" style="display:none"></button>
+                </div>
+                <div class="page">
+                    <div class="pageList"><ul></ul></div>
+                    <div class="pageSub"><ul></ul></div>
+                    <div class="pageContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade dialog-create-page" role="dialog" data-backdrop="static">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-wrapper">
+                    <div class="modal-menu">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title">新增聚合页</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form role="form">
+                                <div class="form-group">
+                                    <label class="control-label">名称</label>
+                                    <span class="red">*</span>
+                                    <div>
+                                        <input class="form-control" type="text" name="name" placeholder="请填写页面名称" />
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" commit>确定</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-switch/bootstrap-switch.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+<script type="text/javascript" src="../js/klorofil-common.js"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+<script type="text/javascript" src="../dists/summernote/dist/summernote.min.js"></script>
+<script type="text/javascript" src="../dists/summernote/dist/lang/summernote-zh-CN.js"></script>
+<script type="text/javascript" src="../dists/input-tags/js/inputTags.jquery.js"></script>
+<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+<script type="text/javascript" src="../js/plupload-upload-icons.js"></script>
+<script type="text/javascript" src="../js/Sortable.min.js"></script>
+<script type="text/javascript" src="../js/jquery.binding.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+
+<script id="pageList" type="text/html">
+    <% for(var i = 0; i < data.length; i++){ %>
+        <li class="pageBox" data-index="<%= i %>">
+            <div class="left">
+                <h3 class='edit' data-index="<%= i %>"><%= data[i].name %></h3>
+                <div class="btnBox btn-group">
+                    <a type="button" class="btn btn-primary btn-xs" href="<%= data[i].accessUrl %>" target="_blank"><i class="fa fa-eye"></i> 商城</a>
+                    <button type="button" class="btn btn-primary btn-xs btn-view-page" data-index="<%= i %>"><i class="fa fa-eye"></i> 模块</button>
+                    <button type="button" class="btn btn-info btn-xs" authority="PAGE_WRITE">
+                        <label class="fancy-checkbox isLeftNavigationBtn" data-index="<%= i %>">分类导航
+                            <% if(data[i].isLeftNavigation){ %>
+                                <input type="checkbox" class="isLeftNavigationBtn" data-index="<%= i %>" checked>
+                            <% }else{ %>
+                                <input type="checkbox">                                
+                            <% } %>
+                            <span></span>
+                        </label>
+                    </button>
+                    <button type="button" class="btn btn-info btn-xs" authority="PAGE_WRITE">
+                        <label class="fancy-checkbox isTopNavigationBtn" data-index="<%= i %>">导航
+                            <% if(data[i].isTopNavigation){ %>
+                                <input type="checkbox" checked>
+                            <% }else{ %>
+                                <input type="checkbox">                                
+                            <% } %>
+                            <span></span>
+                        </label>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-xs btn-add-sub" authority="PAGE_WRITE" data-id="<%= data[i].id %>"><i class="fa fa-plus-square"></i></button>
+                    <button type="button" class="btn btn-danger btn-xs btn-remove" authority="PAGE_DELETE" data-id="<%= data[i].id %>"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+            <span class="right showModule text-primary" data-index="<%= i %>"><i class="lnr lnr-chevron-right"></i></span>
+        </li>
+    <% } %>
+</script>
+<script id="pageSub" type="text/html">
+    <% for(var i = 0; i < childrens.length; i++){ %>
+        <li class="subBox" data-index="<%= i %>">
+            <div class="left">
+                <% if(childrens[i].thumb){ %>
+                    <img src="<%= childrens[i].thumb %>" style="width:30px;height:30px;" authority="PAGE_WRITE" class="btn-bind-pic" data-index="<%= i %>"/>
+                <% }else{ %>
+                    <button type="button" class="btn btn-primary btn-xs btn-bind-pic" authority="PAGE_WRITE" data-index="<%= i %>">菜单图</button>
+                <% } %>
+                <h5 class='edit' style="display: inline-block;" data-index="<%= i %>"><%= childrens[i].name %></h5>
+                <div class="btnBox btn-group">
+                    <button type="button" class="btn btn-info btn-xs" authority="PAGE_WRITE">
+                        <label class="fancy-checkbox isShow" data-index="<%= i %>">二级导航
+                            <% if(childrens[i].isShow){ %>
+                                <input type="checkbox" class="isShow" data-index="<%= i %>" checked>
+                            <% }else{ %>
+                                <input type="checkbox">
+                            <% } %>
+                            <span></span>
+                        </label>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-xs btn-bind-together" authority="PAGE_WRITE" data-index="<%= i %>">绑定</button>
+                    <button type="button" class="btn btn-danger btn-xs btn-remove" authority="PAGE_DELETE" data-id="<%= childrens[i].id %>"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+            <span class="right showModule text-primary" data-index="<%= i %>"><i class="lnr lnr-chevron-right"></i></span>
+        </li>
+    <% } %>
+</script>
+<script id="pageContent" type="text/html">
+    <% if(aggregatePageModules.length == 0){ %>
+        子页中暂无聚合模块！
+    <% }else{ %>
+        <div class="pageModuleBox">
+            <ul class="pagemodule-row-title">
+                <li>
+                    <ul class="pagemodule-col">
+                        <li><span class="text-length-table-col">标题</span></li>
+                        <li><span class="text-length-table-col">展示类型</span></li>
+                        <li><span class="text-length-table-col">操作</span></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="pagemodule-row" data-pId="<%= id %>">
+                <% for(var j = 0; j < aggregatePageModules.length; j++){ %>
+                    <% if(aggregatePageModules[j].aggregateModule){ %>
+                        <li class="pagemodule-col-box" data-id="<%= aggregatePageModules[j].aggregateModule.id %>">
+                            <ul class="pagemodule-col">
+                                <li class="title">
+                                    <span class="text-length-table-col"><%= aggregatePageModules[j].aggregateModule.name %>【<%= aggregatePageModules[j].aggregateModule.productCounts %>】</span>
+                                    <span class="text-length-table-col label label-info"><%= aggregatePageModules[j].aggregateModuleId %></span>
+                                    <!-- <span class="text-length-table-col"><%= aggregatePageModules[j].aggregateModule.subName %></span> -->
+                                    <!-- <a style="text-decoration: underline;word-wrap: break-word;display:block" href="<%= accessUrl %>#module_<%= aggregatePageModules[j].aggregateModuleId %>" target="_blank"><%= accessUrl %>#module_<%= aggregatePageModules[j].aggregateModuleId %></a> -->
+                                </li>
+                                <li>
+                                    <a onclick="app.methods.showView('<%= aggregatePageModules[j].id %>','<%= aggregatePageModules[j].aggregateModule.present.thumb %>')">
+                                        <img class="tempImg img-responsive" src="<%= aggregatePageModules[j].aggregateModule.present.thumb %>">
+                                    </a>
+                                </li>
+                                <li>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-danger btn-xs" authority="PAGE_WRITE" onclick="app.methods.unbindModule(<%= aggregatePageModules[j].aggregateModuleId %>,<%= id %>)">解绑</button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                    <% } %>
+                <% } %>
+            </ul>
+        </div>
+    <% } %>
+</script>
+<script id="moduleList" type="text/html">
+    <table class="moduleTable table table-striped table-bordered">
+        <thead><tr><td>ID</td><td>标题</td><td>商城</td><td>备注</td><td>绑定</td></tr></thead>
+        <tbody>
+            <% for(var i = 0; i < data.length; i++){ %>
+                <tr>
+                    <td style="text-align:center;"><span class="moduleText"><%= data[i].id %></span></td>
+                    <td style="text-align:left;"><span class="moduleText"><%= data[i].name %></span></td>
+                    <td style="text-align:left;"><span class="moduleText"><%= data[i].scopeName %></span></td>
+                    <td style="text-align:left;"><span class="moduleText"><%= data[i].comments %></span></td>
+                    <td style="text-align:center;">
+                        <% if(!data[i].selectOne){ %>
+                            <button type="button" data-id="<%= data[i].id %>" class="btn btn-success submitBtn" onclick="app.methods.bindModuleCommit(<%= id %>,<%= data[i].id %>)">绑定</button>
+                        <% }else{ %>
+                            <span class="label label-info">已绑定</span>
+                        <% } %>
+                    </td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</script>
+<script type="text/javascript">
+    var app = {
+        data: {
+            dom:{
+                pageBox: $('.pageList ul'),
+                subBox: $('.pageSub ul'),
+                moduleBox: $('.pageContent'),
+            },
+            moduleData: [],
+            tepmData: [],
+            tepmState: false
+        },
+        methods: {
+            initPage: function(){
+                if(!authoritys.useAuthority()){
+                    toastr.error("权限不足，不允许访问...");
+                    return;
+                }
+                if(app.data.scopeId == undefined){
+                    app.data.dom.pageBox.html('请选择商城！');
+                    return;
+                }
+                toastr.info("正在更新数据,请等待...");
+                $.ajax({
+                    type: "get",
+                    url: utils.prePath() + '/api/admin/aggregate/page/list' + tools.jsonToParameString({sort: 'priority',size: 100,page: 0,scopeId: app.data.scopeId}),
+                    before: function(){
+                        layer.load()
+                    },
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            if(result.body.content.length == 0){
+                                app.data.dom.pageBox.html('没有找到匹配的记录');
+                                return false;
+                            }
+                            app.data.page_data = result.body.content;
+                            // 整理聚合模块的id,格式化数据
+                            app.data.page_data.map(function(e ,i){
+                                var lastIndex = 0;
+                                e.childrens.map(function(_e,_i){
+                                    // 获取子页面模块数据
+                                    var modulesData = [];
+                                    _e.aggregatePageModules.map(function(_module){
+                                        modulesData.push(_module.aggregateModuleId)
+                                    });
+                                    _e['module_ids'] = modulesData.toString('-');
+                                    if(_e.isShow == true){
+                                        if(_i - lastIndex > 2){
+                                            toastr.warning("聚合页" + e.name + "的首屏展示位设置数据异常，建议重新设置...");
+                                        }
+                                        lastIndex = _i + 1;
+                                    }
+                                });
+                                // 计算首屏展示
+                                e['firstPageShow'] = lastIndex;
+                            })
+                            app.data.dom.pageBox.html(template('pageList', {data: app.data.page_data}));
+                            $('#page').css({'height':'calc(100% - '+$('#toolbar').outerHeight(true)+'px)'})
+                            app.methods.initPageContent();
+                            app.methods.initPageSub();
+                            authoritys.useAuthority();
+                            app.events.initPageEvent();
+                            toastr.success('数据更新完成···')
+                            layer.closeAll('loading');
+                        }
+                    }
+                });
+            },
+            initPageSub: function (){
+                // 加载子页面级
+                if(app.data.page_click_index == undefined){
+                    app.data.dom.subBox.html('请选择聚合页！');
+                    app.data.dom.moduleBox.html('请选择聚合子页！');
+                    return;
+                }
+                if(app.data.page_data[app.data.page_click_index].childrens.length == 0){
+                    app.data.dom.subBox.html('聚合页中暂无聚合模块！');
+                    app.data.dom.moduleBox.html('请选择聚合子页！');  
+                    return;
+                }
+                app.data.dom.subBox.html(template('pageSub', app.data.page_data[app.data.page_click_index]));
+                app.events.initSubEvent();
+            },
+            initPageContent: function (){
+                // 加载模块级
+                if(app.data.sub_click_index == undefined){
+                    app.data.dom.subBox.html('请选择聚合页！');
+                    app.data.dom.moduleBox.html('请选择聚合子页！');
+                    return;
+                }
+                if(app.data.page_data[app.data.page_click_index].childrens.length == 0){
+                    app.data.dom.subBox.html('聚合页中暂无聚合模块！');
+                    return;
+                }
+                if(app.data.page_data[app.data.page_click_index].childrens[app.data.sub_click_index].length == 0){
+                    app.data.dom.moduleBox.html('子页中暂无聚合模块！');  
+                    return;
+                }
+                app.data.dom.moduleBox.html(template('pageContent', app.data.page_data[app.data.page_click_index].childrens[app.data.sub_click_index]));
+                app.events.initModuleEvent();
+            },
+            showView: function(id,src){
+                layer.photos({
+                    photos: {"data": [{"pid": id,"src": src}]},
+                    anim: 5
+                });
+            },
+            pageCreate: function (p_id) {
+                if(app.data.scopeId == undefined){
+                    toastr.warning('请选择商城！');
+                    return;
+                }
+                var _modal = $(".dialog-create-page");
+
+                //modal初始化
+                _modal.find('input[name="name"]').val("")
+                _modal.modal("show");
+                _modal.find('button[commit]').off('click').on('click', function () {
+                    var name = _modal.find('input[name=name]').val();
+                    if ("" == name) {
+                        toastr.warning('页面名称不能为空...');
+                        _modal.find('input[name=name]').focus();
+                        return false;
+                    }
+                    var _param = {
+                        name:name,
+                        priority:0,
+                        scopeId:app.data.scopeId,
+                        isTopNavigation: false,
+                        isLeftNavigation: false,
+                        isShow: false,
+                    };
+                    if(p_id != undefined){
+                        _param['parentId'] = p_id;
+                    }
+                    $.ajax({    
+                        type: "POST",
+                        url: utils.prePath() + "/api/admin/aggregate/page",
+                        data: JSON.stringify(_param),
+                        success: function (result) {
+                            _modal.modal("hide");
+                            if (result.statusCode == 'OK') {
+                                app.methods.initPage();
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                });
+            },
+            editPub: function (data, edit_param){
+                // 组装数据，把未修改的旧数据一起发送
+                var params = {
+                    'id': data.id,
+                    'priority': data.priority,
+                };
+                if(data.isLeftNavigation != undefined){params['isLeftNavigation'] = data.isLeftNavigation}
+                if(data.isShow != undefined){params['isShow'] = data.isShow}
+                params = Object.assign(params, edit_param);
+                $.ajax({
+                    type: "POST",
+                    url: utils.prePath() + "/api/admin/aggregate/page",
+                    async: false,
+                    data: JSON.stringify(params),
+                    before: function(){
+                        layer.load();
+                    },
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.methods.initPage();
+                            layer.closeAll();
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            editSort: function (params){
+                params.map(function(e,i){e['priority'] = (i + 1);});
+                // 排序
+                $.ajax({
+                    type: "POST",
+                    url: utils.prePath() + "/api/admin/aggregate/page/sort",
+                    async: false,
+                    data: JSON.stringify(params),
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.methods.initPage();
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            delPage:function(id){
+                layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+                    $.ajax({
+                        type: "DELETE",
+                        url: utils.prePath() + "/api/admin/aggregate/page/" + id,
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.methods.initPage();
+                                layer.closeAll()
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                });
+            },
+            pageBindModel: function(index){
+                var modules = app.data.page_data[app.data.page_click_index].childrens[index].module_ids.split(',') || [];
+                // if(app.data.moduleData.length == 0){
+                    $.ajax({
+                        type: "get",
+                        async: false,
+                        url : utils.prePath()+"/api/admin/aggregate/module?scopeId="+$('select[name="scopeId"]').val(),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                app.data.moduleData = result.body;
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        },
+                        error:function(){
+                            toastr.error('系统异常,请稍候重试或联系开发人员...');
+                        }
+                    });
+                // }
+                var moduleSelectData = [];
+                if(modules.length){
+                    app.data.moduleData.map(function(e){
+                        var one = e;
+                        one["selectOne"] = false;
+                        for(var i = 0;i < modules.length;i++){
+                            if(e.id == modules[i]){
+                                one["selectOne"] = true;
+                                break;
+                            }
+                        }
+                        moduleSelectData.push(one);
+                    })
+                }
+                var index = layer.open({
+                    type: 1,
+                    content: template('moduleList', {
+                        data: app.data.moduleData,
+                        id:  app.data.page_data[app.data.page_click_index].childrens[index].id
+                    }),
+                    area: ['800px', '750px'],
+                    title: '绑定聚合模块',
+                    skin:'moduleList',
+                    cancel: function(){ 
+                        app.methods.initPage(); //右上角关闭回调
+                    }
+                });
+                $('.moduleTable').DataTable({
+                    "deferRender": true,
+                    "order": [[ 0, 'desc' ]],
+                    "language": {"sProcessing": "处理中...","sLengthMenu": "显示 _MENU_ 项结果","sZeroRecords": "没有匹配结果","sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项","sInfoEmpty": "显示第 0 至 0 项结果，共 0 项","sInfoFiltered": "(由 _MAX_ 项结果过滤)","sInfoPostFix": "","sSearch": "搜索:","sUrl": "","sEmptyTable": "表中数据为空","sLoadingRecords": "载入中...","sInfoThousands": ",","oPaginate": {"sFirst": "首页","sPrevious": "上页","sNext": "下页","sLast": "末页"},"oAria": {"sSortAscending": ": 以升序排列此列","sSortDescending": ": 以降序排列此列"}}
+                });
+            },
+            bindModuleCommit:function(id, mId){
+                // 绑定
+                $.ajax({
+                    type: "PUT",
+                    data : JSON.stringify([{
+                        aggregateModuleId: mId,
+                        id: id,
+                        priority: 0
+                    }]),
+                    url : utils.prePath()+"/api/admin/aggregate/page/module/"+id,
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            $('.moduleTable button[data-id="'+mId+'"]').before('<span class="label label-info">已绑定</span>').remove();
+                            toastr.success('绑定成功...');
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            unbindModule:function(moduleId,id){
+                // 解绑
+                $.ajax({
+                    type: "delete",
+                    data : JSON.stringify([moduleId]),                    
+                    url : utils.prePath()+"/api/admin/aggregate/page/module/"+id,
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.methods.initPage();
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            initTempPic:function(){
+                // 加载模板数据
+                $.ajax({
+                    type: "GET",
+                    url: utils.prePath() + '/api/admin/aggregate/module/present',
+                    success: function (result) {
+                        if (result.statusCode == 'OK') {
+                            app.data.tepmState = true;
+                            app.data.tepmData = result.body;
+                        } else {
+                            toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                        }
+                    }
+                });
+            },
+            initSort: function(box, selectDom, clickDom, callback){
+                Sortable.create(box, {
+                    animation: 150,
+                    draggable: selectDom,
+                    handle: clickDom,
+                    onSort: callback
+                });
+            }
+        },
+        events: {
+            initPageEvent:function(){
+                // 排序
+                app.methods.initSort($('.pageList ul')[0], '.pageBox', '.left', function(){
+                    var priorityData = [];
+                    $('.pageList .pageBox').each(function(){
+                        var index = $(this).data('index')
+                        priorityData.push({'id': app.data.page_data[index].id});
+                    });
+                    app.methods.editSort(priorityData);
+                });
+                // 导航
+                $('.pageList .isTopNavigationBtn span').off().on('click', function (e) {
+                    var index = $(this).parent().data('index');
+                    app.methods.editPub(app.data.page_data[index], {
+                        'isTopNavigation': !app.data.page_data[index].isTopNavigation,
+                    })
+                })
+                // 分类导航
+                $('.pageList .isLeftNavigationBtn span').off().on('click', function (e) {
+                    var index = $(this).parent().data('index');
+                    app.methods.editPub(app.data.page_data[index], {
+                        'isLeftNavigation': !app.data.page_data[index].isLeftNavigation
+                    })
+                })
+                // 新增子页
+                $('.pageList .btn-add-sub').off().on('click', function (e) {
+                    e.preventDefault();
+                    app.methods.pageCreate($(this).data('id'));
+                    app.data.page_click_index = $(this).parents('.pageBox').data('index')
+                });
+                // 预览模块
+                $('.pageList .btn-view-page').off().on('click', function (e) {
+                    var aggregatePageModules = [];
+                    var index = $(this).data('index');
+                    app.data.page_data[index].childrens.map(function(e){
+                        aggregatePageModules = aggregatePageModules.concat(e.aggregatePageModules)
+                    })
+                    app.data.dom.moduleBox.html(template('pageContent', {'aggregatePageModules': aggregatePageModules}));
+                    $('.pageModuleBox .pagemodule-col li:last-child').hide();
+                    app.data.page_click_index = index
+                    app.methods.initPageSub();
+                });
+                // 删除
+                $('.pageList .btn-remove').off().on('click', function (e) {
+                    e.preventDefault();
+                    app.methods.delPage($(this).data('id'));
+                    app.data.page_click_index = undefined
+                });
+                // 编辑名称
+                $('.pageList .edit').off().on('click', function () {
+                    var _this = $(this);
+                    layer.prompt({title: '修改', value: _this.html(), formType: 0}, function (text) {
+                        app.methods.editPub(app.data.page_data[_this.data('index')], {'name': text})
+                    });
+                });
+                // 展开聚合页的子页面详情
+                $('.pageList .showModule').off().on('click', function (e) {
+                    $('.pageList .pageBox').removeClass('active');
+                    $(this).parent().addClass('active');
+                    app.data.page_click_index = $(this).data('index');
+                    app.methods.initPageSub();
+                    authoritys.useAuthority();
+                });
+            },
+            initSubEvent:function(){
+                 // 编辑名称
+                 $('.pageSub .edit').off().on('click', function () {
+                    var _this = $(this);
+                    layer.prompt({title: '修改', value: _this.html(), formType: 0}, function (text) {
+                        app.methods.editPub(app.data.page_data[app.data.page_click_index].childrens[_this.data('index')], {'name': text})
+                    });
+                });
+                // 排序
+                if($('.subBox').length > 0){
+                    app.methods.initSort($('.pageSub ul')[0], '.subBox', '.left', function(){
+                        var priorityData = [];
+                        $('.pageSub .subBox').each(function(){
+                            var index = $(this).data('index')
+                            priorityData.push({'id': app.data.page_data[app.data.page_click_index].childrens[index].id});
+                        });
+                        app.methods.editSort(priorityData);
+                    });
+                }
+                // 二级导航
+                $('.pageSub .isShow span').off().on('click', function (e) {
+                    var index = $(this).parent().data('index');
+                    app.methods.editPub(app.data.page_data[app.data.page_click_index].childrens[index], {
+                        'isShow': !app.data.page_data[app.data.page_click_index].childrens[index].isShow
+                    })
+                })
+                // 绑定
+                $('.pageSub button.btn-bind-together').off().on('click', function (e) {
+                    if(!app.data.tepmState){
+                        toastr.info('模块正在加载，请稍后重试···')
+                        return;
+                    }
+                    var index = $(this).data('index');
+                    app.methods.pageBindModel(index)
+                })
+                // 删除
+                $('.pageSub .btn-remove').off().on('click', function (e) {
+                    e.preventDefault();
+                    app.methods.delPage($(this).data('id'));
+                    app.data.sub_click_index = undefined
+                });
+                // 菜单icon
+                $('.pageSub .btn-bind-pic').off().on('click', function (e) {
+                console.log(1)
+                    e.preventDefault();
+                    app.data.sub_click_index = $(this).data('index');
+                    $('#uploadPic').trigger('click');
+                });
+                // 展开子页的模块详情
+                $('.pageSub .showModule').off().on('click', function (e) {
+                    $('.pageSub .subBox').removeClass('active');
+                    $(this).parent().addClass('active');
+                    app.data.sub_click_index = $(this).data('index');
+                    app.methods.initPageContent();
+                    authoritys.useAuthority();
+                });
+            },
+            initModuleEvent:function(){
+                // 排序
+                if($('.pagemodule-row').length > 0){
+                    app.methods.initSort($('.pagemodule-row')[0], '.pagemodule-col-box', '', function(){
+                        var priorityData = [];
+                        var p_id = app.data.page_data[app.data.page_click_index].childrens[app.data.sub_click_index].id;
+                        $('.pagemodule-row .pagemodule-col-box').each(function(i){
+                            priorityData.push({
+                                aggregateModuleId: $(this).data('id'),
+                                priority: i,
+                                pid: p_id,
+                            })
+                        })
+                        $.ajax({
+                            type: "put",
+                            url: utils.prePath() + "/api/admin/aggregate/page/module/" + p_id,
+                            data: JSON.stringify(priorityData),
+                            success: function (result) {
+                                if (result.statusCode != 'OK') {
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                                app.methods.initPage();
+                            }
+                        });
+                    });
+                }
+            },
+            initSelect: function(){
+                tools.renderSelect.scope('select[name="scopeId"]');
+                $('select[name="scopeId"]').on('changed.bs.select', function (e, clickedIndex) {
+                    app.data.scopeId = tools.getParams().scopeId;
+                    app.data.page_click_index = undefined;
+                    app.data.sub_click_index = undefined;
+                    if(clickedIndex == 0){
+                        app.data.dom.pageBox.html('请选择商城！');
+                        app.data.dom.subBox.html('请选择聚合页！');
+                        app.data.dom.moduleBox.html('请选择子页面！');
+                    }else{
+                        app.methods.initPage();
+                    }
+                });
+            },
+            initUpload: function(){
+                // 上传菜单Icon
+                var uploaderUpload = new plupload.Uploader({
+                    runtimes: 'html5,html4',
+                    browse_button: 'uploadPic',
+                    url: utils.prePath() + "/api/admin/aggregate/module/present/image/upload",
+                    file_data_name: 'images',
+                    filters: {
+                        max_file_size: '2048kb',
+                        mime_types: [
+                            {title : "Image files", extensions : "jpg,gif,png"}
+                        ],
+                    },
+                    multipart_params: {
+                        access_token: utils.cookie.getCookie('accessToken')
+                    },
+                    init: {
+                        FilesAdded: function (up, files) {
+                            layer.load();
+                            up.start();
+                        },
+                        UploadComplete: function (up, files) {
+                            layer.closeAll('loading');
+                        },
+                        Error: function (up, err) {
+                            layer.closeAll('loading');
+                            toastr.error(JSON.parse(err.response).body.message);
+                        },
+                        FileUploaded:function(up,file,result){
+                            var src = JSON.parse(result.response).body;
+                            app.methods.editPub(app.data.page_data[app.data.page_click_index].childrens[app.data.sub_click_index], {'thumb': src})
+                        }
+                    }
+                });
+                uploaderUpload.init();
+            }
+        },
+        init: function () {
+            app.events.initSelect();
+            app.methods.initTempPic();
+            app.events.initUpload();
+            app.data.dom.pageBox.html('请选择商城！');
+            app.data.dom.subBox.html('请选择聚合页！');
+            app.data.dom.moduleBox.html('请选择子页面！');
+        }
+    }
+
+    $(function () {
+        app.init();
+    });
+</script>
+
+</html>

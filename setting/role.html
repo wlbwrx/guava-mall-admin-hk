@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>角色管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/simTree/simTree.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+		.treeview .node-tree-main .badge{background: none;padding: 0;font-size: 0;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">角色管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-primary btn-sm" onclick="app.methods.openAddBox();"><i class="fa fa-plus-square"></i> 新增</button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+			<div class="modal-dialog modal-md" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title">角色</h4>
+					</div>
+					<div class="modal-body">
+						<input style="display:none;" disabled class="form-control" type="text" name="id"/>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">角色名称<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="name"/>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="control-label col-sm-2">值<span class="text-danger">*</span></label>
+							<div class="col-sm-10">
+								<input class="form-control" type="text" name="value"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label">权限<span class="text-danger">*</span></label>
+							<div id="tree-main"></div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.save()">保存</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/simTree/simTree.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				tree: $("#tree-main"),
+				mainData: [],
+				checkType: false, // false 向下传递， true 向上传递
+				menu: []
+			},
+			methods : {
+				initTable : function(){
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_list, {
+                        url: utils.prePath() + '/api/admin/role/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.mainData = data.body;
+							tableUi.initBootstrapTable();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+                        field: 'name',title: '角色名称',
+					}, {
+                        field: 'value',title: '值',
+					}, {
+						field: 'updatedAt',title: '编辑时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+                        title: '操作',align: 'center',minWidth:250,
+                        formatter: function (value, row, index) {
+							return '<div class="toolBox btn-group">'+
+								'<button type="button" class="btn btn-success btn-xs" onclick="app.methods.edit(' + index + ')"><i class="fa fa-edit"></i> 编辑</button>'+
+								'<button type="button" class="btn btn-danger btn-xs" onclick="app.methods.del(' + row.id + ')"><i class="fa fa-trash-o"></i> 删除</button>'+
+								'</div>';
+                        }
+                    }];
+                    return option;
+				},
+				del:function(id){
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + "/api/admin/role/" + id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.close(_index);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				edit:function(index){
+					app.methods.openAddBox();
+					app.methods.initBox(index);
+				},
+				save:function(index){
+					var parame = tools.getParams('.dialog-create');
+					var authorities = [];
+					app.data.treeDom.getSelected().map(function(e){
+						authorities.push({'id': e.id})
+					})
+					parame['authorities'] = authorities;
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/role",
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('保存成功...');
+								app.data.table.bootstrapTable('refresh');
+								$(".dialog-create").modal("hide");
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				initBox: function(index){
+					if(!app.data.menu || app.data.menu.length == 0){
+						toastr.error('请稍后重试···')
+						return;
+					}
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/role/" + app.data.mainData[index].id,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								var menu_data = app.data.menu;
+								if(result.body.authorities && result.body.authorities.length > 0){
+									// 选中修正
+									var new_menu = app.methods.fixMenu(result.body.authorities).split(',').slice(0,-1);
+									app.data.treeDom.destroy();
+									app.data.treeDom = simTree({
+										el: '#tree-main',
+										data: app.data.menu,
+										check: true,
+										linkParent: true,
+									});
+									app.data.treeDom.setSelected(new_menu);
+								}
+			                    tools.initInput(".dialog-create", app.data.mainData[index]);
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				fixMenu: function(this_menu){
+					// 平铺
+					var new_menu = [];
+					this_menu.map(function(e){
+						if(e.authorities && e.authorities.length > 0){
+							new_menu += app.methods.fixMenu(e.authorities)
+						}else{
+							new_menu += e.id + ','
+						}
+					})
+					return new_menu;
+				},
+				openAddBox: function(state){
+                    var _modal = $(".dialog-create");
+                    _modal.find("input").val('');
+                    _modal.find("textarea").val('');
+					_modal.modal("show");
+					try{
+						app.data.treeDom.destroy();
+					}catch(e){}
+					app.data.treeDom = simTree({
+						el: '#tree-main',
+						data: app.data.menu,
+						check: true,
+						linkParent: true,
+					});
+				},
+				getMenuTree: function () {
+					$.ajax({
+						type: "GET",
+						url: utils.prePath() + "/api/admin/authority/list",
+						async: false,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								app.methods.findAndPush(result.body)
+								
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				findAndPush: function(data){
+					data.map(function(e){
+						app.data.menu.push({
+							"id": e.id,
+							"pid": e.parentId,
+							"name": e.name,
+							"expand": false
+						})
+						if(e.authorities){
+							app.methods.findAndPush(e.authorities)
+						}
+					})
+				}
+			},
+			init : function(){
+				app.methods.getMenuTree();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

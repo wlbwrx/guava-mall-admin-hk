@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>库存管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/easyui/themes/bootstrap/easyui.css">
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.shopCart{position: fixed;right: 0;top: 0;bottom: 0;width: 400px;border: 1px solid #ccc;background: #fff;z-index: 100;display: none;}
+			.shopCart .panel{border: 0;height: 100%;}
+			.shopCart .panel-heading{justify-content: space-between;}
+			.shopCart .panel-heading h5.panel-title{margin: 0}
+			.shopCart .panel-body{height: calc(100% - 103px)!important;overflow-y: auto;}
+			.shopCart .panel-body ul{list-style: none;padding: 0;}
+			.shopCart .panel-body ul li{border-bottom: 1px solid #e6e6e6;padding-bottom: 6px;margin-bottom: 6px;}
+			.shopCart .panel-body ul li:last-child{border-bottom: 0;margin-bottom: 0;}
+			.shopCart .panel-body ul li > div{display: flex;}
+			.shopCart .panel-body ul li .left{width: 74px;}
+			.shopCart .panel-body ul li .left .proImage{height: 68px;width: 68px;max-width: 68px;margin: 0;}
+			.shopCart .panel-body ul li .right{width: calc(100% - 70px);margin-bottom: 6px;position: relative;}
+			.shopCart .panel-body ul li .right > span{display: block;}
+			.shopCart .panel-body ul li .right input[name="quantity"]{height: 28px;padding: 0 6px;width: 100px;display: inline-block;}
+			.shopCart .panel-body ul li .right button{position: absolute;right: 0;bottom: 0}
+			.shopCart .panel-body ul li input{width: 100%;}
+			.shopCart .panel-footer{text-align: right;display: flex;}
+			.shopCart .panel-footer input{width: calc(100% - 200px);height: 34px;display: inline-block;resize: none;margin-right: 6px;}
+
+			.sanningDataSku{list-style: none;padding: 0;margin-top: 10px;max-height: 60vh;overflow-y: auto;}
+			.sanningDataSku li{display: flex;justify-content: space-between;align-items: center;border-bottom: 1px solid #000;padding: 6px;}
+			.sanningDataSku li span{display: block;padding: 6px;}
+
+			.orderUpdate{cursor: pointer;}
+			.easyui-window , .easyui-window .panel-body{padding: 0px !important;}
+
+			#purchaseProduct{overflow-y: auto;height: 100%;font-size: 14px;}
+			#purchaseProduct ul{list-style: none;padding-left: 0;}
+			#purchaseProduct > ul > li{border-bottom: 1px solid #000000;padding: 8px;}
+			#purchaseProduct > ul > li:last-child{border-bottom: 0;padding-bottom: 0;}
+			#purchaseProduct > ul > li span{display: flex;padding-bottom: 6px;justify-content: space-between;}
+			#purchaseProduct > ul > li > span:last-child{flex-direction: column;}
+			#purchaseProduct > ul > li > span input{flex: 1}
+			#purchaseProduct > ul > li > span ul{border-top: 1px dashed #ccc;padding: 8px 0;}
+			#purchaseProduct > ul > li > span ul li{border-bottom: 1px dashed #ccc;margin-bottom: 8px;}
+			#purchaseProduct > ul > li > span ul li span{align-items: center}
+			#purchaseProduct > ul > li > span ul li span div{flex: 1;padding-left: 8px;}
+			#purchaseProduct button{display: block;margin: -10px auto 40px;}
+			.purchase_one_product div span{display: block!important;}
+
+			.text-danger{font-weight: bold;font-style: normal;}
+
+			.panel-title{height: 26px;}
+			.panel-icon, .panel-tool{height: 26px;}
+			.panel-tool a.fa{font-size: 20px;height: 20px;width: 20px;margin-right: 6px;}
+
+			/* .layui-layer-shade{opacity: 0.6!important;}
+			.layui-layer-shade,.layui-layer-loading{z-index: 10000!important;} */
+		</style>
+	</head>
+	<body>
+		<div id="purchaseTab" style="display: none;" class="easyui-window" title="采购辅助" data-options="
+			minimizable: false,
+			maximize: true,
+			closed: true,
+			tools: [{iconCls:'fa fa-plus',handler:app.easyui.tabAdd},{iconCls:'fa fa-shopping-cart',handler:app.easyui.cartAdd},{iconCls:'fa fa-list',handler:app.easyui.orderAdd},{iconCls:'fa fa-opencart',handler:app.easyui.cgCart}]">
+			<div class="easyui-layout" data-options="fit:true">
+				<div data-options="region:'west',split:true" style="width: 20%">
+					<div id="purchaseProduct"></div>
+				</div>
+				<div data-options="region:'center'">
+					<div id="purchaseTabInfo" class="easyui-tabs" data-options="fit:true,border:false"></div>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索 </button>
+							<div class="btn-group" authority="STOREHOUSE_INVENTORY_WRITE">
+								<button class="btn btn-success btn-sm" onclick="app.methods.sanningNumber();"><i class="fa fa-archive"></i>&nbsp;扫码盘点</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a id="uploadInvoice">批量盘点</a></li>
+									<li><a href="../excel/批量盘点模板.xls">批量盘点模板</a></li>
+								</ul>
+							</div>
+							<div class="btn-group" authority="STOREHOUSE_INVENTORY_EXPORT">
+								<button class="btn btn-info btn-sm" id="uploadExcel"><i class="fa fa-archive"></i>&nbsp;盘点导入</button>
+								<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/盘点导入模板.xls">盘点导入模板</a></li>
+								</ul>
+							</div>
+							<button class="btn btn-warning btn-sm export" authority="STOREHOUSE_INVENTORY_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/storehouse/inventory/export');"><i class="fa fa-download"></i> 导出库存</button>
+							<button class="btn btn-warning btn-sm export" authority="TW_STOREHOUSE_INVENTORY_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/storehouse/inventorycheck/export');"><i class="fa fa-download"></i> 导出台湾仓48小时内库存变更记录 </button>
+							<audio src="../music/ding.wav" id="ding"></audio>
+							<audio src="../music/wrong.wav" id="wrong"></audio>
+							<div class="btn-group" authority="STOREHOUSE_INVENTORY_TRANSFER">
+								<button class="btn btn-info btn-sm" id="uploadExcelTransfer"><i class="fa fa-archive"></i>&nbsp;移库</button>
+								<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/移库模板.xls">移库模板</a></li>
+								</ul>
+							</div>
+						</div>
+					</div>
+                    <div class="toolBox btn-group right">
+						<button class="btn btn-primary btn-sm refresh" authority="STOREHOUSE_INVENTORY_CART" onclick="app.methods.openCart();"><i class="fa fa-shopping-cart"></i> 打开采购车</button>
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+                        <select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+                        <input type="text" class="form-control" name="productId" placeholder="产品ID">
+                        <input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+                        <input type="text" class="form-control" name="productTitle" placeholder="品名">
+						<div class="ajaxpicker form-control" name="supplierId"></div>
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="printBox"></div>
+		<div class="shopCart">
+			<div class="panel">
+				<div class="panel-heading">
+					<h5 class="panel-title">采购车</h5>
+					<button class="btn btn-warning btn-sm" style="float:right;" onclick="app.methods.closeCart();"><i class="fa fa-times"></i></button>
+				</div>
+				<div class="panel-body">
+					<ul>
+						<h5>临时采购车为空。</h5>
+					</ul>
+				</div>
+				<div class="panel-footer">
+					<input type="text" class="form-control" name="comments" placeholder="备注">
+                    <div class="btn-group">
+						<button class="btn btn-success" onclick="app.methods.exportShopCart()">导出</button>
+						<button class="btn btn-info" onclick="app.methods.clearShopCart()">清空</button>
+						<button class="btn btn-success" onclick="app.methods.createPurchased()">批量散采</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="storageSku"  role="dialog" data-backdrop="static" data-keyboard="false">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">扫描sku码</h4>
+					</div>
+					<div class="modal-body">
+						<input type="text" class="form-control" name="productSkuBarcode_sanning" placeholder="扫描结果">
+						<ul class="sanningDataSku"></ul>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" onclick="app.methods.storageSkuClose()">&nbsp;&nbsp;取&nbsp;消&nbsp;&nbsp;</button>
+						<button type="button" onclick="app.methods.intoStorageSubmit()" class="btn btn-primary">&nbsp;&nbsp;确认入库&nbsp;&nbsp;</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../js/JsBarcode.all.min.js"></script>
+	<script type="text/javascript" src="../dists/print/jQuery.print.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/easyui/jquery.easyui.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../dists/easyui/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+	<script type="text/html" id="checkInventoryInfo">
+        <div class="checkInventoryInfoForm">
+			<div class="form-group">
+				<label>类型</label>
+				<select class="selectpicker" name="changeType" data-width="100%">
+					<option value="10">增加库存</option>
+					<option value="20">减少库存</option>
+				</select>
+			</div>
+            <div class="form-group"><label>数量</label><input type="text" class="form-control" name="quantity"></div>
+            <div class="form-group"><label>库位</label><input type="text" class="form-control" name="positions"></div>
+			<div class="form-group"><label>备注</label><textarea class="form-control" name="changeComments" style="resize:none;"></textarea></div>
+            <button class="btn btn-primary" onclick="app.methods.saveCheckInventory(<%= index %>)">提交更改</button>
+        </div>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				storeData: [],
+				shopCart: cacheSessionStorage.getCache('shopCart') || [],
+				selections: []
+			},
+			easyui : {
+				tabAdd : function(){
+					$.messager.prompt('Prompt', '请输入一个网址...', function(r){
+						if (r){
+							$('#purchaseTabInfo').tabs('add',{
+							    title: r,
+							    content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+							    closable: true
+							});
+						}
+					});
+				},
+				orderAdd : function(){
+					var r = 'https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm'
+					$('#purchaseTabInfo').tabs('add',{
+						title: '淘宝订单',
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+						closable: true
+					});
+				},
+				cartAdd : function(){
+					var r = 'https://cart.taobao.com/cart.htm'
+					$('#purchaseTabInfo').tabs('add',{
+						title: '淘宝购物车',
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+						closable: true
+					});
+				},
+				cgCart : function(){
+					var r = 'https://cart.1688.com/cart.htm'
+					$('#purchaseTabInfo').tabs('add',{
+						title: '1688购物车',
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="'+r+'"></iframe>',
+						closable: true
+					});
+				}
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					tools.renderSelect.supplier('supplierId');
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+						url: utils.prePath() + '/api/admin/erp/storehouse/inventory',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.storeData = data.body.content;
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+						},
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'product_sku_barcode',title: '条码',align: 'center',
+					}, {
+						field: 'product_id',title: '产品ID',align: 'center',
+					}, {
+                        field: 'product_sku_img',title: '产品图',align: 'center',
+                        formatter: function (value, row, index) {
+							return tools.formatterFunction.proImage(row.product_sku_img, row.product_id, row.product_title);
+                        }
+					}, {
+                        field: 'product_title',title: '产品名称（SKU名）',
+                        formatter: function (value, row, index) {
+                            return value + '（' + row.product_sku_name + '）';
+                        }
+					}, {
+						field: 'inventory',title: '库存',align: 'center',
+						formatter: function (value, row, index) {
+                            return '<span style="font-size:18px;" class="' + (row.warning_inventory >= value ? 'text-danger' : 'text-primary') + '">' + value + '</span>';
+                        }
+					}, {
+						field: 'storehouse_name',title: '仓库',align: 'center',
+						formatter: function (value, row, index) {
+							return '<span class="nowarp">' + value + '</span>';
+                        }
+					}, {
+						field: 'inventory_positions',title: '库位',align: 'center',
+						formatter: function (value, row, index) {
+							var r = value.split(',').filter(function (s) {
+								return s && s.trim();
+							});
+							return '<span class="nowarp">' + r.toString() + '</span>';
+                        }
+					},{
+						field: 'warning_inventory',title: '常驻库存',align: 'center',
+						formatter: function (value, row, index) {
+                            return '<span class="useCkick" onclick="app.methods.editWarning(' + index + ')">' + value + '</span>'
+                        }
+					},
+					// ,{
+					// 	field: 'supplier_name',title: '供应商',minWidth:160,
+					// 	formatter: function (value, row, index) {
+					// 		return '<span class="nowarp">' + value + '</span>';
+					// 	}
+					// },
+						{
+						field: 'comments',title: '备注',minWidth:160,
+						formatter: function (value, row, index) {
+                            return '<span class="useCkick" onclick="app.methods.editComments(' + index + ')">' + (value || '--') + '</span>'
+                        }
+					}, {
+                        title: '操作',align: 'center',minWidth:280,
+                        formatter: function (value, row, index) {
+							return '<div class="toolBox btn-group">'+
+								'<button type="button" class="btn btn-success btn-xs" onclick="app.methods.checkInventory(' + index + ')">盘点</button>'+
+								'<button type="button" class="btn btn-info btn-xs" onclick="app.methods.viewLog(' + index + ')">日志</button>'+
+								'<button type="button" class="btn btn-primary btn-xs" authority="STOREHOUSE_INVENTORY_CART" onclick="app.methods.addShopCart(' + index + ')">加入采购车</button>'+
+								'<button class="btn btn-success btn-xs" onclick="app.methods.printOne('+index+');">打印标签</button>'+
+								'</div>';
+                        }
+                    }];
+                    return option;
+				},
+				sanningNumber : function(){
+					var storehouseId = tools.findUserInStore();
+					if(!storehouseId){
+						toastr.warning('请使用库管账号进行盘点操作。');
+						return;
+					}
+					app.data.storehouseThis = [];
+					$('.sanningDataSku').html('');
+					$('#storageSku').modal('show');
+					$('#storageSku input[name="productSkuBarcode_sanning"]').val('').off().on('keyup', function(event){
+						if(event.keyCode == 13){
+							var scanningInVal = $(this).val().trim().replace(/\./,'').substr(0,8);
+							if(!((scanningInVal - 0) > 0)){
+								toastr.warning('SKU码格式有误，请重新输入！');
+								$(this).val('');
+								return;
+							}
+							$.ajax({
+								type: "GET",
+								url: utils.prePath() + '/api/admin/erp/storehouse/inventory/all' + tools.jsonToParameString({size:1, page:0, productSkuBarcode: scanningInVal}),
+								success: function (result) {
+									if (result.statusCode == 'OK' && result.body.content[0] && result.body.content[0] != '') {
+										toastr.info('校验成功...');
+										var state = 0;
+										app.data.storehouseThis.map(function(e){
+											var newNum = $('.sanningDataSku input[data-code="' + e.productSkuBarcode + '"]').val();
+											if(newNum != e.quantity){
+												e.quantity = newNum;
+											}
+											if(e.productSkuBarcode == scanningInVal){
+												e.quantity = (e.quantity - 0) + 1;
+											}else{
+												state++;
+											}
+										});
+										if(state == app.data.storehouseThis.length){
+											// 录入正确
+											$('#ding')[0].play(1);
+											app.data.storehouseThis.push({
+												"storehouseId" : storehouseId,
+												"productId" : result.body.content[0].product_id,
+												"productSkuBarcode" : scanningInVal - 0,
+												"productSkuImg" : result.body.content[0].product_sku_img,
+												'productTitle': result.body.content[0].product_title + '(' + result.body.content[0].product_sku_name + ')',
+												"quantity" : 1
+											});
+										}
+										app.methods.scanningInto();
+									}else{
+										$('#wrong')[0].play(1);
+										toastr.warning('校验失败！')
+									}
+								}
+							});
+						}
+					});
+				},
+				initPushFile: function(){
+					// 盘点导入
+					app.data.uploader = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadExcel',
+						url: utils.prePath() + "/api/admin/erp/storehouse/batch/inventory/comments",
+						file_data_name: 'file',
+						multi_selection: false,
+						filters: {
+							max_file_size: '4000kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+							prevent_duplicates: true
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+							storehouseId : ''
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								var storehouseId = tools.getParams().storehouseId;
+								up.settings.multipart_params.storehouseId = storehouseId;
+								if(!storehouseId){
+									toastr.info('请选择仓库...');
+									app.data.uploader.splice(0,10)
+									return;
+								}
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.length > 0){
+									var html = ''
+									res.map(function(e){	
+										html += '<tr><td>'+e.productSkuBarcode+'</td><td>'+e.quantity+'</td><td>'+e.errors+'</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										content: '<table class="table"><tr><td>条码</td><td>数量</td><td>错误原因</tr>' + html + '</table>',
+									})
+								}else{
+									toastr.success('导入成功...');
+								}
+								layer.closeAll('loading');								
+								app.data.uploader.splice(0,10)
+							},
+							Error: function (up, err) {
+								if(err.response){
+									toastr.error(JSON.parse(err.response).body.message);
+								}else{
+									toastr.error(err.message);
+								}
+								layer.closeAll('loading');	
+								app.data.uploader.splice(0,10)
+							}
+						}
+					});
+					app.data.uploader.init();
+					// 移库
+					app.data.uploaderTransfer = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadExcelTransfer',
+						url: utils.prePath() + "/api/admin/erp/storehouse/batch/inventory/remove",
+						file_data_name: 'file',
+						multi_selection: false,
+						filters: {
+							max_file_size: '4000kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+							prevent_duplicates: true
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+							storehouseId : ''
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								var storehouseId = tools.getParams().storehouseId;
+								up.settings.multipart_params.storehouseId = storehouseId;
+								if(!storehouseId){
+									toastr.info('请选择仓库...');
+									app.data.uploader.splice(0,10)
+									return;
+								}
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.length > 0){
+									var html = ''
+									res.map(function(e){	
+										html += '<tr><td>'+e.productSkuBarcode+'</td><td>'+e.positions+'</td><td>无产品信息</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										content: '<table class="table"><tr><td>条码</td><td>库位</td><td>错误原因</tr>' + html + '</table>',
+									})
+								}else{
+									toastr.success('导入成功...');
+								}
+								layer.closeAll('loading');								
+								app.data.uploaderTransfer.splice(0,10)
+							},
+							Error: function (up, err) {
+								if(err.response){
+									toastr.error(JSON.parse(err.response).body.message);
+								}else{
+									toastr.error(err.message);
+								}
+								layer.closeAll('loading');	
+								app.data.uploaderTransfer.splice(0,10)
+							}
+						}
+					});
+					app.data.uploaderTransfer.init();
+					var uploader_uploadInvoice = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadInvoice',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/storehouse/batch/inventory/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.length > 0){
+									var html = ''
+									res.map(function(e){	
+										html += '<tr><td>'+e.productSkuBarcode+'</td><td>'+e.quantity+'</td><td>'+e.errors+'</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										content: '<table class="table"><tr><td>条码</td><td>数量</td><td>错误原因</tr>' + html + '</table>',
+									})
+								}else{
+									toastr.success('导入成功...');
+								}
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadInvoice
+					uploader_uploadInvoice.init();
+				},
+				scanningInto: function(sku){
+					var html = '';
+					app.data.storehouseThis.map(function(e){
+						html += '<li>'+
+							'<span>' + e.productSkuBarcode + '</span>'+
+							'<span>' + tools.formatterFunction.proImage(e.productSkuImg, null) + '</span>'+
+							'<span>' + e.productTitle + '</span>'+
+							'<span><input type="number" class="form-control" name="quantity" placeholder="数量" value="'+e.quantity+'" data-code="' + e.productSkuBarcode + '" min="0"></span>'+
+							'<span><button class="btn btn-success btn-sm" onclick="app.methods.printOne('+e.productSkuBarcode+');">打印标签</button></span>'+
+						'</li>';
+					});
+					$('.sanningDataSku').html(html);
+					$('#storageSku input[name="productSkuBarcode_sanning"]').focus().val('');
+				},
+				printOne: function(index){
+					var haveState = app.data.storeData[index];
+					if(!haveState){
+						haveState = app.methods.getSanningDataSkuOne(index);
+						tools.printProductTag(haveState.productId, haveState.productTitle.split('(')[0], haveState.productTitle, haveState.productSkuBarcode);
+					}else{
+						tools.printProductTag(haveState.product_id, haveState.product_sku_name, haveState.product_title, haveState.product_sku_barcode);
+					}
+				},
+				storageSkuClose: function(){
+					layer.confirm('确认关闭？', {
+					  btn: ['確定','取消'] //按钮
+					},function(index, layero){
+						$('#storageSku').modal('hide');
+						layer.closeAll();
+					});
+				},
+				getSanningDataSkuOne: function(scanningInVal){
+					var haveState;
+					for(var i = 0;i < app.data.storehouseThis.length; i++){
+						if(app.data.storehouseThis[i].productSkuBarcode == scanningInVal){
+							haveState = app.data.storehouseThis[i];
+							break;
+						}
+					}
+					return haveState;
+				},
+				intoStorageSubmit: function(){
+					if(app.data.storehouseThis.length == 0){
+						toastr.error('请扫描后再入库！');
+						return;
+					}
+					var pubNum = 0;
+					var state = 0;
+					app.data.storehouseThis.map(function(e, index){
+						var newNum = $('.sanningDataSku input[data-code="' + e.productSkuBarcode + '"]').val();
+						if(newNum != e.quantity){
+							e.quantity = newNum;
+						}
+						if(e.quantity > 0){
+							pubNum += e.quantity - 0;
+						}
+						if(e.quantity == 0){
+							state++;
+						}
+					});
+					if(app.data.storehouseThis.length == state){
+						toastr.error('请录入后再进行入库操作！');
+						return;
+					}
+					app.data.storehouseThis.map(function(e){
+						delete e['productSkuImg'];
+						delete e['productTitle'];
+					});
+					layer.confirm('入库货品共' + pubNum + '件，请确认！', {
+					  btn: ['確定','取消'] //按钮
+					},function(index, layero){
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + '/api/admin/erp/storehouse/batch/inventory',
+							data: JSON.stringify(app.data.storehouseThis),
+							success: function (result) {
+								try{
+								if (result.statusCode == 'OK') {
+									toastr.success('入库成功...');
+									app.data.table.bootstrapTable('refresh');
+									app.data.storehouseThis = [];
+									layer.closeAll();
+									$('#storageSku').modal('hide');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}catch(e){console.log(e)}
+							}
+						});	
+					});
+				},
+				addShopCart: function(index){
+					var data = {
+						title: app.data.storeData[index].product_title + '</br>' + app.data.storeData[index].product_sku_name,
+						img: app.data.storeData[index].product_sku_img,
+						storehouseInventoryId: app.data.storeData[index].storehouse_inventory_id,
+						id: app.data.storeData[index].product_id,
+						quantity: 1,
+						comments: '',
+						product_sku_barcode: app.data.storeData[index].product_sku_barcode,
+						storehouse_name: app.data.storeData[index].storehouse_name
+					}
+					var haveIndex = null;
+					app.data.shopCart.map(function(e,i){
+						if(e.storehouseInventoryId == data.storehouseInventoryId){
+							haveIndex = i;
+						}
+					})
+					if(haveIndex != null){
+						app.data.shopCart[haveIndex].quantity = (app.data.shopCart[haveIndex].quantity - 0 + 1);
+					}else{
+						app.data.shopCart.push(data);
+					}
+					cacheSessionStorage.setCache('shopCart', app.data.shopCart)
+					toastr.success('加入成功。')
+					// app.methods.openCart();
+				},
+				openCart: function(){
+					var html = '';
+					if(app.data.shopCart.length > 0){
+						app.data.shopCart.map(function(e,i){
+							html += '<li><div><div class="left">'+tools.formatterFunction.proImage(e.img, e.id, e.title)+'</div><div class="right"><span>' + e.title 
+								+ '</span><input type="number" class="form-control" name="quantity" placeholder="数量" value="' + e.quantity 
+								+ '"><button class="btn btn-danger btn-sm" onclick="app.methods.delShopCart(' + i 
+								+ ');"><i class="fa fa-trash"></i></button></div></div><input type="text" class="form-control" name="comments" placeholder="备注" value="'+e.comments+'"></li>'
+						});
+					}else{
+						html = '<h5>临时采购车为空。</h5>';
+					}
+					$('.shopCart ul').html(html);
+					$('.shopCart').show('normal');
+				},
+				delShopCart: function(index){
+					app.data.shopCart.map(function(e, i){
+						e = Object.assign(e, tools.getParams('.shopCart ul li:nth-child(' + (i+1) + ')'))
+					});
+					cacheSessionStorage.setCache('shopCart', app.data.shopCart)
+					app.data.shopCart.splice(index, 1);
+					app.methods.openCart();
+				},
+				closeCart: function(){
+					$('.shopCart').hide('normal');
+					app.data.shopCart.map(function(e, i){
+						e = Object.assign(e, tools.getParams('.shopCart ul li:nth-child(' + (i+1) + ')'))
+					});
+					cacheSessionStorage.setCache('shopCart', app.data.shopCart)
+				},
+				clearShopCart: function(){
+					$('.shopCart').hide('normal');
+					app.data.shopCart = [];
+					$('.shopCart ul').html('');
+					cacheSessionStorage.removeCache('shopCart')
+				},
+				exportShopCart: function(){
+					app.data.shopCart.map(function(e, i){
+						e = Object.assign(e, tools.getParams('.shopCart ul li:nth-child(' + (i+1) + ')'))
+					});	
+					var data = {
+						'storehouseCartProducts': [],
+						'comments' : $('.shopCart .panel-footer input[name="comments"]').val()
+					};
+					app.data.shopCart.map(function(e){
+						data.storehouseCartProducts.push({
+							'storehouseInventoryId' : e.storehouseInventoryId, 
+							'inventory' : e.quantity - 0,
+							'comments' : e.comments
+						})
+					})
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/storehouse/inventory/cart/create",
+						data: JSON.stringify(data),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+									if(result.body.key == ''){
+									toastr.error('系统异常,请稍候重试或联系开发人员...');
+									return false;
+								}else{
+									tools.exportByFrom("/api/admin/erp/storehouse/inventory/cart/export/" + result.body.key);
+									toastr.success('导出采购车成功...');
+									app.methods.clearShopCart();
+								}
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				viewLog: function(index){
+					var _index = layer.open({
+						type: 1,
+						content: '<table class="proLog"></table>',
+                    	area: ['100vw' , '100vh'],
+						title: '货品日志',
+						closeBtn: 1
+					});
+					$('.proLog').bootstrapTable({
+						pagination : true , 
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						templateView : false,
+						pageNumber : 1, 
+						pageSize : 30, 
+						toolbarAlign : 'left',
+						clickToSelect: true,
+						queryParamsType : 'page' ,
+						queryParams : function(params){
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							params['storehouseInventoryId'] = app.data.storeData[index].storehouse_inventory_id;
+							return params;
+						},
+                        url: utils.prePath() + '/api/admin/erp/storehouse/inventory/log',
+						totalField: 'body.totalElements',
+        				dataField: 'body.content',
+					    columns: [{
+							field: 'quantity',title: '变更数',align: 'center',
+						}, {
+							field: 'changeType',title: '类型',align: 'center',
+							formatter: function (value, row, index) {
+								return tools.formatterFunction.logStatus(value);
+							}
+						}, {
+							field: 'afterInventory',title: '变更后',align: 'center',
+						}, {
+							field: 'beforeInventory',title: '变更前',align: 'center',
+						}, {
+							field: 'changeComments',title: '备注',align: 'center',
+						}, {
+							field: 'createdBy',title: '操作员',align: 'center',
+						}, {
+							field: 'createdAt',title: '操作时间',align: 'center',
+							formatter: function (value, row, index) {
+								return tools.formatterFunction.time(value);
+							}
+						}],
+						onLoadError: function(result){
+							if(result == 403){
+								toastr.error("不允许访问")
+							}else{
+								toastr.error('系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				saveCheckInventory:function(id){
+					var data = Object.assign(tools.getParams('.checkInventoryInfoForm'), {
+						'storehouseInventoryId': id
+					});
+					if(data.changeType == 10 && !data.positions){
+						toastr.warning('请填写库位...');
+						return
+					}
+					app.methods.editInventoryAjax(data);
+				},
+				checkInventory: function(index){
+					var _index = layer.open({
+						type: 1,
+						content: template('checkInventoryInfo', {index:app.data.storeData[index].storehouse_inventory_id}),
+						area: ['400px', '560px'],
+						title: '盘点库存',
+						closeBtn: 1
+					});
+					$('select[name="changeType"]').selectpicker();
+				},
+				editWarning: function(index){
+					layer.prompt({
+						formType: 0,
+						value: app.data.storeData[index].warning_inventory,
+						title: '修改常驻库存',
+					}, function(value, _index, elem){
+						app.methods.editInventoryAjax({
+							'storehouseInventoryId': app.data.storeData[index].storehouse_inventory_id,
+							'warningInventory': value
+						});
+					});
+				},
+				editComments: function(index){
+					layer.prompt({
+						formType: 2,
+						value: app.data.storeData[index].comments,
+						title: '编辑备注',
+						area: ['400px', '200px']
+					}, function(value, _index, elem){
+						app.methods.editInventoryAjax({
+							'storehouseInventoryId': app.data.storeData[index].storehouse_inventory_id,
+							'comments': value
+						});
+					});
+				},
+				editInventoryAjax: function(data){
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/storehouse/inventory",
+						data: JSON.stringify(data),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('编辑成功...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+                initSelect : function(){
+					tools.renderSelect.storehouse('select[name="storehouseId"]');                    
+                    tools.renderSelect.storageType('select[name="storageTypeId"]');                    
+				},
+				initFocus: function(){
+					$('#storageSku').off().on('shown.bs.modal',function(e){                    
+						$('#storageSku input[name="productSkuBarcode_sanning"]').focus();
+					});
+				},
+
+				// 批量散采
+				createPurchased: function(){
+					// 关闭全部tab
+					$("#purchaseTabInfo .tabs li").each(function() {
+						$('#purchaseTabInfo').tabs('close', $(this).find('.tabs-title').text());
+					});
+					// 选中的数据
+					var selections = app.data.shopCart
+					if(selections.length == 0){
+						toastr.warning('请选择后再开始采购···')
+						return false
+					}
+					var dataSkuList = []
+					selections.map(function(e,i){
+						dataSkuList.push(e.product_sku_barcode)
+					})
+					layer.load()
+					// 获取商品列表数据
+					$.ajax({
+						type: "PUT",
+						async: false,
+						url: utils.prePath() + "/api/admin/product/cart/info",
+						data: JSON.stringify(dataSkuList),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								for (const i in selections) {
+									for (const j in result.body) {
+										if (selections[i].product_sku_barcode == result.body[j].product_sku_barcode) {
+											result.body[j].storehouse_name = selections[i].storehouse_name
+											result.body[j].pending_quantity = selections[i].quantity
+											result.body[j].product_image_url = selections[i].img
+										}
+									}
+								}
+								app.data.selections = result.body
+								app.methods.createPurchasedNext() // 下单成功后再左侧表中回填单号
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+							layer.closeAll()
+						}
+					});
+				},
+
+				// 下单成功后再左侧表中回填单号
+				createPurchasedNext: function() {
+					var selections = app.data.selections
+					var url_data = []; // tab链接列表
+					var purchase_data = []; // 左侧数据列表
+					selections.map(function(e){
+						var state_url = 0;
+						for(var i = 0;i < url_data.length;i++){
+							url_data[i] == e.source_url && state_url++
+						}
+						if(state_url == 0){
+							url_data.push(e.source_url)
+							// 给tab拼接链接
+							$('#purchaseTabInfo').tabs('add',{
+								title: e.product_id + '-' + e.product_title,
+								content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="' + e.source_url + '"></iframe>',
+								closable: true
+							});
+						}
+						// 供应商
+						var state_supplier = 0;
+						for(var j = 0;j < purchase_data.length;j++){
+							if(purchase_data[j].supplier_name == e.supplier_name){
+								state_supplier++
+							}
+						}
+						state_supplier == 0 && purchase_data.push({
+							'supplier_name': e.supplier_name,
+							'product': []
+						})
+					})
+					// 供应商下添加商品
+					purchase_data.map(function(e){
+						for(var i = 0;i < selections.length;i++){
+							if(e.supplier_name == selections[i].supplier_name){
+								e.product.push(selections[i])
+							}
+						}
+					})
+					// 商品列表渲染
+					var html = '<ul>';
+					purchase_data.map(function(e,i){
+						html += '<li data-i="'+i+'">'
+						html += '<span>供应商：' + e.supplier_name + '</span>'
+						html += '<span>采购单号：<input name="purchaseCode" /></span>'
+						html += '<span>运费：<input name="purchaseFreight" type="number" value="0"/></span>'
+						html += '<span>备注：<input name="comments" /></span>'
+						var pro_list_html = '';
+						e.product.map(function(_e){
+							pro_list_html += '<li class="purchase_one_product">'
+							pro_list_html += '<span>'+
+								tools.formatterFunction.proImage(_e.product_image_url) +
+								'<div>'+
+									'<span style="text-decoration: underline;cursor:pointer" onclick="app.methods.addTab(\''+_e.source_url+ '\',\'' + _e.product_id + '-' + _e.product_title + '\')">产品ID：'+_e.product_id + ' ( '+_e.product_sku_barcode+' )' +'</span>'+
+									'<span>规格：<i class="text-danger">'+_e.product_sku_name +'</i></span>'+
+									'<span>仓库：'+_e.storehouse_name+'(七日销量:'+(_e.last_7_sale || '0')+')</span>'+
+									'<span>待审核：'+(_e.check_quantity || 0)+'</span>'+
+								'</div>'+
+							'</span>'
+							pro_list_html += '<span>数量：<input name="quantity" type="number" skubarcode="'+_e.product_sku_barcode+'" value="'+_e.pending_quantity+'"/></span>'
+							pro_list_html += '<span>价格：<input name="purchasePrice" value="'+_e.purchase_price+'"/></span>'
+							pro_list_html += '</li>'
+						})
+						html += '<span>商品详情：<ul>' + pro_list_html + '</ul></span>'
+						html += '</li>'
+					})
+					html += '</ul>'
+					html += '<button id="pushPurchased" class="btn btn-success" onclick="app.methods.pushPurchased();">确认采购，提交采购单</button>'
+					$('#purchaseProduct').html(html);
+					$('#purchaseTab').window('open').panel('resize',{
+						width: $(window).width() + 'px',
+						height: $(window).height() + 'px',
+						top: 0,
+						left: 0,
+					});
+				},
+
+				// 添加tab
+				addTab: function(url, title){
+					$('#purchaseTabInfo').tabs('add',{
+						title: title,
+						content: '<iframe frameborder="0" style="width: 100%; height: 100%; border: none;overflow: hidden;" src="' + url + '"></iframe>',
+						closable: true
+					});
+				},
+
+				// 确认采购，提交采购单
+				pushPurchased: function(){
+					$('#pushPurchased').attr('disabled', 'true')
+					var purchased_data = [];
+					var state = 0;
+					$('#purchaseProduct > ul > li').each(function(){
+						var purchaseCode = $(this).find('input[name="purchaseCode"]').val(),
+							purchasePrice = $(this).find('input[name="purchasePrice"]').val(),
+							purchaseFreight = $(this).find('input[name="purchaseFreight"]').val(),
+							comments = $(this).find('input[name="comments"]').val();
+						if(purchaseCode == '' || purchasePrice < 0){state++;}
+						$(this).find('.purchase_one_product').each(function(){
+							var product = {
+								'skubarcode': $(this).find('input[name="quantity"]').attr('skubarcode'),
+								'number': $(this).find('input[name="quantity"]').val(),
+								'purchasePrice': $(this).find('input[name="purchasePrice"]').val(),
+							}
+							var this_product = app.methods.findProduct(product.skubarcode)
+							if(product.number != 0){
+								purchased_data.push({
+									'purchaseCode': purchaseCode, // 采购单号
+									'productId': this_product.product_id, // 商品ID
+									'originalTitle': this_product.product_title, // 商品名称
+									'productSkuBarcode': this_product.product_sku_barcode, // 商品sku
+									'productSkuName': this_product.product_sku_name, // 商品sku名称
+									'storehouseName': this_product.storehouse_name, // 仓库名称
+									'supplierName': this_product.supplier_name, // 供应商
+									'sourceUrl': this_product.source_url, // 淘宝链接
+									'quantity': product.number, // 数量
+									'purchasePrice': product.purchasePrice, // 价格
+									'purchaseFreight': purchaseFreight, // 运费
+									'comments': comments // 备注
+								})
+							}
+						})
+					})
+					if(state > 0){
+						toastr.warning('请完全填写信息···')
+						$('#pushPurchased').removeAttr('disabled')
+						return false
+					}
+					if(purchased_data.length == 0){
+						toastr.warning('根据数量判定，未找到采购商品···')
+						$('#pushPurchased').removeAttr('disabled')
+						return false
+					}
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/erp/purchased/create",
+						data: JSON.stringify(purchased_data),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('采购单创建成功...');
+								app.data.table.bootstrapTable('refresh');
+								$('#purchaseTab').window('close');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+							$('#pushPurchased').removeAttr('disabled')
+							app.methods.clearShopCart() // 清空
+						},
+						error: function (result) {
+							toastr.error(JSON.parse(result.responseText).body.message);
+							$('#pushPurchased').removeAttr('disabled')
+						}
+					});
+				},
+
+				// 查找商品
+				findProduct: function(skubarcode){
+					for(var i = 0; i < app.data.selections.length; i++){
+						if(app.data.selections[i].product_sku_barcode == skubarcode){
+							return app.data.selections[i];
+						}
+					}
+				}
+			},
+			init : function(){
+				app.methods.initFocus();
+				app.methods.initPushFile();
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

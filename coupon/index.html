@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>优惠券列表</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+        <link rel="stylesheet" href="../dists/select2/dist/css/select2.css" />
+        <link rel="stylesheet" type="text/css" href="../dists/daterangepicker/daterangepicker.css" />
+        <link href="https://cdn.bootcss.com/flatpickr/4.4.6/flatpickr.min.css" rel="stylesheet">
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+            span.select2{min-width: 150px;}
+            
+            .couponTypeSelect input[type="number"]{display: inline-block;width: 80px;margin: 0 6px;padding: 0 6px;height: 24px;}
+            .couponTypeSelect .label{margin: 0 6px;}
+            .couponTypeSelect > div{margin: 0 0 10px 0;display: flex;}
+
+            .dialog-set-time input[type="datetime-local"]{width: 200px;margin: 0 6px 10px;padding: 0 6px;height: 24px;}
+            .dialog-set-time input[type="number"]{width: 100px;margin: 0 6px 10px;padding: 0 6px;height: 24px;}
+            .dialog-set-time input + div{display: inline-flex}
+
+            .red{color: red}
+		</style>
+	</head>
+	<body>
+        <div class="container-fluid">
+            <div class="panel panel-headline">
+                <div class="panel-heading">
+                    <div class="left">
+                        <h3 class="panel-title">优惠券列表</h3>
+                        <div class="toolBox btn-group">
+                            <button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+                            <button class="btn btn-primary btn-sm" onclick="app.methods.addCoupon();"><i class="fa fa-plus-square"></i>&nbsp;&nbsp;新增优惠券</button>
+                            <button class="btn btn-success btn-sm sendMesBtn" onclick="app.methods.openSendMes();" style="display:none;">發送短信</button>
+                        </div>
+                    </div>
+                    <div class="toolBox btn-group right">
+                        <button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <table id="table-coupon"></table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal fade dialog-create-coupon" role="dialog" data-backdrop="static">
+            <div class="modal-dialog modal-md" role="document">
+                <div class="modal-content">
+                    <div class="modal-wrapper">
+                        <div class="modal-menu">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                                <h4 class="modal-title">新增优惠券</h4>
+                            </div>
+                            <div class="modal-body">
+                                <form role="form">
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">名称<span class="red">*</span></label>
+                                        <div class="col-sm-10">
+                                            <input class="form-control" type="text" name="couponName" placeholder="请填写优惠券名称" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">券码<span class="red">*</span></label>
+                                        <div class="col-sm-10">
+                                            <input class="form-control" type="text" name="couponCode" placeholder="券码建议4~6位大写字母混合数字" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">可用商城</label>
+                                        <div class="col-sm-10">
+                                            <select type="text" class="form-control" name="scopeId" style="min-width: 150px;"></select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">展示在网站</label>
+                                        <div class="col-sm-10">
+                                            <label class="fancy-radio" style="display:inline-block">
+                                                <input class="form-check-input" type="radio" name="isShow" value="0" checked>
+                                                <span><i></i>不展示</span>
+                                                </label>
+                                                <label class="fancy-radio" style="display:inline-block">
+                                                    <input class="form-check-input" type="radio" name="isShow" value="1">
+                                                <span><i></i>展示</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">跳转链接</label>
+                                        <div class="col-sm-10">
+                                            <input class="form-control" type="text" name="link" placeholder="填写商城地址或者聚合页地址" />
+                                            <span class="red">*优惠券领取完的跳转链接,必须要http://</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">类型<span class="red">*</span></label>
+                                        <div class="couponTypeSelect col-sm-10">
+                                            <div>
+                                                <label class="fancy-radio">
+                                                    <input class="form-check-input" type="radio" name="couponType" value="10">
+                                                    <span><i></i><span class="label label-primary">金额满减券</span></span>
+                                                </label>
+                                                <div>
+                                                    满
+                                                    <input class="form-control" type="number" name="amountRestrict">
+                                                    (HKD)减
+                                                    <input class="form-control" type="number" name="denomination" min="0">
+                                                    (HKD)
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="fancy-radio">
+                                                    <input class="form-check-input" type="radio" name="couponType" value="50">
+                                                    <span><i></i><span class="label label-primary">无门槛券</span></span>
+                                                </label>
+                                                <div>
+                                                    立减
+                                                    <input class="form-control" type="number" name="denomination">
+                                                    (HKD)
+                                                </div>
+                                            </div>
+                                            <!-- <div>
+                                                <label class="fancy-radio">
+                                                    <input class="form-check-input" type="radio" name="couponType" value="70">
+                                                    <span><i></i><span class="label label-primary">在线支付券</span></span>
+                                                </label>
+                                                <div>
+                                                    立减
+                                                    <input class="form-control" type="number" name="denomination">
+                                                    (HKD)
+                                                </div>
+                                            </div> -->
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">展示优先级</label>
+                                        <div class="col-sm-10">
+                                            <input class="form-control" type="number" name="priority"/>
+                                            <span class="red">*优先级默认为0</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="control-label col-sm-2">备注</label>
+                                        <div class="col-sm-10">
+                                            <input class="form-control" type="text" name="comments" />
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" commit>确定</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+    <script type="text/javascript" src="../dists/select2/dist/js/select2.full.min.js"></script>
+    <script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+    <script type="text/javascript" src="../js/plupload-upload.js"></script>
+    <script type="text/javascript" src="../dists/flatpickr/flatpickr.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+    <script src="http://oss.sheetjs.com/js-xlsx/xlsx.core.min.js"></script>
+    <script>
+        // <!-- https://gitee.com/baojuhua/lutils/blob/master/min/xlsx.utils.min.js -->
+        var xlsxUtils = (function () { var t = { Binary: { fixdata: function (e) { for (var r = "", t = 0, n = 10240; t < e.byteLength / n; ++t)r += String.fromCharCode.apply(null, new Uint8Array(e.slice(t * n, t * n + n))); return r += String.fromCharCode.apply(null, new Uint8Array(e.slice(t * n))) }, s2ab: function (e) { for (var r = new ArrayBuffer(e.length), t = new Uint8Array(r), n = 0; n != e.length; ++n)t[n] = 255 & e.charCodeAt(n); return r } }, _wb: null, _rABS: !1, import: function (e, r) { this.wb = null; var n = new FileReader; n.onload = function (e) { var n = e.target.result; t._wb = t._rABS ? XLSX.read(btoa(t.Binary.fixdata(n)), { type: "base64" }) : XLSX.read(n, { type: "binary" }), "function" == typeof r && r(t._wb) }, t._rABS ? n.readAsArrayBuffer(e) : n.readAsBinaryString(e) }, getSheetByName: function (e) { return XLSX.utils.sheet_to_json(t._wb.Sheets[e]) }, getSheetByIndex: function () { var e = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : 0; return t.getSheetByName(t._wb.SheetNames[e]) }, export: function (e, r) { var n = null; for (var o in e) { var a = t.format2Sheet(e[o]); n = t.format2WB(a, o, n) } return t.format2Blob(n, r) }, readDataHead: function (e) { var r = {}, t = Array.isArray(e) ? Object.keys(e[0]) : e, n = !0, o = !1, a = void 0; try { for (var i, f = t[Symbol.iterator](); !(n = (i = f.next()).done); n = !0) { var u = i.value; r[u] = u } } catch (e) { o = !0, a = e } finally { try { !n && f.return && f.return() } finally { if (o) throw a } } return r }, format2Sheet: function (e) { var r = Object.keys(e[0]), n = []; return e.map(function (e, n) { return r.map(function (r, o) { return Object.assign({}, { v: e[r], position: (o > 25 ? t.getCharCol(o) : String.fromCharCode(65 + o)) + (n + 1) }) }) }).reduce(function (e, r) { return e.concat(r) }).forEach(function (e, r) { return n[e.position] = { v: e.v } }), n }, format2WB: function (e) { var r = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : "mySheet", t = arguments[2], n = Object.keys(e); return t || (t = new Object, t.Sheets = {}, t.SheetNames = []), t.SheetNames.push(r), t.Sheets[r] = Object.assign({}, e, { "!ref": n[0] + ":" + n[n.length - 1] }), t }, format2Blob: function (e, r) { return new Blob([t.Binary.s2ab(XLSX.write(e, { bookType: void 0 == r ? "xlsx" : r, bookSST: !1, type: "binary" }))], { type: "" }) }, getCharCol: function (e) { for (var r = "", t = 0; e > 0;)t = e % 26 + 1, r = String.fromCharCode(t + 64) + r, e = (e - t) / 26; return r } }; return t; })();
+    </script>
+    <script>
+        // <!-- https://gitee.com/baojuhua/lutils/blob/master/min/saveAs.min.js --> 
+        function saveAs(e, t) { if (!("string" != typeof e || e.length <= 0)) { var n = document.createElement("a"); n.id = "download-" + Date.parse(new Date), n.href = e, n.download = t || "", n.style = "opacity: 0;height: 1px;width: 1px;overflow: hidden;position:fixed;top: -1;left: -1;z-index: -1;", document.body.appendChild(n), document.getElementById(n.id).click(), document.body.removeChild(document.getElementById(n.id)) } }
+    </script>
+    <script type="text/html" id="couponInfo">
+		<div class="row">
+            <div class="col-md-6">
+                <h5>优惠券领取情况</h5>
+                <div class="form-group">
+                    <input class="form-control" type="text" name="tel" placeholder="联系方式筛选"/>
+                </div>
+                <table id="getCouponData"></table>
+            </div>
+			<div class="col-md-6">
+				<h5>优惠券使用情况</h5>
+                <table id="useCouponData"></table>
+			</div>
+		</div>
+    </script>
+    <script type="text/javascript">
+        var app = {
+            data: {
+                table: $("#table-coupon"),
+            },
+            methods: {
+                initTable: function () {
+                    var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+                    app.data.table.bootstrapTable({
+                        showExport: true,  //是否显示导出按钮  
+                        pagination : true , 
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						templateView : false,
+						pageNumber : 1, 
+						pageSize : 30, 
+						pageList : [30 , 60 , 100],
+						toolbarAlign : 'left',
+						clickToSelect: true,
+						queryParamsType : 'page' ,
+                        queryParams: function (params) {    
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber) - 1;
+                            return params;
+                        },
+                        url: utils.prePath() + '/api/admin/coupon/list',
+                        totalField: 'body.totalElements',
+                        dataField: 'body.content',
+                        columns: app.methods.optionByAuthority(),
+                        onLoadSuccess: function (data) {
+                            app.data.couponData = data.body.content;
+                            tableUi.initBootstrapTable();
+                            authoritys.useAuthority();
+                        },
+						onLoadError: function(result){
+							if(result == 403){
+								toastr.error("不允许访问")
+							}else{
+								toastr.error('系统异常,请稍候重试或联系开发人员...');
+							}
+                        }
+                    });
+                },
+                optionByAuthority: function () {
+                    var option = [{
+                        field: 'coupon_name',
+                        title: '名称',
+                        align: 'center',
+                        formatter: function (value, row, index, field) {
+                            return '<a href="#" onclick="app.methods.showDetail(' + index + ')">'+value+'</a>';
+                        }
+                    },{
+                        field: 'coupon_code',
+                        title: '优惠券代码',
+                        align: 'center',
+                    },{
+                        field: 'priority',
+                        title: '优先级',
+                        align: 'center',
+                        formatter: function (value, row, index, field) {
+                            // -1，下线；0，预上线；1，上线
+                            switch(row.is_release){
+                                case -1:return '<span class="label label-info">'+value+'</span>';break;
+                                default:return '<a class="label label-info" onclick="app.methods.editCouponPriority(' + index + ')">'+value+'</a>';break;
+                            }
+                        }
+                    },{
+                        title: '折扣规则',
+                        formatter: function (value, row, index, field) {
+                            var roleText = '',
+                                typeText = '';
+                            switch(row.coupon_type){
+                                case 10:roleText='满'+row.amount_restrict+'(HKD)减'+row.denomination+'(HKD)';break;
+                                case 50:roleText='立减'+row.denomination+'(HKD)';break;
+                                case 70:roleText='在线支付立减'+row.denomination+'(HKD)';break;
+                            }
+                            switch(row.coupon_type){
+                                case 10:typeText='金额满减券';break;
+                                case 50:typeText='无门槛券';break;
+                                case 70:typeText='在线支付券';break;
+                            }
+                            return '<span style="margin-right:10px" class="label label-primary">'+typeText+'</span>' + roleText;
+                        }
+                    },{
+                        field: 'scope_id',
+                        title: '适用商城',
+                        align: 'center',
+                        formatter: function (value, row, index, field) {
+                            var scopeName = ''
+                            app.data.scopeData.map(function(e){
+                                if(e.id == value){
+                                    scopeName = e.name
+                                }
+                            })
+                            return '<span class="label label-primary">'+scopeName+'</span>';
+                        }
+                    },{
+                        field: 'is_show',
+                        title: '是否展示',
+                        align: 'center',
+                        formatter: function (value, row, index, field) {
+                            if(0 == value){
+                                return '<span class="label label-default">不展示</span>';
+                            }else if(1 == value){
+                                return '<span class="label label-success">展示</span>';
+                            }
+                        }
+                    },{
+                        field: 'link',
+                        title: '跳转链接',
+                    },{
+                        field: 'comments',
+                        title: '备注',
+                    },{
+                        title: '操作',
+                        align: 'center',
+                        width: 120,
+                        minWidth: 120,
+                        formatter: function (value, row, index, field) {
+                            // -1，下线；0，预上线；1，上线
+                            switch(row.is_release){
+                                case -1:
+                                    return '<span class="label label-default">优惠券已下线</span>';break;
+                                case 0:
+                                    return '<div class="btn-group" role="group"><a class="btn btn-success btn-xs" authority="COUPON_WRITE" onclick="app.methods.releaseCoupon(' + row.id + ')">上线</a>'+
+                                        '<a class="btn btn-danger btn-xs" authority="COUPON_DELETE" onclick="app.methods.deleteCoupon(' + row.id + ')">删除</a></div>';
+                                    break;
+                                case 1:
+                                    return '<div class="btn-group" role="group"><a class="btn btn-primary btn-xs" authority="COUPON_SEND" onclick="app.methods.sendCoupon(' + row.id + ')">发券</a>'+
+                                        '<a class="btn btn-warning btn-xs" authority="COUPON_WRITE" onclick="app.methods.unReleaseCoupon(' + row.id + ')">下线</a></div>';
+                                    break;
+                            }
+                        }
+                    }];
+                    return option;
+                }, 
+                showDetail:function(index){
+                    var layer_index = layer.open({
+                        type: 1,
+                        content: template('couponInfo',{}),
+                        area: ['98vw', '90vh'],
+                        title: '优惠券使用情况',
+                        skin: 'couponInfoBox',
+                        closeBtn: 1
+                    });
+                    $('.couponInfoBox input[name="tel"]').keyup(function(event){
+					  	if(event.keyCode ==13){
+                            $('#getCouponData').bootstrapTable('refresh');
+					  	}
+					});
+                    $('#getCouponData').bootstrapTable({
+						pagination: true,
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						showColumns: true,
+						clickToSelect: true,
+						templateView: false,
+						showHeader: true,
+						pageNumber: 1,
+						pageSize: 15,
+						showColumns: false,
+						toolbarAlign: 'left',
+						queryParamsType: 'page',
+						queryParams: function (params) {
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber) - 1;
+							params.tel = $('.couponInfoBox input[name="tel"]').val();
+							return params;
+						},
+                        url : utils.prePath()+"/api/admin/coupon/report/send?couponId="+app.data.couponData[index].id,
+						totalField: 'body.totalElements',
+						dataField: 'body.content',
+						columns:  [{
+                            field: 'tel',
+                            title: '联系方式',
+                            align: 'center'
+                        },{
+                            field: 'createdAt',
+                            title: '领取日期',
+                            align: 'center',
+                            formatter: function (value, row, index, field) {
+                                return moment(value).format('YYYY-MM-DD HH:mm:ss')
+                            }
+                        }]  
+					});
+                    $('#useCouponData').bootstrapTable({
+						pagination: true,
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						showColumns: true,
+						clickToSelect: true,
+						templateView: false,
+						showHeader: true,
+						pageNumber: 1,
+						pageSize: 15,
+						showColumns: false,
+						toolbarAlign: 'left',
+						queryParamsType: 'page',
+						queryParams: function (params) {
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber) - 1;
+							return params;
+						},
+                        url : utils.prePath()+"/api/admin/coupon/report/used/"+app.data.couponData[index].coupon_code,
+						totalField: 'body.totalElements',
+						dataField: 'body.content',
+						columns:  [{
+                            field: 'code',
+                            title: '订单号',
+                            align: 'center'
+                        },{
+                            field: 'affiliate',
+                            title: '来源',
+                            align: 'center',
+                        },{
+                            field: 'created_at',
+                            title: '下单时间',
+                            align: 'center',
+                            formatter: function (value, row, index, field) {
+                                return moment(value.replace('T',' ')).format('YYYY-MM-DD HH:mm:ss')
+                            }
+                        },{
+                            field: 'discount_total_price',
+                            title: '结算金额',
+                            align: 'center',
+                        },{
+                            field: 'scope_id',
+                            title: '商城',
+                            align: 'center',
+                            formatter: function (value, row, index, field) {
+                                var scopeName = ''
+                                app.data.scopeData.map(function(e){
+                                    if(e.id == value){
+                                        scopeName = e.name
+                                    }
+                                })
+                                return '<span class="label label-primary">'+scopeName+'</span>';
+                            }
+                        }]
+					});
+                },
+                addCoupon:function(){
+                    var _modal = $(".dialog-create-coupon");
+                    _modal.modal({
+                        backdrop: 'static',
+                        keyboard: false,
+                        show: false
+                    });
+
+                    //modal初始化
+                    _modal.find("input[type='text']").val('');
+                    _modal.find("input[type='number']").val('');
+                    _modal.modal("show");
+
+                    _modal.find('button[commit]').off('click').on('click', function () {
+                        var formData = $('.dialog-create-coupon form').serializeJson(); 
+                        if(!formData.couponName){
+                            toastr.error('请输入优惠券名称');
+                            return false;
+                        }
+                        if(!formData.couponCode){
+                            toastr.error('请输入券码');
+                            return false;
+                        }
+                        if(!formData.couponType){
+                            toastr.error('请选择优惠券类型');
+                            return false;
+                        }
+                        var data = {
+                            couponName : formData.couponName,
+                            couponCode : formData.couponCode,
+                            link : formData.link,
+                            priority : formData.priority || 0,
+                            couponType : formData.couponType,
+                            comments : formData.comments,
+                            scopeId : formData.scopeId,
+                            isShow : formData.isShow,
+                            isRelease : 0
+                        };
+                        var mesBox;
+                        switch(formData.couponType){
+                            case '10':
+                                mesBox = $('.couponTypeSelect > div').eq(0);
+                                data['amountRestrict'] = mesBox.find('input[name="amountRestrict"]').val();
+                                data['denomination'] = mesBox.find('input[name="denomination"]').val();
+                                if(mesBox.find('input[name="amountRestrict"]').val() == ''){
+                                    toastr.error('请填写条件');
+                                    return false;
+                                }
+                                if(mesBox.find('input[name="denomination"]').val() == ''){
+                                    toastr.error('请填写面额');
+                                    return false;
+                                }
+                                break;
+                            case '50':
+                                mesBox = $('.couponTypeSelect > div').eq(1);
+                                data['denomination'] = mesBox.find('input[name="denomination"]').val();
+                                if(mesBox.find('input[name="denomination"]').val() == ''){
+                                    toastr.error('请填写面额');
+                                    return false;
+                                }
+                                break;
+                            case '70':
+                                mesBox = $('.couponTypeSelect > div').eq(2);
+                                data['denomination'] = mesBox.find('input[name="denomination"]').val();
+                                if(mesBox.find('input[name="denomination"]').val() == ''){
+                                    toastr.error('请填写面额');
+                                    return false;
+                                }
+                                break;
+                        }
+                        $.ajax({
+                            type : "post",
+                            url : utils.prePath()+"/api/admin/coupon",
+                            data: JSON.stringify(data),
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+                                    _modal.modal("hide");
+                                    app.data.table.bootstrapTable('refresh');
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    })
+                },
+                deleteCoupon: function (id) {
+                    $.ajax({
+                        type : "delete",
+                        url : utils.prePath()+"/api/admin/coupon/"+id,
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                app.data.table.bootstrapTable('refresh');
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+                releaseCoupon: function(id){
+                    $.ajax({
+                        type : "PUT",
+                        url : utils.prePath()+"/api/admin/coupon/"+id+"/publish",
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                app.data.table.bootstrapTable('refresh');
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+                unReleaseCoupon: function(id){
+                    $.ajax({
+                        type : "PUT",
+                        url : utils.prePath()+"/api/admin/coupon/"+id+"/cancel",
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                app.data.table.bootstrapTable('refresh');
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+                sendCoupon: function(id){
+                    layer.prompt({title: '给用户手机号发券，多个号码【英文逗号】分隔' ,formType: 2}, function(text, _index){
+                        $.ajax({
+                            type : "POST",
+                            url : utils.prePath()+"/api/admin/coupon/send/"+id,
+                            data : JSON.stringify(text.split(',')),
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+                                    layer.close(_index)
+                                    toastr.success('发送成功...');
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+                },
+                openSendMes: function(){
+                    var layer_index = layer.open({
+                        type: 1,
+                        content: '<div class="sedMesBox"><div class="form-group row"><label class="control-label col-sm-2">发送至<span class="red">*</span></label><div class="col-sm-10"><textarea class="form-control" style="resize: none;height: 80px;" type="text" name="tels" placeholder="电话以,间隔"></textarea></div></div><div class="form-group row"><label class="control-label col-sm-2">短信内容<span class="red">*</span></label><div class="col-sm-10"><textarea class="form-control" style="resize: none;height: 80px;" type="text" name="content"></textarea></div></div><button class="btn btn-success" onclick="app.methods.sedMes();">发送</button></div>',
+                        area: ['600px', '400px'],
+                        title: '发送短消息',
+                        closeBtn: 1
+                    });
+                },
+                sedMes: function(){
+                    var tel = $('.sedMesBox textarea[name="tels"]').val();
+                    var content = $('.sedMesBox textarea[name="content"]').val();
+                    if(content.trim() == ''){
+                        toastr.error('请填写内容...');
+                        return false;
+                    }
+                    if(tel.trim() == ''){
+                        toastr.error('请填写电话...');
+                        return false;
+                    }
+
+                    layer.confirm('找开发确认过了么？', {
+                        btn: ['是的','还没有'] //按钮
+                    }, function(){
+                            $.ajax({
+                                type : "POST",
+                                url : utils.prePath()+"/api/admin/coupon/send/content",
+                                data : JSON.stringify({
+                                    tels:tel.split(','),
+                                    content:content
+                                }),
+                                success : function(result){
+                                    if(result.statusCode == 'OK'){
+                                        layer.closeAll()
+                                        toastr.success('发送成功...');
+                                    }else{
+                                        toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                    }
+                                }
+                            });
+                        });
+                },
+                editCouponPriority: function(index){
+                    layer.prompt({title: '修改', value : app.data.couponData[index].priority , formType: 3}, function(text, _index){
+                        $.ajax({
+                            type : "PUT",
+                            url : utils.prePath()+"/api/admin/coupon/"+app.data.couponData[index].id+"/priority/" + text,
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+                                    app.data.table.bootstrapTable('refresh');
+                                    layer.close(_index)
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+                },
+                initBtn: function(){
+                    var user = utils.cookie.getCookie('username');
+                    if(user == 'admin' || user == 'dev'){
+                        $('.sendMesBtn').show();
+                    }else{
+                        $('.sendMesBtn').remove();
+                    }
+                },
+                initSelect: function(){
+                    $.ajax({
+                        type : "GET",
+                        url : utils.prePath()+"/api/admin/scope/list",
+                        async : false,
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                var data = [];
+                                result.body.content.map(function (e) {
+                                    data.push({
+                                        id: e.id,
+                                        text: e.name,
+                                    })
+                                })
+                                $('select[name="scopeId"]').select2({
+                                    data: data,
+                                    placeholder: "选择来源商城",
+                                    width:'100%'
+                                });
+                                app.data.scopeData = result.body.content;
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    })
+                }
+            },
+            init: function () {
+                app.methods.initBtn();
+                app.methods.initSelect();
+                app.methods.initTable();
+            }
+        }
+
+        $(function () {
+            app.init();
+        });
+    </script>
+</html>

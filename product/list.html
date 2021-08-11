@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>产品管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/easyui/themes/bootstrap/easyui.css">
+		<link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.editPro .layui-layer-content{padding: 0}
+			.layui-layer-content{padding: 20px;}
+			input[name="isNewEndDay"]{border: 0;padding: 0 6px;height: 100%;margin-left: 10px;width: 100px;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">产品管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<!-- <button class="btn btn-primary btn-sm" onclick="app.methods.openCreatePro();"><i class="fa fa-plus-square"></i>&nbsp;创建产品</button>
+							<button class="btn btn-primary btn-sm" onclick="app.methods.openByUser();"><i class="fa fa-plus-square"></i>&nbsp;手动创建</button> -->
+							<!-- <button class="btn btn-warning btn-sm" authority="PRODUCT_EXPORT" onclick="tools.exportByFrom('/api/admin/product/sku/export');"><i class="fa fa-download"></i>&nbsp;&nbsp;导出SKU</button> -->
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="productCreatedBeginTime" rangeEnd="productCreatedEndTime" class="form-control" name="productCreatedTimes" placeholder="创建时间" autocomplete="off"/>
+						<input type="text" class="form-control" name="ids" placeholder="产品ID">
+						<input type="text" class="form-control" name="title" placeholder="产品标题">
+						<input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+						<select name="scopeId" class="selectpicker" data-live-search="true" data-title="商城"></select>
+						<select name="saleStrategy" class="selectpicker" data-live-search="true" data-title="营销模式"></select>
+						<select name="status" class="selectpicker" data-live-search="true"></select>
+						<select name="depletionRange" class="selectpicker" data-live-search="true"></select>
+						<input class="classify" name="categoryId" style="width:100%;">
+						<input type="text" class="form-control" name="remark" placeholder="备注">
+						<input type="text" class="form-control" name="createdBy" placeholder="创建人">
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="createProBox"  role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">创建产品<span class="text-danger" style="font-size:16px;">（*1688为爬取链接、天猫为文件上传）</span></h4>
+					</div>
+					<div class="modal-body">
+						<div style="display: flex" class="productOrganizeBox">
+							<input class="form-control addOption" type="text" data-type="productOrganize" placeholder="新增选择项：在此输入新分类后回车。"/>
+						</div>
+						<textarea id="productUrl" class="form-control" rows="3" style="resize: none;margin-top: 10px;" placeholder="1688产品链接"></textarea>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.createProByLink();">链接创建</button>
+						<button type="button" id="uploadExcel" class="btn btn-primary">文件创建</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="createProByUser"  role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">添加产品</h4>
+					</div>
+					<div class="modal-body">
+						<div style="display: flex" class="productOrganizeBox">
+							<input class="form-control addOption" type="text" data-type="productOrganize" placeholder="新增选择项：在此输入新分类后回车。"/>
+						</div>
+						<input type="text" style="margin-top: 10px;" class="form-control" name="title" placeholder="商品名称">
+						<input type="text" style="margin-top: 10px;" class="form-control" name="sourceUrl" placeholder="商品链接">
+						<input type="text" style="margin-top: 10px;" class="form-control" name="supplier" placeholder="供应商名称">
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.createProByUser();">创建</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/easyui/jquery.easyui.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../dists/easyui/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=2020111200"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main")
+			},
+			methods : {
+				// 初始化数据
+				initTable: function(){
+					var authority_data = authoritys.useAuthority();
+					if(authority_data){
+						app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+							url: utils.prePath() + '/api/admin/product/list',
+							columns: app.methods.optionByAuthority(),
+							queryParams : function(params){
+								params.size = params.pageSize;
+								params.page = parseInt(params.pageNumber)-1;
+								delete params['pageSize'];
+								delete params['pageNumber'];
+								return Object.assign(params, tools.getParams());
+							},
+							onLoadSuccess : function(data){
+								tableUi.initBootstrapTable();
+								authoritys.useAuthority();
+								app.data.proData = data.body.content;
+							},
+						}));
+					}else{
+						toastr.error("权限不足，不允许访问...")
+					}
+				},
+
+				// 列表配置
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'id',title: 'ID',align: 'center',minWidth: 50,
+						formatter: function(value, row, index, field) {
+							return row.productExt ? '<a href="'+row.productExt.sourceUrl+'" target="_blank">'+value+'</a>' : '';
+						}
+					}, {
+						field: 'productImageUrl',title: '主图',align: 'center',
+						formatter: function(value, row, index, field) {
+							return '<img src="'+value+'" alt="'+row.title+'" onclick = "tools.previewPro('+row.id+');" class="img-responsive proImage">';
+						}
+					}, {
+						field: 'title',title: '标题',minWidth: 180,
+					},
+						{
+						field: 'organize',title: '商品分组',align: 'center',minWidth: 80,
+						formatter: function(value, row, index, field) {
+							return row.productExt ? '<span class="text-length-table-col">'+(row.productExt.organize || '--')+'</span>' : '';
+						}
+					}, {
+						title: '价格区间',align: 'center',minWidth: 150,
+						formatter: function(value, row, index, field) {
+							if(row.minPrice && row.maxPrice){
+								return '<span class="money">$' + row.minPrice + ' ~ ' + '$' + row.maxPrice + '</span>';
+							}else{
+								return '<span class="text-danger">请设置SKU价格</span>';
+							}
+						}
+					}, {
+						field: 'description',title: '描述',minWidth: 160,
+						formatter: function(value, row, index, field) {
+							if(value){
+								return value;
+							}else{
+								return '<span class="text-warning">部分模板需要该数据</span>';
+							}
+						}
+					}, {
+						field: 'productExt.remark',title: '备注',minWidth: 80,
+						formatter: function(value, row, index, field) {
+							if(row.productExt){
+								if(row.productExt.downReason){
+									if(row.status == 10){
+										return '<span class="nowarp" style="display:block;margin-top:6px;">上架时间：' + tools.formatterFunction.time(row.productExt.downReason * 1000) + '</span>' + '<span class="text-length-table-col">'+(value || '--')+'</span>';
+									}else{
+										return '<span class="nowarp" style="display:block;margin-top:6px;">下架原因：' + row.productExt.downReason + '</span>' + '<span class="text-length-table-col">'+(value || '--')+'</span>';
+									}
+								}else{
+									return '<span class="text-length-table-col">'+(value || '--')+'</span>';
+								}
+							}else{
+								// console.log(row.id + '数据错误。')
+								return '--'
+							}
+						}
+					}, {
+						field: 'status',title: '状态',align: 'center',width: 50,
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.proStatus(value) + (row.isNew?'<span style="display:block;padding-top:6px">新品</span>':'')
+						}
+					}, {
+						field: 'scopeNames',title: '销售平台',minWidth: 120
+					}, {
+						field: 'saleStrategy',title: '营销模式',minWidth: 80,
+						formatter: function(value, row, index, field) {
+							var str = ''
+							if (value) {
+								str = value.replace('clean', '出清')
+								str = str.replace('multiple', '多件')
+							} else {
+								str = '--'
+							}
+							return str
+						}
+					},
+					{
+						field: 'createdBy',title: '创建人',minWidth: 60,
+					},{
+						field: 'createdAt',title: '创建时间',align: 'center',minWidth: 80,
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.time(value);
+						}
+					},
+						{
+						title: '操作',minWidth: 160,
+						formatter: function(value, row, index, field) {
+							return '<div class="btn-group" role="group">'
+								+((row.status > 0) ? ' <button class="btn btn-info btn-xs" authority="PRODUCT_WRITE" onclick="app.methods.productEdit('+index+')">编辑</button>' : '')
+								+((row.status == 20 || row.status == 1) ? ' <button class="btn btn-success btn-xs" authority="PRODUCT_WRITE" onclick="app.methods.productStatus('+row.id+' , 10)">上架</button>' : (row.status == 10) ? '  <button class="btn btn-warning btn-xs" authority="PRODUCT_WRITE" onclick="app.methods.productStatus('+row.id+' , 20)">下架</button>' : '')
+								+((row.status != 10 && row.status != 20) ? ' <button class="btn btn-danger btn-xs" authority="PRODUCT_DELETE" onclick="app.methods.productDelete('+row.id+')">刪除</button>' : '')
+								+'</div>';
+						}
+					}];
+					return option;
+				},
+
+				// 初始化筛选条件
+				initSelect: function(){
+					tools.rangeTime('input[name="productCreatedTimes"]',true);
+					tools.renderSelect.organizes();
+					tools.renderSelect.scope('select[name="scopeId"]');
+					tools.renderSelect.sale('select[name="saleStrategy"]');
+					tools.renderSelect.product('select[name="status"]');
+					tools.renderSelect.depletionRange('select[name="depletionRange"]');
+					$('#toolbar select[name="status"]').selectpicker();
+					//tools.renderSelect.supplier('select[name="supplierId"]');
+					tools.renderSelect.categoryTree('.classify');
+				},
+
+				openByUser: function(){
+					tools.renderSelect.organizes('#createProByUser .productOrganizeBox', 'productOrganize', false);
+					try{
+						app.data.uploader.destroy();
+					}catch(e){}
+					app.methods.initPushProFile();
+					$('#createProByUser input').val('');
+					$('#createProByUser').modal('show');
+				},
+
+				createProByUser: function(){
+					// var text = $('#productUrl').val();
+					var organize = $('#createProByUser select[name="productOrganize"]').val();
+					var params1 = tools.getParams('#createProByUser');
+					params1['organize'] = organize
+					delete params1.productOrganize
+					if(!params1.organize || params1.organize == ''){
+						toastr.error('请填写分类再继续创建...');
+						return false;
+					}
+					if(!params1.title || params1.title == ''){
+						toastr.error('请填写标题...');
+						return false;
+					}
+					if(!params1.sourceUrl  || params1.sourceUrl == ''){
+						toastr.error('请填写链接...');
+						return false;
+					}
+					if(!params1.supplier || params1.supplier == ''){
+						toastr.error('请填写供应商...');
+						return false;
+					}
+					$.ajax({
+						type : "POST",
+						url : utils.prePath()+"/api/admin/product/manual/create",
+						data : JSON.stringify(params1),
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.table.bootstrapTable('refresh');
+								var index = layer.open({
+									type: 2,
+									title:'产品编辑',
+									skin: 'editPro',
+									move: false,
+									content: 'edit.html?id=' + result.body.id,
+									area: ['100vw' , '100vh'],
+								});
+								$('#createProByUser').modal('hide');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+
+				openCreatePro: function(){
+					tools.renderSelect.organizes('#createProBox .productOrganizeBox', 'productOrganize', false);
+					try{
+						app.data.uploader.destroy();
+					}catch(e){}
+					app.methods.initPushProFile();
+					$('#createProBox textarea').val('');
+					$('#createProBox').modal('show');
+				},
+
+				createProByLink : function(){
+					var text = $('#productUrl').val();
+					var organize = $('#createProBox select[name="productOrganize"]').val();
+					if(organize == ''){
+						toastr.error('请填写分类再继续创建...');
+						return false;
+					}
+					if(text == ''){
+						toastr.error('请填写1688链接再继续创建...');
+						return false;
+					}
+					$.ajax({
+						type : "GET",
+						url : utils.prePath()+"/api/admin/product/exist",
+						data : {productUrl : text},
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								if(result.body && result.body.length > 0){
+									var alreadyHtml = '';
+									result.body.map(function(e,i){
+										alreadyHtml += e.productId;
+										(i < result.body.length - 1) ? alreadyHtml += ' · ' : '';
+									})
+									layer.confirm('本产品与ID为' + alreadyHtml + '的产品重复，是否继续创建？', {
+										btn: ['继续','取消']
+									}, function(index){
+										app.methods.createProAjax(text , organize);
+										layer.close(index);
+									});
+								}else{
+									app.methods.createProAjax(text , organize);
+								}
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+
+				createProAjax : function(url , organize){
+					$.ajax({
+						type : "POST",
+						url : utils.prePath()+"/api/admin/product/achieve",
+						data : JSON.stringify({'sourceUrl' : url , 'organize' : organize}),
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.table.bootstrapTable('refresh');
+								toastr.error('1688产品创建成功...');
+								$('#createProBox').modal('hide');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+
+				initPushProFile: function(){
+					app.data.uploader = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadExcel',
+						url: utils.prePath() + "/api/admin/product/archer/tmall/csv",
+						file_data_name: 'file',
+						multi_selection: false,
+						filters: {
+							max_file_size: '2000kb',
+							mime_types: [{ title: "Excel files", extensions: "csv" }],
+							prevent_duplicates: true
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+							organize : ''
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								var organize = $('select[name="productOrganize"]').val();
+								if(organize == ''){
+									toastr.error('请填写分类再继续创建...');
+									return false;
+								}
+								up.settings.multipart_params.organize = organize;
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+								$('#createProBox').modal('hide');
+							},
+							UploadComplete: function (up, files) {
+								toastr.success('表格上传完成,后台创建中...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								toastr.success('导入成功...');
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								if(err.response){
+									toastr.error(JSON.parse(err.response).body.message);
+								}else{
+									toastr.error(err.message);
+								}
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					app.data.uploader.init();
+				},
+
+				productDelete : function(productId){
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type : "DELETE",
+							url : utils.prePath()+"/api/admin/product/" + productId,
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									app.data.table.bootstrapTable('refresh');
+									toastr.success('删除成功...');
+					  				layer.close(_index);
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+
+				// 编辑产品
+				productEdit : function(index){
+					var index = layer.open({
+						type: 2,
+						title:'产品设置，名称：' + app.data.proData[index].title + '，ID：' + app.data.proData[index].id,
+						skin: 'editPro',
+						move: false,
+					  	content: 'edit.html?id=' + app.data.proData[index].id,
+					  	area: ['100vw' , '100vh'],
+						cancel: function (index, layero) {
+							// var iframeWin = window[layero.find('iframe')[0]['name']]
+							// iframeWin.app.attributes.initProductInfo()
+							// return false
+						}
+					});
+				},
+
+				productStatus : function(productId , status){
+					var canUp = true;
+					if(status == 10){
+						var tableData = app.data.table.bootstrapTable('getData');	
+						$.each(tableData, function(i , product) {
+							if(product.id == productId){
+								if(!product.minPrice || !product.maxPrice){
+									canUp = false;
+									return false;
+								}
+							}
+						});
+						if(!canUp){
+							toastr.error('该产品SKU价格尚未设置正确,请设置后重试...');
+							return false;
+						}
+						// 设置
+						layer.open({
+							title: '新品设置',
+							content: '<label class="form-control">该商品是否为新品？<input name="isNew" type="checkbox" checked></label><label class="form-control">新品保持天数<input name="isNewEndDay" min="1" value="7" type="number" placeholder="请填写新品保持天数（）"></label>',
+							btn: ['保存'], //可以无限个按钮
+						 	yes: function(){
+								var isNew = $('input[name="isNew"]')[0].checked;
+								var isNewEndDay = $('input[name="isNewEndDay"]').val() - 0;
+								if(isNew){
+									if(isNewEndDay < 1){
+										toastr.warning('天数格式有误...');
+										return false;
+									}
+									app.methods.stateChange(productId, {status : 10 , downReason : moment().unix() + '', isNew: true, isNewEndDay: isNewEndDay})
+								}else{
+									app.methods.stateChange(productId, {status : 10 , downReason : moment().unix() + '', isNew: false})
+								}
+							}
+						});
+						$('input[name="isNew"]').off().on('change', function(){
+							var isNew = $('input[name="isNew"]')[0].checked;
+							if(isNew){
+								$('input[name="isNewEndDay"]').parent().show()
+							}else{
+								$('input[name="isNewEndDay"]').parent().hide()
+							}
+						})
+					}
+					if(status == 20){
+						layer.prompt({title: '备注', value : ''}, function(text, index){
+							if(text == ''){
+								toastr.error('下架前请填写备注信息...');
+								return false;
+							}
+							app.methods.stateChange(productId, {status : 20 , downReason : text})
+						});
+					}
+				},
+
+				stateChange:function(productId, params){
+					$.ajax({
+						type : "PUT",
+						url : utils.prePath()+"/api/admin/product/status/" + productId,
+						data: JSON.stringify(params),
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								params.status == 10 && toastr.success('产品上架成功...');
+								params.status == 20 && toastr.warning('产品下架成功...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+
+				initAddOpt: function(){
+					$('.addOption').on('keyup', function(event){
+						if(event.keyCode ==13 && $(this).val() != ''){
+							$('select[name="' + $(this).data('type') + '"]').selectpicker('destroy').html('<option value="' + $(this).val() + '">' + $(this).val() + '</option>').selectpicker('val', $(this).val());
+							$(this).val('');
+						}
+					})
+					$('.addOption').on('blur', function(event){
+						if($(this).val() != ''){
+							toastr.warning('回车一下自动选择！');
+						}
+					})
+				},
+			},
+			init : function(){
+				app.methods.initAddOpt();
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

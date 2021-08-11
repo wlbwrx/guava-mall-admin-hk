@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>商城管理</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/hint/hint.css"/>
+		<link rel="stylesheet" href="../dists/select2/dist/css/select2.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.panel .panel-body{padding-bottom: 10px;}
+			.panel .panel-body > div{width: 50%;margin-right: 8px;}
+			@media screen and (max-width: 768px) {
+				.panel .panel-body > div{width: 100%;margin-right: 0;}				
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<h3 class="panel-title">折扣配置</h3>
+					<div class="right">
+						<button type="button" onclick="window.location.reload();"><i class="fa fa-refresh"></i></button>
+					</div>
+				</div>
+				<div class="panel-body" style="display: flex;flex-wrap: wrap;">
+                    <div>
+                        <div id="toolbar" class="btn-group">
+                            <button type="button" class="btn btn-primary" onclick="app.methods.numberAdd();"><i class="fa fa-plus-square"></i>&nbsp; 新增 </button>
+                            <button type="button" id="uploadLogo" style="display: none;"></button>
+                        </div>
+                        <table id="table-number"></table>
+                    </div>
+					<div>
+                        <div id="toolbar1" class="btn-group">
+                            <button type="button" class="btn btn-primary" onclick="app.methods.facotrAdd();"><i class="fa fa-plus-square"></i>&nbsp; 新增 </button>
+                            <button type="button" id="uploadLogo" style="display: none;"></button>
+                        </div>
+                        <table id="table-factor"></table>
+                    </div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="numberAdd"  role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">创建折扣</h4>
+					</div>
+					<div class="modal-body">
+						<form id="scopeAdd">
+							<input type="number" name="quantity" class="form-control" placeholder="件数" />
+							<br/>
+							<input type="number" name="discount" class="form-control" placeholder="折扣（例如9.5折只需要填写0.95即可）" />
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">&nbsp;&nbsp;取&nbsp;消&nbsp;&nbsp;</button>
+						<button type="button" class="btn btn-primary" onclick="app.methods.numberSave();">&nbsp;&nbsp;保&nbsp;存&nbsp;&nbsp;</button>
+					</div>
+				</div>
+			</div>
+        </div>
+        <div class="modal fade" id="facotrAdd"  role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">创建因子</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="scopeAdd">
+                            <input type="number" name="minPrice" class="form-control" placeholder="价格下限" />
+                            <br/>
+                            <input type="number" name="maxPrice" class="form-control" placeholder="价格上限" />
+                            <br/>
+                            <input type="number" name="factor" class="form-control" placeholder="折扣因子" />
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">&nbsp;&nbsp;取&nbsp;消&nbsp;&nbsp;</button>
+                        <button type="button" class="btn btn-primary" onclick="app.methods.factorSave();">&nbsp;&nbsp;保&nbsp;存&nbsp;&nbsp;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				uploader : null, 
+				table : $("#table-number"),
+				table1 : $("#table-factor"),
+			},
+			methods : {
+				initTable : function(){
+					app.data.table.bootstrapTable({
+						sidePagination: "server",
+						toolbar : '#toolbar',
+						url: utils.prePath() + '/api/admin/promotion/discount/number',
+        				dataField: 'body',
+					    columns: [{
+					        field: 'quantity',
+					        title: '数量',
+					        align : 'center',
+					    },{
+					        field: 'discount',
+					        title: '折扣',
+							align : 'center',
+							formatter :  function(value, row, index, field) {
+					        	return '<span onclick="app.methods.numberEdit(' + index + ')">'+value+'</a>';
+							}
+					    }, {
+					        title: '操作' , 
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return '<a class="btn btn-danger btn-xs" onclick="app.methods.numberDelete(' + row.id + ')">刪除</a>';
+							}
+						}],
+						onLoadSuccess: function(data){
+							app.data.numberData = data.body
+						},
+                        onLoadError : function(data){
+                            if(data == 403){
+								toastr.error('用户权限不足,如需操作,请联系管理员...');
+                            }
+                        }
+                    });
+                    app.data.table1.bootstrapTable({
+						sidePagination: "server",
+						toolbar : '#toolbar1',
+						url: utils.prePath() + '/api/admin/promotion/discount/factor',
+        				dataField: 'body',
+					    columns: [{
+					        field: 'minPrice',
+					        title: '价格区间',
+                            align : 'center',
+                            formatter :  function(value, row, index, field) {
+					        	return value + '元 ~ ' + row.maxPrice + '元';
+							}
+					    },{
+					        field: 'factor',
+					        title: '因子',
+							align : 'center',
+							formatter :  function(value, row, index, field) {
+					        	return '<span onclick="app.methods.factorEdit(' + index + ')">'+value+'</a>';
+							}
+					    }, {
+					        title: '操作' , 
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return '<a class="btn btn-danger btn-xs" onclick="app.methods.factorDelete(' + row.id + ')">刪除</a>';
+							}
+						}],
+						onLoadSuccess: function(data){
+							app.data.factorData = data.body
+						},
+                        onLoadError : function(data){
+                            if(data == 403){
+								toastr.error('用户权限不足,如需操作,请联系管理员...');
+                            }
+                        }
+                    });
+				},
+				numberEdit : function(index){
+					layer.prompt({
+                        title: '修改',
+                        value: app.data.numberData[index].discount,
+                        formType: 0
+                    }, function (text, i) {
+                        $.ajax({
+							type : "POST",
+							url : utils.prePath()+"/api/admin/promotion/discount/number",
+							data: JSON.stringify({
+								'id': app.data.numberData[index].id,
+								'quantity': app.data.numberData[index].quantity,
+								'discount': text
+							}),
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									app.data.table.bootstrapTable('refresh');
+									layer.close(i);
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+				},
+				numberAdd : function(){
+					$('#numberAdd input[name="quantity"]').val('');
+					$('#numberAdd input[name="discount"]').val('');
+					$('#numberAdd').modal({backdrop : 'static'});
+                },
+                numberSave: function(){
+                    $.ajax({
+                        type : "POST",
+                        url : utils.prePath()+"/api/admin/promotion/discount/number",
+                        data: JSON.stringify({
+                            quantity:$('#numberAdd input[name="quantity"]').val(),
+                            discount:$('#numberAdd input[name="discount"]').val()
+                        }),
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                app.data.table.bootstrapTable('refresh');
+                                $('#numberAdd').modal('hide');
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+				factorEdit : function(index){
+					layer.prompt({
+                        title: '修改',
+                        value: app.data.factorData[index].factor,
+                        formType: 0
+                    }, function (text, i) {
+                        $.ajax({
+							type : "POST",
+							url : utils.prePath()+"/api/admin/promotion/discount/factor",
+							data: JSON.stringify({
+								'id': app.data.factorData[index].id,
+								'minPrice': app.data.factorData[index].minPrice,
+								'maxPrice': app.data.factorData[index].maxPrice,
+								'factor': text
+							}),
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									app.data.table1.bootstrapTable('refresh');
+									layer.close(i);
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+				},
+                facotrAdd : function(){
+					$('#facotrAdd input[name="minPrice"]').val('');
+					$('#facotrAdd input[name="maxPrice"]').val('');
+					$('#facotrAdd input[name="factor"]').val('');
+					$('#facotrAdd').modal({backdrop : 'static'});
+                },
+                factorSave: function(){
+                    $.ajax({
+                        type : "POST",
+                        url : utils.prePath()+"/api/admin/promotion/discount/factor",
+                        data: JSON.stringify({
+                            minPrice:$('#facotrAdd input[name="minPrice"]').val(),
+                            maxPrice:$('#facotrAdd input[name="maxPrice"]').val(),
+                            factor:$('#facotrAdd input[name="factor"]').val()
+                        }),
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+                                app.data.table1.bootstrapTable('refresh');
+                                $('#facotrAdd').modal('hide');
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+				numberDelete : function(promotionDiscountNumberId){
+					layer.confirm('确定删除该商城？', {
+					  	btn: ['确定','取消'] //按钮
+					}, function(index){
+					  	layer.close(index);
+					  	$.ajax({
+							type : "DELETE",
+							url : utils.prePath()+"/api/admin/promotion/discount/number/" + promotionDiscountNumberId,
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									app.data.table.bootstrapTable('refresh');
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+                },
+                factorDelete : function(promotionDiscountFactorId){
+					layer.confirm('确定删除该商城？', {
+					  	btn: ['确定','取消'] //按钮
+					}, function(index){
+					  	layer.close(index);
+					  	$.ajax({
+							type : "DELETE",
+							url : utils.prePath()+"/api/admin/promotion/discount/factor/" + promotionDiscountFactorId,
+							success : function(result){
+								if(result.statusCode == 'OK'){
+									app.data.table1.bootstrapTable('refresh');
+								}else{
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+			},
+			init : function(){
+				app.methods.initTable();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

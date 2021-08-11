@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>产品列表</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/hint/hint.css"/>
+		<link rel="stylesheet" href="../dists/select2/dist/css/select2.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.modal{z-index: 2;}
+            .modal-backdrop{z-index: 1;}
+			.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th{vertical-align: middle;}
+			#toolbar.btn-group .btn{margin-top: 2px;}
+			#toolbar.btn-group{width: 100%;}
+			#toolbar.btn-group .form-inline{display: block;margin-left: 10px; float: right;}
+			.text-length{display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;overflow: hidden;font-weight: 500;font-size: 15px;min-height: 42px;}
+			.text-length-table-col{display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 3;overflow: hidden;}
+			.carousel-inner>.item>a>img, .carousel-inner>.item>img, .img-responsive, .thumbnail a>img, .thumbnail>img{cursor: pointer;}
+			.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th{max-width: 300px;}
+			.proImage{min-width: 50px;max-width: 50px;width: 50px;}
+
+			/* 移动化 */
+			@media screen and (min-width: 769px) {
+				.modal-dialog .modal-content{min-width: 700px;}
+			}
+			@media screen and (max-width: 768px) {
+				#toolbar.btn-group > button:nth-child(2){display: none;}
+				#toolbar.btn-group > .form-inline {display: none;margin: 10px 0 0 0;width: 100%;}
+				#toolbar.btn-group > .form-inline input,
+				#toolbar.btn-group > .form-inline span.select2{width: 100% !important;}
+				.fixed-table-toolbar .columns .keep-open > button{margin-top: 2px;}
+				.bootstrap-table .fixed-table-toolbar {position: relative;}
+				.bootstrap-table .fixed-table-toolbar .bs-bars {width: 100%;}
+				.bootstrap-table .fixed-table-toolbar > .columns {position: absolute;right: 0;top: 0;}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<h3 class="panel-title">产品列表</h3>
+					<div class="right">
+						<button type="button" onclick="window.location.reload();"><i class="fa fa-refresh"></i></button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+					    <button type="button" class="btn btn-success" onclick="app.methods.changeTableView();"><i class="fa fa-exchange"></i>&nbsp; 切换 </button>
+					    <button type="button" class="btn btn-info" onclick="app.methods.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+					    <div class="form-inline">
+					    	<div class="form-group">
+						    	<select name="status" class="form-control">
+						    		<option value="">全部</option>
+						    		<option value="1">已创建</option>
+						    		<option value="-1">创建失败</option>
+								  	<option value="10">已上架</option>
+								  	<option value="20">已下架</option>
+								</select>
+						    </div>
+						    <div class="form-group">
+						    	<input type="text" class="form-control" name="id" placeholder="产品ID" style="width: 80px;">
+						    </div>
+						    <div class="form-group">
+						    	<input type="text" class="form-control" name="title" placeholder="产品标题" style="width: 150px;">
+							</div>
+						    <!--
+                            	作者：yuan496_01@163.com
+                            	时间：2018-02-07
+                            	描述：按照商城类型过滤
+                            -->
+						    <div class="form-group">
+						    	<select type="text" class="form-control" name="category" style="width: 150px;"></select>
+						    </div>
+						    <!--
+                            	作者：yuan496_01@163.com
+                            	时间：2018-02-07
+                            	描述：按照商城类型过滤
+                            -->
+						    <div class="form-group">
+						    	<select type="text" class="form-control" name="organize" style="width: 150px;"></select>
+						    </div>
+						    
+						  	<button class="btn btn-primary" onclick="app.methods.searchTable();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					    </div>
+					</div>
+					<table id="table-products"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../dists/select2/dist/js/select2.full.min.js"></script>
+	<script id="itemtpl" type="text/html">	
+	    <div class="col-sm-4 col-md-3 col-lg-2">
+	        <div class="thumbnail example">
+	            <a href="<%=hrefFormat(item.id)%>" target="_blank"><img src="<%=item.productImageUrl%>" class="img-responsive" alt="<%=item.title%>"></a>
+	            <div class="caption">
+	            	<p class="text-muted text-length" data-toggle="tooltip" data-placement="top" title="<%=item.title%>"><%=item.title%></p>
+	                <p class="text-muted"><span class="text-danger">$</span><%=item.minPrice||"-"%> ~ <span class="text-danger">$</span><%=item.maxPrice||"-"%></p>
+	                <p>
+	                	<% if (item.status > 0) { %>
+                			<a href="#" class="btn btn-primary btn-xs" onclick="app.methods.productEdit(<%=item.id%>);" data-id="<%=item.id%>"><i class="fa fa-edit"></i>编辑</a>
+                		<% } %>
+	                </p>
+	            </div>
+	        </div>
+	    </div>
+    </script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-products")
+			},
+			methods : {
+				showSearchView:function(){
+					$('#toolbar .form-inline').toggle('fast')
+					$('#toolbar > button').eq(-1).find('i').toggleClass('fa-angle-double-down')
+					$('#toolbar > button').eq(-1).find('i').toggleClass('fa-angle-double-up')
+				},
+				initTable : function(){
+					app.data.table.bootstrapTable({
+						pagination : true , 
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						showColumns : true,
+						toolbar : '#toolbar',
+						templateView : false,
+						showHeader : true,
+						pageNumber : 1 , 
+						pageSize : 15 , 
+						pageList : [15 , 30 , 45 , 90],
+						toolbarAlign : 'left',
+						queryParamsType : 'page' ,
+						queryParams : function(params){
+							params.status = $('#toolbar select[name=status]').val().trim();
+							params.id = $('#toolbar input[name=id]').val().trim();
+							params.title = $('#toolbar input[name=title]').val().trim();
+							params.categoryId = ($('select[name="category"]').val() == '#') ? '' : $('select[name="category"]').val();
+							params.organize = ($('select[name="organize"]').val() == '#') ? '' : $('select[name="organize"]').val();
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							return params;
+						},
+						url: utils.prePath() + '/api/admin/product/list',
+						totalField: 'body.totalElements',
+        				dataField: 'body.content',
+					    columns: [{
+					        field: 'id',
+					        title: 'ID',
+					        align : 'center',
+					        width : 50,
+					        minWidth : 50
+					    }, {
+					        field: 'productImageUrl',
+					        title: '主图',
+					        width : 60,
+					        minWidth : 60,
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="#" onclick = "app.methods.preview('+row.id+');"><img src="'+value+'" alt="'+row.title+'" class="img-responsive proImage"></a>';
+							}
+					    }, {
+					        field: 'title',
+					        title: '标题',
+					        width : 200,
+					        minWidth : 200,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span>'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'description',
+					        title: '描述',
+					        width : 100,
+					        minWidth : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span>'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'remark',
+					        title: '备注',
+					        width : 100,
+					        minWidth : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   row.productExt ? '<span class="text-length-table-col">'+(row.productExt.remark || '--')+'</span>' : '';
+							}
+					    }, {
+					        field: 'organize',
+					        title: '产品分组',
+					        width : 100,
+					        minWidth : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   row.productExt ? '<span class="text-length-table-col">'+(row.productExt.organize || '--')+'</span>' : '';
+							}
+					    }, {
+					        title: '价格区间',
+					        align : 'center',
+					        width : 150,
+					        minWidth : 150,
+					        formatter :  function(value, row, index, field) {
+					        	if(row.minPrice && row.maxPrice){
+					        		return '<span class="text-danger">$</span>' + row.minPrice + ' ~ ' + '<span class="text-danger">$</span>' + row.maxPrice;
+					        	}
+					        	return '--';
+							}
+					    }, {
+					        field: 'status',
+					        title: '状态' ,
+					        align : 'center',
+					        width : 50,
+					        formatter :  function(value, row, index, field) {
+					        	var statusHtml = '' ;
+					        	switch (value){
+					        		case 20:
+					        			statusHtml = '<span class="label label-warning">已下架</span>' ;
+					        			break;
+				        			case 10:
+					        			statusHtml = '<span class="label label-info">已上架</span>' ;
+					        			break;
+				        			case 0:
+					        			statusHtml = '<span class="label label-info">创建中</span>' ;
+					        			break;
+				        			case 1:
+					        			statusHtml = '<span class="label label-info">已创建</span>' ;
+					        			break;
+				        			case -1:
+					        			statusHtml = '<span class="label label-danger">创建失败</span>' ;
+					        			break;
+					        		default:
+					        			break;
+					        	}
+					        	return statusHtml ;
+							}
+					    }, {
+					        title: '操作' , 
+					        align : 'center',
+					        width : 200,
+					        minWidth : 160,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<div class="btn-group" role="group">'
+					        	        +((row.status > 0) ? '  <a class="btn btn-info btn-xs" onclick="app.methods.productEdit('+row.id+')">编辑</a>' : '')
+										+'</div>';
+							}
+					    }],
+					    onLoadSuccess : function(data){
+					    	$.each($('#table-products td'), function (j, column) {
+					    		$(this).css('max-width' , $(this).css("width"));
+					    	});
+					    	//处理图片显示
+							$('#table-products .thumbnail img').height($('#table-products .thumbnail img').width());
+							$('[data-toggle="tooltip"]').tooltip();
+					    },
+                        onLoadError : function(data){
+                            if(data == 403){
+								toastr.error('用户权限不足,如需操作,请联系管理员...');
+                            }
+                        }
+					});
+				},
+				initSelect2 : function(){
+					console.log(app.data)
+					$.ajax({
+						type:"get",
+						url:utils.prePath()+"/api/admin/scope/categories",
+						async:false,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								var _data = [];
+								$.each(result.body, function(index , shop) {
+									var _categorie = [];
+									$.each(shop.categories, function(index2 , categorie) {
+										_categorie.push({id:categorie.id , text:categorie.name});
+									});
+									_data.push({text : shop.name , children : _categorie});
+								});
+								$('select[name="category"]').select2({
+									data : _data,
+									placeholder: "商城分类",
+									allowClear: true
+								});
+								$('select[name="category"]').val(null).trigger("change");
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+					
+					$.ajax({
+						type:"get",
+						url:utils.prePath()+"/api/admin/product/organizes",
+						async:false,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								var _data = [];
+								$.each(result.body, function(index , organize) {
+									_data.push({id:organize,text:organize});
+								});
+								$('select[name="organize"]').select2({
+									data : _data,
+									placeholder: "产品分组",
+									allowClear: true
+								});
+								$('select[name="organize"]').val(null).trigger("change");
+								$('select[name="linkUrlOrganize"]').select2({
+									data : _data,
+									multiple : true,
+									maximumSelectionLength : 1,
+									tags : true,
+									allowClear: true,
+									width:'calc(100% - 84px)'
+								});
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				changeTableView : function(){
+					var options = app.data.table.bootstrapTable('getOptions');
+                	app.data.table.bootstrapTable('refreshOptions', {templateView: !options.templateView , showHeader : !options.showHeader , showColumns : !options.showColumns});
+				},
+				productEdit : function(productId){//产品详情
+					var index = layer.open({
+					  	type: 2,
+					  	content: 'productEditSimple.html?id=' + productId,
+					  	area: [$(window).width() + 'px' , $(window).height() + 'px']
+					});
+				},
+				preview : function(id){
+					layer.open({
+					  	type: 2,
+					  	title: '产品预览',
+					  	maxmin : true,
+					  	shadeClose: true,
+					  	resize : false,	
+					  	shade: 0.8,
+					  	area: ['392px', '710px'],
+					  	content: utils.perviewPath(id)
+					});
+				},
+				searchTable : function(){
+					app.data.table.bootstrapTable('refresh');
+				},
+				enterKey : function(){
+					$('#toolbar').keyup(function(event){
+					  	if(event.keyCode ==13){
+					    	app.methods.searchTable();
+					  	}
+					});
+				}
+			},
+			init : function(){
+				app.methods.initTable();
+				app.methods.initSelect2();
+				app.methods.enterKey();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

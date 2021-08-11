@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>销售实时数据</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+        <style>
+            th,td{font-size: 30px;text-align: right;word-break: keep-all;}
+            .nav a{font-size: 16px;cursor: pointer;}
+            .timeNow{float: right;padding: 10px 15px;line-height: 20px;}
+            #tab{padding: 0;width: 100%;height: calc(100% - 40px);overflow: auto;box-sizing: border-box}
+            #table{margin-bottom: 70px;}
+            .fa-plus-square-o {margin-right: 10px;cursor: pointer;}
+            .fa-minus-square-o {margin-right: 10px;cursor: pointer;}
+            .single-list {display: none;}
+            .single-list td{font-size: 20px;}
+            @media screen and (max-width:812px){
+                th,td{font-size: 20px;}
+            }
+        </style>
+	</head>
+	<body>
+		<div class="container-fluid" style="padding: 10px;background: #fff;overflow: hidden;">
+            <div class="custom-tabs-line tabs-line-bottom left-aligned">
+                <ul class="nav" role="tablist">
+                    <li class="active" data-type="table"><a role="tab" data-toggle="tab">今天</a></li>
+                    <li data-type="table"><a role="tab" data-toggle="tab">环比昨天</a></li>
+                    <li data-type="table"><a role="tab" data-toggle="tab">昨天</a></li>
+                    <li data-type="table"><a role="tab" data-toggle="tab">本周</a></li>
+                    <li data-type="table"><a role="tab" data-toggle="tab">本月</a></li>
+                </ul>
+                <span class="timeNow"></span>
+            </div>
+            <div class="tab-content" style="height:calc(100% - 43px)">
+                <div class="tab-pane fade in active" id="tab">
+                    <table id="table" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="text-align:center">Affiliate</th>
+                                <th>订单总额</th>
+                                <th>订单总数</th>
+                                <th>SKU总数</th>
+                                <th>运费总额</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<!-- <script type="text/javascript" src="../js/moment.js"></script> -->
+	<script type="text/javascript" src="../js/dayjs.min.js"></script>
+	<script type="text/javascript" src="../js/dayjs-zh-cn.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+    <script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data: {
+                timeRanges:[],
+                show: false // 单页查看显示/隐藏
+			},
+			methods : {
+                initTime: function(){
+                    var timeJson = {
+                        sevenDaysAgo: dayjs().subtract(7, 'days').set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        yesterday: dayjs().subtract(1, 'days').set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        thisDay: dayjs().set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        thisWeek: dayjs().locale('zh-cn').startOf('week').set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        lastWeek: dayjs().locale('zh-cn').startOf('week').subtract(7, 'day').set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        thisMonth: dayjs().startOf('month').set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        prevMonth: dayjs().startOf('month').subtract(1, 'month').set('hour', 0).set('minute', 0).set('second', 0).unix(),
+                        now: dayjs().unix()
+                    };
+                    app.data.timeRanges = {
+                        '今天': {'beginTime':timeJson.thisDay,'endTime': timeJson.now},
+                        '昨天': {'beginTime':timeJson.yesterday,'endTime': timeJson.thisDay},
+                        '环比昨天': {'beginTime':timeJson.yesterday,'endTime':dayjs().subtract(1, 'days').unix()},
+                        '本周': {'beginTime':timeJson.thisWeek,'endTime': timeJson.now},
+                        '本月': {'beginTime':timeJson.thisMonth,'endTime': timeJson.now},
+                    };
+                    app.data.now = dayjs().format('YYYY-MM-DD HH:mm:ss');
+                },
+				initData: function(type){
+                    var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+                    var paramStr = tools.jsonToParameString(app.data.timeRanges[(type || '今天')]);
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + '/api/admin/erp/analysis/order/affiliate/overview' + paramStr,
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                var html = '';
+                                var pub = {
+                                    affiliate: "合计",
+                                    sku_count: 0,
+                                    total_order_count: 0,
+                                    total_order_freight: 0,
+                                    total_order_price: 0
+                                };
+                                var filter_data = result.body;
+                                var sells_data = [];
+                                var no_p_data = {
+                                    affiliate: "未知",
+                                    sku_count: 0,
+                                    total_order_count: 0,
+                                    total_order_freight: 0,
+                                    total_order_price: 0,
+                                };
+                                for(var i = 0; i < filter_data.length; i++){
+                                    if(filter_data[i].affiliate == '未知' || filter_data[i].affiliate == ''){
+                                        no_p_data.sku_count += filter_data[i].sku_count
+                                        no_p_data.total_order_count += filter_data[i].total_order_count
+                                        no_p_data.total_order_freight += filter_data[i].total_order_freight
+                                        no_p_data.total_order_price += filter_data[i].total_order_price
+                                        sells_data.push(no_p_data)
+                                    }else{
+                                        sells_data.push(filter_data[i])
+                                    }
+                                }
+                                sells_data.sort(function(a,b){
+                                    if(a.total_order_price > b.total_order_price){
+                                        return -1;
+                                    }else if(a.total_order_price < b.total_order_price){
+                                        return 1;
+                                    }else{
+                                        return 0;
+                                    }
+                                })
+                                sells_data.map(function(e){
+                                    if (e.affiliate != '單頁') {
+                                        html += `<tr>
+                                                    <td style="text-align:center">${e.affiliate}</td>
+                                                    <td>${e.total_order_price}</td>
+                                                    <td>${e.total_order_count}</td>
+                                                    <td>${e.sku_count}</td>
+                                                    <td>${e.total_order_freight}</td>
+                                                </tr>`
+                                    } else {
+                                        // 单页集合
+                                        var singleList = ''
+                                        for (const i in e.sppDetails) {
+                                            singleList += `<tr class="single-list">
+                                                                <td style="text-align:center">${e.sppDetails[i].affiliatePrefect}</td>
+                                                                <td>${e.sppDetails[i].total_order_price}</td>
+                                                                <td>${e.sppDetails[i].total_order_count}</td>
+                                                                <td>${e.sppDetails[i].sku_count}</td>
+                                                                <td>${e.sppDetails[i].total_order_freight}</td>
+                                                            </tr>`
+                                        }
+                                        html += `<tr>
+                                                    <td style="text-align:center"><i class="fa fa-plus-square-o" aria-hidden="true" onclick="app.methods.openSingle()"></i>${e.affiliate}</td>
+                                                    <td>${e.total_order_price}</td>
+                                                    <td>${e.total_order_count}</td>
+                                                    <td>${e.sku_count}</td>
+                                                    <td>${e.total_order_freight}</td>
+                                                </tr>
+                                                ${singleList}`
+                                    }
+                                    pub.sku_count += e.sku_count
+                                    pub.total_order_count += e.total_order_count
+                                    pub.total_order_freight += e.total_order_freight
+                                    pub.total_order_price += e.total_order_price
+                                })
+                                // 合计
+                                html += `<tr style="font-weight:700">
+                                            <td style="text-align:center">${pub.affiliate}</td>
+                                            <td>${pub.total_order_price.toFixed(2)}</td>
+                                            <td>${pub.total_order_count}</td>
+                                            <td>${pub.sku_count}</td>
+                                            <td>${pub.total_order_freight}</td>
+                                        </tr>`
+                                $('#table tbody').html(html)
+                                $('.timeNow').html('最近更新时间：' + app.data.now)
+
+                                // 每次刷新后重置
+                                $('.single-list').hide()
+                                $('.fa-minus-square-o').addClass('fa-plus-square-o').removeClass('fa-minus-square-o')
+                                app.data.show = false
+                            }
+                        }
+                    })
+                },
+                // 单页显示/隐藏
+                openSingle: function () {
+                    if (app.data.show) {
+                        $('.single-list').hide()
+                        $('.fa-minus-square-o').addClass('fa-plus-square-o').removeClass('fa-minus-square-o')
+                        app.data.show = false
+                    } else {
+                        $('.single-list').show()
+                        $('.fa-plus-square-o').addClass('fa-minus-square-o').removeClass('fa-plus-square-o')
+                        app.data.show = true
+                    }
+                },
+                initTabEvent: function(){
+                    $('.nav li').on('click', function(){
+                        app.methods.initTime();
+                        app.methods.initData($(this).text());
+                    });
+                    setInterval(function(){
+                        app.methods.initTime();
+                        app.methods.initData($('.nav li.active').text());
+                    },60000);
+                }
+			},
+			init : function(){
+                app.methods.initTabEvent(); 
+                app.methods.initTime();
+                app.methods.initData();
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

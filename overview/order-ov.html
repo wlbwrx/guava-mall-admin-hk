@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>订单分析预览</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			#overView{height: calc(100% - 34px);}
+			.fixed-table-toolbar{display: none;}
+			.bootstrap-table{height: 100%!important;}
+			.bootstrap-table .fixed-table-container{height: calc(100% - 100px)!important;padding: 0!important;}
+			.label.old{border: 1px solid #000;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+                	<div class="left">
+						<h3 class="panel-title">订单分析预览</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+						</div>	
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<select class="selectpicker" data-live-search="true" name="scopeId"></select>
+						<input type="text" class="form-control" name="affiliate" placeholder="输入投放人姓名">
+						<input type="text" inputTpye="daterange" rangeStart="beginTime" rangeEnd="endTime" class="form-control" name="orderTimes" placeholder="选择时间" />
+                        <button class="btn btn-primary refresh" onclick="app.methods.initView();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<div id="overView"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			methods : {
+				initView : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + '/api/admin/erp/analysis/order/overview' + tools.jsonToParameString(tools.getParams()),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+								var data = {};
+								result.body.map(function(e){
+									data[e.key] = {
+										'comments': e.comments,
+										'value': e.value,
+									};
+								});
+								var ovData = [{
+									title: '总数',
+									data: [data.totalOrderPrice, data.totalOrderFreight, data.totalOrderCount, data.skuCountSQL, data.independentUsersAmount , data.independentUsersPrice]
+								},{
+									title: '采购',
+									data: [data.purchasedAmountSQL]
+								},{
+									title: 'PayPal',
+									data: [data.paypalTotalOrderPrice, data.paypalTotalOrderCount , data.paypalTotalOrderPriceProportion]
+								},{
+									title: 'stripe',
+									data: [data.stripeTotalOrderPrice, data.stripeTotalOrderCount , data.stripeTotalOrderPriceProportion]
+								},{
+									title: '非转化',
+									data: [data.naturalTotalOrderPrice, data.naturalTotalOrderCount, data.naturalProportion]
+								},{
+									title: '复购',
+									data: [Object.assign(data.rebuyIndependentUsersAmount, {'func' : 'app.methods.shouReBuy();'}), data.rebuyIndependentUsersProportion]
+								}];
+                                $('#overView').html(app.methods.initDom(ovData));
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+                initDom: function(data){
+					var html = '';
+					data.map(function(e){
+						var ulhtml = '';
+						e.data.map(function(_e){
+							ulhtml += '<li><div class="metric" onclick="' + (_e.func || '') + '" style="' + (_e.func ? 'cursor: pointer;' : '') + '">'+
+								'<span class="icon"><i class="fa fa-line-chart"></i></span>'+
+								'<p>'+
+									'<span class="number">' + tools.formatNumber(_e.value) + '</span>'+
+									'<span class="title">' + _e.comments + '</span>'+
+								'</p>'+
+							'</div></li>';
+						});
+						html += '<div class="panel"><div class="panel-heading"><h3 class="panel-title">' + e.title + '</h3></div><div class="panel-body"><ul>' + ulhtml + '</ul></div></div>';
+					});
+                    return html;
+				},
+				shouReBuy: function(){
+					layer.open({
+						type: 1,
+						content: '<table id="table-user"></table>',
+						title: '查看复购详情',
+                    	area: ['100vw' , '100vh'],
+						closeBtn: 1
+					});
+					$('#table-user').bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+						url: utils.prePath() + '/api/admin/erp/analysis/order/users',
+						queryParams : function(params){
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							return Object.assign(params, tools.getParams());
+						},
+						columns: [{
+							field: 'tel',title: '电话',align: 'center',
+						}, {
+							field: 'consignee',title: '收件曾用名',align: 'center',
+							formatter: function (value, row, index, field) {
+								return value.split('&,&').join('<br>');
+							}
+						}, {
+							field: 'status_count',title: '有效订单数（不包含取消单）',
+							formatter: function (value, row, index, field) {
+								var html = '';
+								value.split('&,&').map(function(e){
+									var data = e.split(':');
+									html += '<div style="margin-right:12px;display: inline-block;color: #fff">' + tools.formatterFunction.orderStatus(data[0].trim()) + ' <span class="badge" style="background: #5bc0de;">' + data[1].trim() + '</span></div>';
+								});
+								return html;
+							}
+						}, {
+							title: '操作',align: 'center',
+							formatter: function (value, row, index, field) {
+								return '<button type="button" class="btn btn-info btn-xs" onclick="app.methods.showUserOrder(' + row.tel + ')">订单详情（包含取消单）</button>';;
+							}
+						}],
+					}));
+				},
+				showUserOrder: function(tel){
+					layer.open({
+						type: 1,
+						content: '<table id="table-order"></table>',
+						title: '查看复购订单详情（包含取消单）',
+                    	area: ['100vw' , '100vh'],
+						closeBtn: 1
+					});
+					$('#table-order').bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+						url: utils.prePath() + '/api/admin/erp/analysis/order',
+						queryParams : function(params){
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							return Object.assign(params, {
+								'tel': tel,
+								'beginTime': 1483200000,
+								'endTime': tools.getParams().beginTime
+							});
+						},
+						columns: [{
+							field: 'order_code',title: '订单号',align: 'center',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.warningDays(value, row.days);
+							}
+						}, {
+							field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="analysisSkuBox"><li><span>產品ID</span><span>品名</span><span>條碼</span><span>數量</span><span>折扣总价</span><span>平均采购价</span><span>系统采购价</span><span>商品狀態</span></li></ul>',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.analysisSku(value);
+							}
+						}, {
+							field: 'discount_total_coupon_price',title: '优惠额度',align: 'center',
+						},{
+							field: 'payment_type',title: '付款方式',align: 'center',
+							formatter: function(value, row, index, field) {
+								return tools.formatterFunction.paymentStatus(value);
+							}
+						}, {
+							field: 'order_status',title: '订单状态',align: 'center',
+							formatter: function(value, row, index, field) {
+								return tools.formatterFunction.orderStatus(value);
+							}
+						}, {
+							field: 'order_total_price',title: '折扣总价',align: 'center',
+							formatter: function (value, row, index, field) {
+								return '<span class="money">' + value + '</span>';
+							}
+						}, {
+							field: 'affiliate',title: '来源',align: 'center',
+						}, {
+							field: 'pixel_id',title: 'pixel ID',align: 'center',
+						}, {
+							field: 'storehouse_id',title: '发货仓',align: 'center',
+							formatter: function (value, row, index, field) {
+								var html = '';
+								cacheSessionStorage.getCache('storehouse').map(function(e){
+									if(value == e.id){
+										html = e.storehouseName	
+									}
+								})
+								return '<span class="nowarp">' + html + '</span>';
+							}
+						}, {
+							field: 'scope_id',title: '商城',align: 'center',
+							formatter: function (value, row, index, field) {
+								var html = '';
+								cacheSessionStorage.getCache('scope').map(function(e){
+									if(value == e.id){
+										html = e.name
+									}
+								})
+								return '<span class="nowarp">' + html + '</span>';
+							}
+						}, {
+							field: 'created_at',title: '下单时间',align: 'center',minWidth:90,
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.time(value);
+							}
+						}, {
+							field: 'consignee',title: '收貨人',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.addressText(row.consignee, row.tel, row.city, row.district, row.detail);
+							}
+						}],
+					}));
+				},
+				initSelect : function(){
+					tools.rangeTime('input[name="orderTimes"]');
+					tools.renderSelect.scope('select[name="scopeId"]');
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initView();
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

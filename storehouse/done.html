@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>已出库</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.commentsList{list-style: none;padding: 0;margin: 0;}
+			.commentsList li{border-bottom: 1px solid #ddd;padding: 6px;display: block;}
+			.commentsList li:last-child{border-bottom: 0;}
+			.commentsList li span{display: block;white-space:nowrap;}
+
+			.checkReturnInfoForm ul{list-style: none;padding: 0;}
+			.checkReturnInfoForm ul li{display: flex;align-items: center;justify-content: center;border-bottom: 1px solid #ddd;background: #fff;}
+			.checkReturnInfoForm ul li *{display: block;}
+			.checkReturnInfoForm ul li *:nth-child(1){width: 200px;}
+			.checkReturnInfoForm ul li *:nth-child(2){width: 60px;}
+			.checkReturnInfoForm ul li *:nth-child(3){width: 60px;}
+			.checkReturnInfoForm ul li *:nth-child(4){width: 180px;}
+
+			.col-sm-10{display: flex;justify-content: center;align-items: center;}
+			
+			.refreshTracking{display: block;}
+			ul.addressBox{cursor: default;text-decoration: none}
+
+			.errBox td{padding: 6px 12px;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<div class="btn-group" authority="TRACKER_CHANGE">
+								<button type="button" class="btn btn-success btn-sm" id="uploadTracker"><i class="fa fa-upload"></i> 转运单号修正</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/转运单号修正.xls">转运单号修正模板</a></li>
+								</ul>
+							</div>
+							<div class="btn-group" authority="DELIVERY_CHANGE">
+								<button type="button" class="btn btn-success btn-sm" id="uploadComments"><i class="fa fa-upload"></i> 导入发货单物流备注</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<!--<li><a id="uploadInvoiceSec">导入二次派送信息</a></li>-->
+									<li><a href="../excel/发货单物流备注.xls">下载物流备注模板</a></li>
+								</ul>
+							</div>
+							<button class="btn btn-info btn-sm manager hidden" authority="DELIVERY_CHANGE" onclick="app.methods.batchReceiveOrReject('receive');"><i class="fa fa-upload"></i> 批量签收</button>
+							<button class="btn btn-error btn-sm manager hidden" authority="DELIVERY_CHANGE" onclick="app.methods.batchReceiveOrReject('reject');"><i class="fa fa-upload"></i> 批量拒收</button>
+							<button class="btn btn-warning btn-sm manager hidden export"  authority="DELIVERY_EXPORT" onclick="app.methods.exportData();"><i class="fa fa-download"></i>&nbsp;&nbsp;导出数据</button>
+							<!-- <button class="btn btn-primary btn-sm refresh manager hidden" authority="DELIVERY_WRITE" onclick="app.methods.refreshExpress();"><i class="fa fa-retweet"></i> 物流</button> -->
+						</div>
+					</div>
+                    <div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="deliveryCreateBeginTime" rangeEnd="deliveryCreateEndTime" class="form-control" name="deliveryOrderTimes" placeholder="打包时间" />
+						<input type="text" inputTpye="daterange" rangeStart="trackerCreatedAtBeginTime" rangeEnd="trackerCreatedAtEndTime" class="form-control" name="trackerTimes" placeholder="发货时间" />
+						<select name="status" class="selectpicker" data-live-search="true" data-title="发货单状态" style="display:none"></select>
+                        <input type="text" class="form-control" name="deliveryCode" placeholder="发货单号">
+                        <input type="text" class="form-control" name="orderCode" placeholder="订单号">
+                        <input type="text" class="form-control" name="productId" placeholder="产品ID">
+                        <input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+                        <input type="text" class="form-control" name="trackingNumber" placeholder="物流单号">
+						<select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+                        <input type="text" class="form-control" name="productTitle" placeholder="品名">
+                        <input type="text" class="form-control" name="tel" placeholder="电话">
+						<select class="selectpicker" data-live-search="true" name="trackerStatus"></select>
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="wayInfo">
+        <div class="wayInfoForm">
+            <div class="form-group" style="display:none;"><label>货运单号</label><input type="text" class="form-control" name="deliveryCode" value="<%= delivery_code %>"></div>
+            <div class="form-group"><label>货代公司</label><input type="text" class="form-control" name="expressProxy" value="<%= agency_company %>"></div>
+            <div class="form-group"><label>物流单号</label><input type="text" class="form-control" name="expressCode" value="<%= tracking_number %>"></div>
+            <div class="form-group"><label>物流公司</label><input type="text" class="form-control" name="expressCompany" value="<%= carrier_code %>"></div>
+            <button class="btn btn-primary" onclick="app.methods.submitWayInfo()">提交更改</button>
+        </div>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                deliveryData: [],
+				initUploadInvoiceState: false,
+				initUploadInvoiceSecState: false,
+				initUploadTrackerState: false,
+				state: utils.getURLParam('status')
+			},
+			methods : {
+				exportData : function(){
+					var param = tools.getParams();
+					if(app.data.state){
+						param['status'] = app.data.state;
+					}
+					tools.exportByFrom('/api/admin/erp/delivery/way/export', param);
+				},
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/delivery/way/list' + (app.data.state ? ('?status='+app.data.state) : ''),
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.deliveryData = data.body.content;
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.initUploadInvoiceState == false && app.data.initUploadInvoiceSecState == false && app.data.initUploadTrackerState == false && app.methods.initPushFile();
+							app.methods.initrefreshTracking();				
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'delivery_code',title: '发货单号',align: 'center',
+						formatter: function (value, row, index, field) {
+							if(row.delivery_status == 20){
+								return value + '<a href="#" style="margin-left:3px;" class="glyphicon glyphicon glyphicon-edit" aria-hidden="true" authority="DELIVERY_WRITE" onclick="app.methods.editWay(' + index + ')"></a>';
+							}else{
+								return value;
+							}
+                        }
+					}, {
+						field: 'storehouse_name',title: '发货仓库',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + value + '</span>';
+						}
+					}, {
+						field: 'delivery_price',title: '待收金额',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight_price == 0 || row.freight_price == null ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight_price ) + '</div></div>';
+						}
+					}, {
+						field: 'consignee',title: '收货人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(value, row.tel, row.email, row.address, index);
+                        }
+					}, {
+						field: 'carrier_code',title: '物流',align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.trackingName(value) + '<span class="refreshTracking useCkick">' + (row.tracking_number || '--') + '</span>';
+                        }
+					}, {
+						field: 'tracker_status',title: '物流资讯',
+						formatter: function (value, row, index, field) {
+							return '<p class="label label-default">' + tools.formatterFunction.trackerStatus(row.tracker_status) + '</p><p style="margin-left: 4px;" class="label label-info">'+tools.formatterFunction.time(row.last_update_time)+'</p><p style="margin: 6px 0;">'+(row.last_event || '--')+'</p>'
+                        }
+					}, {
+						field: 'delivery_status',title: '发货单状态',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.deliveryStatus(value);
+                        }
+					}, {
+						field: 'comments',title: '订单备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							var html = '<ul class="commentsList">'
+							value.split(' &,& ').map(function(e){
+								html += '<li><span>' + e.split(';')[0] + '</span><span>' + e.split(';')[1] + '</span></li>'
+							})
+							html += '</ul>'
+							return html;
+                        }
+					},{
+						field: 'delivery_remark',title: '发跟单备注',align: 'center',minWidth:150,
+						formatter : function(value, row, index, field){
+							var html = '<ul class="commentsList">';
+								html += '<li><span>发货单:' + (row.delivery_remark ? row.delivery_remark : "") + '</span><span>物&nbsp;&nbsp;&nbsp;流    :' + (row.tracker_info_remark ? row.tracker_info_remark : "") + '</span></li>';
+							html += '</ul>';
+							return html;
+						}
+					},{
+						field: 'order_sku_info',title: '<span class="columnsTit">订单信息</span><ul class="orderProductInfoBox"><li><span>订单号</span><span><ul class="orderProductInfo"><li><span>商品图</span><span>商品ID</span><span>产品标题</span><span>条码</span><span>数量</span><span>价格</span><span>库位</span></li></ul></span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return '<div data-index="' + index + '">' + tools.formatterFunction.orderSkuInfos(value) + '</div>';
+                        }
+					}, {
+						field: 'created_at',title: '打包时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'tracker_created_at',title: '发货时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: '',title: '操作',align: 'center',minWidth:180,
+						formatter: function (value, row, index) {
+							var html = '<div class="toolBox btn-group">';
+							if(row.delivery_status == 40 && !app.data.state || app.data.state == 40){
+								html += '<button type="button" authority="DELIVERY_CHANGE" class="btn btn-success btn-xs" onclick="app.methods.receiveDelivery(' + row.delivery_id + ')">签收</button>'
+								html += '<button type="button" authority="KEY_BLACK" class="btn btn-xs" style="background:#ccc" onclick="app.methods.inToBlack(' + index + ')">一键拉黑</button>'
+							}else if(row.delivery_status == 20 && !app.data.state || app.data.state == 20){
+								html += '<button type="button" authority="DELIVERY_CHANGE" class="btn btn-success btn-xs" onclick="app.methods.receiveDelivery(' + row.delivery_id + ')">签收</button>'
+								html += '<button type="button" authority="DELIVERY_CHANGE" class="btn btn-danger btn-xs" onclick="app.methods.rejectDelivery(' + row.delivery_id + ')">拒收</button>'
+							}
+							if(!app.data.state || app.data.state == 0){
+								html += '<button type="button" class="btn btn-info btn-xs" authority="DELIVERY_CHANGE" onclick="app.methods.remark(' + index + ')">备注</button>';
+							}
+							html += '</div>';
+							return html
+						}
+					}];
+                    return option;
+				},
+				remark: function(index){
+					layer.prompt({
+                        title: '备注',
+                        value: app.data.deliveryData[index].remark,
+                        formType: 0
+                    }, function (text, i) {
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/remark",
+							data: JSON.stringify({
+								deliveryCode : app.data.deliveryData[index].delivery_code,
+								remark : text
+							}),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('操作成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+                    });
+                },
+				inToBlack: function(index){
+					var parame = {
+						auditType: "10",
+						columnType: "20",
+						columnValue: app.data.deliveryData[index].tel + '',
+						comments: "一键拉黑",
+					}
+					$.ajax({
+						type: "POST",
+						url: utils.prePath() + "/api/admin/erp/blacklist",
+						data: JSON.stringify(parame),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('拉黑成功，请打开黑名单查看...');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				editWay: function(index){
+					var data = app.data.deliveryData[index];
+					var _index = layer.open({
+						type: 1,
+						content: template('wayInfo', data),
+						area: ['400px', 'auto'],
+						title: '编辑' + data.delivery_code + '货运信息',
+						skin:'wayInfo',
+						closeBtn: 1
+					});
+				},
+				submitWayInfo: function(){
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/delivery/way/update",
+						data: JSON.stringify(tools.getParams('.wayInfoForm')),
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('物流信息已更新...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				refreshExpress: function(){
+					layer.confirm('确认更新物流？', {
+					  	btn: ['确认','取消'] //按钮
+					}, function(index){
+					  	$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/tracker/update",
+							data: JSON.stringify(tools.getParams()),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('物流信息已刷新...');
+									app.data.table.bootstrapTable('refresh');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+						layer.close(index);
+					});
+				},
+				batchReceiveOrReject : function(type){
+					layer.prompt({
+						  formType: 2,
+						  maxlength: 100000,
+					  	title: '批量发货单默认按照发货单编号排序,发货单编号之间以","或"回车"分割',
+					  	area: ['800px', '350px'] //自定义文本域宽高
+					}, function(value, index, elem){
+						var productIds = [];
+						if(value && value.trim() != ''){
+							value.split('\n').map(function(_e){
+								_e.trim().replace(/，/ig,',').split(',').map(function(e , index){
+									if(e && e.trim() != ''){
+										productIds.push(e);
+									}
+								});
+							})
+						}
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/batch/"+type,
+							data : JSON.stringify({"deliveryCodes" : productIds}),
+							success: function (result) {
+								var mes = result.body.errores;
+                                if(mes.length > 0){
+									var html = '<table class="table"><tr><td>发货单号</td><td>错误原因</td></tr>'
+									mes.map(function(e){
+										html += '<tr><td>'+e.deliveryId+'</td><td>'+e.message+'</td></tr>';
+									})
+									layer.open({
+										type: 1,
+										content: html+'</table>',
+										title: '批量处理失败的发货单',
+										area: ['80vw', '80vh'],
+										closeBtn: 1
+									});
+                                }else{
+                                    toastr.success('批量处理成功');
+                                }
+	                            layer.close(index);
+							}
+						});
+					});
+				},
+				receiveDelivery: function(deliveryId){
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/delivery/receive/" + deliveryId,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('确认收货...');
+								app.data.table.bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				rejectDelivery: function(deliveryId){
+					$.ajax({
+						type: "PUT",
+						url: utils.prePath() + "/api/admin/erp/delivery/reject/" + deliveryId,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('拒收...');
+								app.data.table.bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				initPushFile: function(){
+					var uploader_uploadInvoiceSec = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadInvoiceSec',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/delivery/way/second/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.successes.length > 0 && res.errores.length == 0){
+									toastr.success('导入成功...');
+								}
+								if(res.errores.length > 0){
+									var html = '';
+									res.errores.map(function(e){	
+										html += '<tr><td>'+e.deliveryCode+'</td><td>'+e.expressProxy+'</td><td>'+e.expressCompany+'</td><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.errores.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										content: '<table class="table"><tr><td>发货单号</td><td>货代公司</td><td>物流公司</td><td>物流编号</td><td>错误信息</td></tr>' + html + '</table>',
+									})
+								}
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadInvoiceSec.init();
+					app.data.initUploadInvoiceSecState = true;
+					var uploader_uploadTracker = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadTracker',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/delivery/tracker/change/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								toastr.success('导入成功...');
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadTracker.init();
+					app.data.initUploadTrackerState = true;
+					var uploader_uploadComments = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadComments',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/delivery/comments/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								toastr.success('导入成功...');
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadComments.init();
+					app.data.initUploadCommentsState = true;
+				},
+                initSelect : function(){
+					if(!app.data.state){
+						tools.renderSelect.delivery('select[name="status"]');
+						$('select[name="status"]').selectpicker('val','20').show();
+					}else{
+						$('select[name="status"]').remove()
+					}
+					tools.rangeTime('input[name="deliveryOrderTimes"]');
+					tools.rangeTime('input[name="trackerTimes"]',true);
+					tools.renderSelect.storehouse('select[name="storehouseId"]');                    
+					tools.renderSelect.returnsProValue('select[name="returnsSource"]','returnsSource');                    
+					tools.renderSelect.returnsProValue('select[name="returnHandleType"]','returnHandleType');                    
+					tools.renderSelect.returnsProValue('select[name="returnReason"]','returnReason');                    
+					tools.renderSelect.returnsProValue('select[name="returnHandleResult"]','returnHandleResult');
+					tools.renderSelect.trackerStatus('select[name="trackerStatus"]');
+					if(utils.getURLParam('status') && utils.getURLParam('status') != ''){
+						$('select[name="trackerStatus"]').parent().hide();
+					}
+					
+				},
+                initrefreshTracking : function(){
+					$('.refreshTracking').off().on('click', function(){
+						var trackingNumber = $(this).text();
+						if(trackingNumber == '--'){
+							toastr.warning('货运编号格式错误');
+							return
+						}
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/delivery/tracker/update/" + trackingNumber,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('快递信息查询完成...');
+									app.data.table.bootstrapTable('refresh');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					})
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

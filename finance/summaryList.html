@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>汇总</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<!-- VENDOR CSS -->
+	<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+	<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+	<link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+	<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="../dists/linearicons/style.css">
+	<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+	<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="../css/main.css?v=20200331">
+	<!-- GOOGLE FONTS -->
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	<style>
+		progress{border-radius: 3.5px;height: 7px;display: block;width: 100%}
+		progress::-webkit-progress-bar{background-color:#F2F3F4;border-radius: 3.5px;}
+		progress::-webkit-progress-value{background-color: #4F4F4F;border-radius: 3.5px;}
+		body{color: #000}
+		.blue{color: #2267B0;}
+		.red{color: #CE2424;}
+		.gu::before{content: '';background: url(../img/icon-gu.png);height: 14px;width: 14px;background-size: cover;display: inline-block;margin-right: 3px;position: relative;top: 2px;}
+		.container-fluid{overflow: hidden;}
+		.scroll{overflow-y: auto;background:#fff;}
+		.tip{font-size: 12px;color: #777777;line-height: 18px;margin: 0;margin-top: 6px;}
+		.paramesBox p{display: inline-block;margin: 0;line-height: 14px;padding-bottom: 6px;}
+		.paramesBox p button{border: 0;background: transparent;margin: 0 20px 0 4px;padding: 0;}
+		.paramesBox p button img{width: 14px;}
+		#toolbar{margin-top: 18px;display: flex;flex-wrap: wrap;align-items: center}
+		#toolbar > input,#toolbar > select{width: 150px;color: #000!important}
+		#toolbar > input[inputTpye="daterange"]{width: 280px}
+		#toolbar > *{margin-right: 3px;margin-bottom: 3px;}
+		.change{padding: 12px 15px;display: flex;align-items: center}
+		.change img{width: 14px;margin: 0 16px}
+		.change button{width: 120px;border: 1px solid #007AFF;color: #007AFF;text-align: center;border-radius: 4px;font-size: 12px;background: #fff;}
+		.change button.active{opacity: .5;}
+		.tableBox{padding: 0 15px;display: flex;align-items: flex-start;flex-wrap: wrap;}
+		.havIcon{padding-left: 40px}
+		.havIcon.purchasedIcon{background: url(../img/icon-stock.png) 4px 22px no-repeat;background-size: 20px;}
+		.havIcon.adIcon{background: url(../img/icon-ad.png) 4px 22px no-repeat;background-size: 20px;}
+		.havIcon.expressIcon{background: url(../img/icon-express.png) 4px 22px no-repeat;background-size: 20px;}
+		.havIcon > span{flex: 1;font-weight: bold}
+		.havIcon p{margin-bottom: 0;line-height: 58px;display: flex;align-items: center}
+		.havIcon progress{margin-bottom: 20px;}
+		.havIcon p span:first-child{width: 68px}
+		.havIcon p span:nth-child(2){width: 12px;font-weight: bold}
+		.havIcon p span:nth-child(3){flex: 1;font-weight: bold}
+		.havIcon p i img{height: 14px;width: 14px;margin-left: 2px;position: relative;top: -1px;}
+		.topBox,.topMes{background: #fff;}
+		.topBox{padding: 15px;z-index: 10;}
+		.topMes{display: none;justify-content: space-between;align-items: center;padding: 12px;z-index: 1;}
+		.topMes span:first-child{font-size: 16px;font-weight: bold}
+		.topMes span:nth-child(2){font-size: 12px;flex: 1;overflow: hidden;padding-left: 3px;}
+		.topMes button{color: #007AFF;background: transparent;border: none}
+		.lnr-chevron-left {transform: rotate(-90deg);display: inline-block;}
+		.pageType{opacity: 0;}
+		.mesFz{color: #777;font-weight: 500}
+		.bold{font-weight: 700;}
+		@media screen and (max-width: 415px) {
+			.refresh{margin-top: 16px!important;}
+			.mesFzMT{margin-top: 18px;}
+			.change{justify-content: space-around;padding: 12px 30px}
+			.change button{padding: 3px 8px;}
+			.topBox{display: none;height: 100%;}
+			.topMes{display: flex;}
+			#toolbar > *{display: inline-block;margin-right: 6px;margin-bottom: 8px;}
+			#toolbar,#toolbar > label{display: block;}
+			#toolbar label{margin-left: 0!important;}
+			.tableBox .card{margin: 0;width: 100%;margin-bottom: 15px;}
+			.tableBox .card:last-child{margin-bottom: 100px;}
+			.pageType{display: none;}
+			.btn.refresh{font-size: 14px;width: 200px}
+		}
+		.summary{
+			width:100%;
+		}
+		.summary header{
+			height:40px;
+			line-height: 40px;
+			font-size:15px;color:#333;border-bottom:1px solid #eee;
+		}
+		.summary section{
+			display:flex;display:-webkit-flex;
+			border:1px solid #d6d6d6;
+			margin-top:10px;
+			padding:20px 40px;
+			border-radius:3px;
+		}
+		.section_div{
+			min-width:25%;
+			border-right:1px solid #eee;color:#666;
+			text-align: center;flex:1;
+		}
+		.section_div:last-child{
+			border-right:0;
+		}
+		.section_div span,.section_div i{
+			font-style:normal;
+			display:block;
+		}
+		.section_div i{
+			font-size:17px;
+			font-weight:bold;
+			color:#666;
+			margin-top:10px;
+		}
+	</style>
+</head>
+
+<body>
+	<i class="pageType"></i>
+	<div class="container-fluid">
+		<div class="topBox">
+			<div class="paramesBox">
+				<label class="mesFz">汇总：</label>
+				<div class="change" style="display:inline-block;">
+					<button onclick="app.methods.moneyTo('rmb')" class="toRMB active">转人民币￥</button>
+				</div>
+				<!-- <div class="change">
+					<button onclick="app.methods.moneyTo('rmb')" class="toRMB">统一货币(¥)</button>
+					<img src="../img/icon-change.png" alt="">
+					<button class="active toNormal" onclick="app.methods.moneyTo('normal')">原始货币(NT$,$)</button>
+				</div> -->
+				<p class="mesFz"></button>汇率 = <span class="exchangeRate">4.5</span><button onclick="app.methods.edit('exchangeRate','人民币兑台币汇率');"><img src="../img/icon-edit.png" alt="" srcset=""></button></p>
+			</div>
+			<div id="toolbar">
+				<!-- <label class="mesFz">搜索条件：</label> -->
+				<select class="selectpicker" data-live-search="true" name="dateType"></select> <!-- 选择时间方式-->
+				<input type="text" inputTpye="daterange" rangeStart="beginTime" rangeEnd="endTime" class="form-control" name="orderTimes"
+				 placeholder="选择时间" />
+				 <select class="selectpicker" data-live-search="true" name="agencyCompany"></select>   <!-- 全部貨代公司 -->
+				 <select class="selectpicker" data-live-search="true" name="storehouseId"></select>   <!-- 全部仓库 -->
+				<!-- <input type="text" class="form-control" name="affiliate" placeholder="输入投放人姓名">
+				<label class="mesFz mesFzMT" style="margin-left:30px">回填数据：</label>
+				<input type="text" class="form-control" name="adCost" placeholder="广告花费($)"> -->
+				<!-- <input type="text" class="form-control" name="roiFb" placeholder="FB平均ROI"> -->
+				<button class="btn btn-primary refresh" onclick="app.methods.searchData();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				<button class="btn btn-success" onclick="tools.exportByFrom('/api/admin/erp/settle/collect/export');"><i class="fa fa-download"></i>&nbsp;&nbsp;导出</button>
+				<!-- <input type="text" class="form-control" name="exchangeRate" style="display:none" value="4.5">
+				<input type="text" class="form-control" name="basicFreight" style="display:none" value="43">
+				<input type="text" class="form-control" name="basicSkuCosts" style="display:none" value="2"> -->
+			</div>
+		</div>
+		<div class="scroll">
+			<!-- <div class="change">
+				<button onclick="app.methods.moneyTo('rmb')" class="toRMB">统一货币(¥)</button>
+				<img src="../img/icon-change.png" alt="">
+				<button class="active toNormal" onclick="app.methods.moneyTo('normal')">原始货币(NT$,$)</button>
+			</div> -->
+			<div class="tableBox">
+				<!-- 汇总展示 -->
+				<!-- COD回款 -->
+				<div class="summary">
+					<header>
+						COD回款
+					</header>
+					<section>
+						<div class='section_div'>
+							<span>COD应回款金额</span>
+							<i class='payback_total_delivery_price'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>COD已回款金额</span>
+							<i class='payback_total_logistics_payback'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>金额差异</span>
+							<i class='payback_logistics_payback_different'><strong>0</strong></i>
+						</div>
+					</section>	
+				</div>
+				<!-- 物流费用 -->
+				<div class="summary">
+					<header>
+						物流费用
+					</header>
+					<section>
+						<div class='section_div'>
+							<span>预估物流费用</span>
+							<i class='express_price_plan'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>实际物流费用</span>
+							<i class='express_price_last'><strong>0</strong></i>
+						</div>
+					</section>	
+					<section>
+						<div class='section_div'>
+							<span>货代反馈运费</span>
+							<i class='express_price_freight	'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>外岛/偏远地区加收运费</span>
+							<i class='express_price_out_island'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>商超费</span>
+							<i class='express_price_consign'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>上门取件费</span>
+							<i class='express_price_pick_up'><strong>0</strong></i>
+						</div>
+					</section>	
+				</div>
+				<!-- 客诉退款 -->
+				<div class="summary">
+					<header>客诉退款</header>
+					<section>
+						<div class='section_div'>
+							<span>预估退款金额</span>
+							<i class='refund_price_plan'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>最终退款金额</span>
+							<i class='refund_price_last'><strong>0</strong></i>
+						</div>
+						<div class='section_div'>
+							<span>退款手续费</span>
+							<i class='refund_price_service'><strong>0</strong></i>
+						</div>
+					</section>
+				</div>
+				<!-- 金融服务费 -->
+				<div class="summary">
+					<header>金融服务费</header>
+					<section>
+						<div class='section_div'>
+							<span>金融服务费</span>
+							<i class='finance_service_price'><strong>0</strong></i>
+						</div>
+					</section>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+<script type="text/javascript">
+	var app = {
+		invoiceData: {},
+		methods: {
+			initView: function () {
+				if($('.topBox').css('display') != 'none'){
+					$('.scroll').css('height', 'calc(100% - ' + $('.topBox').outerHeight() + 'px)');
+				}else{
+					$('.scroll').css('height', 'calc(100% - ' + $('.topMes').outerHeight() + 'px)');
+				}
+				var authority_data = authoritys.useAuthority();
+				// if(!authority_data){
+				// 	toastr.error("权限不足，不允许访问...")
+				// 	return;
+				// }
+				var params = tools.getParams();
+				params.adCost = ((params.adCost - 0) * ($('.usd_rmb').text() - 0)) || 0;
+				app.methods.allData()
+				var scopeVal = '';
+				cacheSessionStorage.getCache('scope').map(function (e) {
+					e.id == params.scopeId && (scopeVal = e.name);
+				});
+				$('.layui-layer-shade').remove();
+				$('.topMes .scope').text(scopeVal);
+				$('.topMes .time').text(moment.unix(params.beginTime).format('YYYY-MM-DD HH:mm:ss') + ' - ' + moment.unix(params.endTime).format('YYYY-MM-DD HH:mm:ss'));
+			},
+			// 汇总查询数据
+			allData: function () {
+				let params = tools.getParams();
+				$.ajax({
+					type: "GET",
+					url: utils.prePath() + '/api/admin/erp/settle/collect',
+					data: params,
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							let showData = result.body
+							app.invoiceData = showData
+							$('.toRMB').addClass('active')
+							app.methods.showDataInfo(false)
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+			},
+			showDataInfo: function(isChange){
+				let showData = app.invoiceData;
+				let hlRmb = 1
+				// 汇总重新计算 需要计算成人民币
+				if(isChange == true){
+					hlRmb =  parseFloat($('.exchangeRate').text())
+				}
+				// 应回款金额
+				$('.payback_total_delivery_price strong').html( (isChange == false ? 'NT$' : '￥') + ((showData.payback_total_delivery_price != null ? showData.payback_total_delivery_price : 0)/hlRmb).toFixed(2) )
+				// 已回款金额
+				$('.payback_total_logistics_payback strong').html((isChange == false ? 'NT$' : '￥') + ((showData.payback_total_logistics_payback != null ? showData.payback_total_logistics_payback : 0)/hlRmb).toFixed(2) )
+				// 金额差异
+				$('.payback_logistics_payback_different strong').html((isChange == false ? 'NT$' : '￥') + ((showData.payback_logistics_payback_different != null ? showData.payback_logistics_payback_different : 0)/hlRmb).toFixed(2))
+				// 预估物流费用
+				$('.express_price_plan strong').html((isChange == false ? 'NT$' : '￥') + ((showData.express_price_plan != null ? showData.express_price_plan : 0)/hlRmb).toFixed(2))
+				// 实际物流费用
+				$('.express_price_last strong').html('￥' + (showData.express_price_last != null ? showData.express_price_last : 0))
+				// 货代反馈运费
+				$('.express_price_freight strong').html('￥' + (showData.express_price_freight != null ? showData.express_price_freight : 0))
+				// 外岛/偏远地区加收运费
+				$('.express_price_out_island strong').html('￥' + (showData.express_price_out_island != null ? showData.express_price_out_island : 0))
+				// 商超费
+				$('.express_price_consign strong').html('￥' + (showData.express_price_consign != null ? showData.express_price_consign : 0))
+				// 上门取件费
+				$('.express_price_pick_up strong').html('￥' + (showData.express_price_pick_up != null ? showData.express_price_pick_up : 0))
+				// 预估退款金额
+				$('.refund_price_plan strong').html((isChange == false ? 'NT$' : '￥') + ((showData.refund_price_plan != null ? showData.refund_price_plan : 0)/hlRmb).toFixed(2))
+				// 最终退款金额
+				$('.refund_price_last strong').html((isChange == false ? 'NT$' : '￥') + ((showData.refund_price_last != null ? showData.refund_price_last : 0)/hlRmb).toFixed(2))
+				// 退款手续费
+				$('.refund_price_service strong').html((isChange == false ? 'NT$' : '￥') + ((showData.refund_price_service != null ? showData.refund_price_service : 0)/hlRmb).toFixed(2))
+				// 金融服务费
+				$('.finance_service_price strong').html('￥' + (showData.finance_service_price != null ? showData.finance_service_price : 0))
+			},
+			moneyTo: function (type) {
+				$('.toRMB').toggleClass('active')
+				if($('.toRMB').hasClass('active')){
+					app.methods.showDataInfo(false)
+				}else{
+					app.methods.showDataInfo(true)
+				}
+			},
+			edit: function (type, tit) {
+				layer.closeAll();
+				layer.prompt({
+					title: tit || '请修改',
+					value: $('.' + type).text()
+				}, function (text, _index) {
+					$('input[name=' + type + ']').val(text);
+					$('.' + type).text(text);
+					$('.toRMB').addClass('active')
+					app.methods.showDataInfo(false)
+					layer.close(_index);
+				});
+			},
+			searchData: function () {
+				if ($('.pageType').css('display') == 'none') {
+					$('.topMes').show();
+					$('.topBox').hide();
+				}
+				$('.toRmb').map(function () {
+					$(this).next().text('NT$');
+				});
+				$('.toRMB').removeClass('active')
+				$('.toNormal').addClass('active')
+				app.methods.initView();
+			},
+			initSelect: function () {
+				tools.rangeTime('input[name="orderTimes"]');
+				// tools.renderSelect.scope('select[name="scopeId"]');
+				// 选择时间类型
+				tools.renderSelect.dateType('select[name="dateType"]'); 
+				// 全部貨代公司
+				tools.renderSelect.agencyCompany('select[name="agencyCompany"]')
+				// 全部仓库
+				tools.renderSelect.storehouseId('select[name="storehouseId"]')
+			},
+		},
+		init: function () {
+			app.methods.initSelect();
+			if ($('.pageType').css('display') != 'none') {
+				app.methods.initView();
+			} else {
+				$('.topMes').trigger('click');
+			}
+		}
+	}
+	$(function () {
+		app.init();
+	});
+</script>
+
+</html>

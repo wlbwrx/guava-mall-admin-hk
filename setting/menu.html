@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>菜单管理</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<!-- VENDOR CSS -->
+	<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+	<!-- <link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" /> -->
+	<link rel="stylesheet" href="../dists/bootstrap-treeview/bootstrap-treeview.min.css" />
+	<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+	<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+	<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="../css/main.css?v=20200331">
+	<!-- GOOGLE FONTS -->
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	<style>
+		.panel .panel-body{padding: 10px 16px;overflow-y: scroll}
+		.panel .panel-heading .toolBox.right{padding-right: 0;}
+		.treeview .node-tree-main .badge{background: none;padding: 0;}
+		.treeview .node-tree-main .badge button{padding: 0px 10px;}
+	</style>
+</head>
+
+<body>
+	<div class="container-fluid">
+		<div class="panel panel-headline">
+			<div class="panel-heading">
+				<div class="left"></div>
+				<div class="toolBox btn-group right">
+					<button class="btn btn-primary btn-sm refresh" onclick="app.methods.addChild(0);"><i class="fa fa-plus-square"></i> 新增</button>
+					<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+				</div>
+			</div>
+			<div class="panel-body">
+				<div id="tree-main"></div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+		<div class="modal-dialog modal-md" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title">权限</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<label class="control-label col-sm-2">名称<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<input class="form-control" type="text" name="name"/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">排序<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<input class="form-control" type="number" name="orderNum"/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">类型<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<select name="type" class="selectpicker">
+								<option value="1">目录</option>
+								<option value="2">菜单</option>
+								<option value="3">按钮</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">icon（目录）</label>
+						<div class="col-sm-10">
+							<input class="form-control" type="text" name="icon"/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">链接（菜单）</label>
+						<div class="col-sm-10">
+							<input class="form-control" type="text" name="url"/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">value（按钮）</label>
+						<div class="col-sm-10">
+							<input class="form-control" type="text" name="value"/>
+						</div>
+					</div>
+					<input class="form-control" type="text" name="parentId" style="display:none"/>
+					<input class="form-control" type="text" name="id" style="display:none"/>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" onclick="app.methods.saveChild()">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-treeview/bootstrap-treeview.min.js"></script>
+<!-- <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script> -->
+<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+<script type="text/javascript">
+	var app = {
+		data: {
+			tree: $("#tree-main"),
+			menu: []
+		},
+		methods: {
+			initTree: function () {
+				app.data.tree.treeview({
+					data: app.methods.getTree(),
+					showTags: true,
+					selectedBackColor: '#9ec6e8',
+					levels: 0,
+					// multiSelect: true,
+					// showCheckbox: true,
+				});
+				// 操作
+				app.data.tree
+				.on('click', 'button.addChild', function(){
+					var pid = $(this).data('id');
+					$(".dialog-create input[name=id]").val('');
+					$(".dialog-create input[name=parentId]").val(pid);
+					app.methods.addChild();
+				}).on('click', 'button.editChild', function(){
+					var id = $(this).data('id');
+					var tree_node = app.methods.getTreeNode(app.data.menu,id);
+					tools.initInput('.dialog-create', tree_node);
+					app.methods.addChild();
+				}).on('click', 'button.delChild', function(){
+					var id = $(this).data('id');
+					layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + "/api/admin/authority/" + id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('删除成功');
+									app.methods.initTree();
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				});
+			},
+			getTree: function () {
+				var menu_tree;
+				$.ajax({
+					type: "GET",
+					url: utils.prePath() + "/api/admin/authority/list",
+					async: false,
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							menu_tree = app.methods.putChild(result.body);
+							app.data.menu = result.body;
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+				return menu_tree;
+			},
+			getTreeNode: function(data,id){
+				var tree_node = null;
+				for(var i = 0;i < data.length;i++){
+					if(data[i].id == id){
+						return data[i];
+					}else{
+						if(data[i].authorities && data[i].authorities.length > 0){
+							tree_node = app.methods.getTreeNode(data[i].authorities, id);
+							if(tree_node){
+								return tree_node;
+							}
+						}
+					}
+				}
+			},
+			putChild: function(data){
+				var menu_tree = [];
+				data.map(function(e){
+					var tree_node = {
+						text: e.name,
+						tags: [
+							'<button type="button" class="btn btn-danger btn-xs delChild" data-id="' + e.id + '">删除</button>',
+							'<button type="button" class="btn btn-info btn-xs editChild" data-id="' + e.id + '">修改</button>',
+						],
+					}
+					var type_name = '';
+					switch(e.type){
+						case 1: type_name = '目录';break;
+						case 2: type_name = '菜单';break;
+						case 3: type_name = '按钮';break;
+					}
+					tree_node.text += '  <span class="label label-info">'+type_name+'</span>';
+					if(e.type != 3){
+						tree_node.tags.push('<button type="button" class="btn btn-primary btn-xs addChild" data-id="' + e.id + '">新增</button>')
+					}
+					if(e.authorities && e.authorities.length > 0){
+						var child_menu = app.methods.putChild(e.authorities);
+						tree_node['nodes'] = child_menu;
+					}
+					menu_tree.push(tree_node);
+				})
+				return menu_tree;
+			},
+			addChild: function(id){
+				if(id == 0){
+					$('.dialog-create input').val('');
+					$('.dialog-create input[name=parentId]').val(0);
+				}
+				$(".dialog-create").modal("show");
+			},
+			saveChild: function(parame){
+				var parame = tools.getParams(".dialog-create");
+				if(!parame.name || !parame.orderNum || !parame.type){
+					toastr.error('请正确填写数据')
+					return;
+				}
+				$.ajax({
+					type: parame.id ? "PUT" : "POST",
+					url: utils.prePath() + "/api/admin/authority",
+					async: false,
+					data: JSON.stringify(parame),
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							toastr.success('设置成功');
+							$(".dialog-create").modal("hide");
+							app.methods.initTree();
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+			}
+		},
+		init: function () {
+			app.methods.initTree();
+		}
+	}
+	$(function () {
+		app.init();
+	});
+</script>
+
+</html>

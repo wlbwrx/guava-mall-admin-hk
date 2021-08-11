@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>待出库</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			.commentsList{list-style: none;padding: 0;margin: 0;}
+			.commentsList li{border-bottom: 1px solid #ddd;padding: 6px;}
+			.commentsList li:last-child{border-bottom: 0;}
+			.commentsList li span{display: block;;white-space:nowrap;}
+			ul.addressBox{cursor: default;text-decoration: none}
+
+			#printBoxForm{margin-bottom: 10px;background: #fff;position: relative;padding-bottom: 36px;height: 600px;}
+			#printBoxForm .bottom{position: absolute;bottom: 0;width: 100%;}
+			#printBoxForm .line.line_2{height: 2px;border: 1px solid #F0F0F0;}
+			#printBoxForm .line.line_4{height: 4px;border: 2px solid #F0F0F0;}
+			#printBoxForm .line.line_12{height: 12px;border: 6px solid #F0F0F0;}
+			#printBoxForm .line.line_18{height: 18px;border: 9px solid #F0F0F0;}
+			#printBoxForm .line.line_top{margin-top: 3px;}
+			#printBoxForm .line.line_bottom{margin-bottom: 3px;}
+			#printBoxForm .head,
+			#printBoxForm .user{padding: 0 40px;color: #000000;}
+			#printBoxForm .head{font-size: 26px;padding-top: 24px;padding-bottom: 24px;}
+			#printBoxForm .user{list-style: none;height: calc(100% - 135px);overflow-y: auto;}
+			#printBoxForm .user li{font-size: 14px;}
+			#printBoxForm .user li .tit{opacity: 0.5;line-height: 32px;}
+			#printBoxForm .user li .pro ul{list-style: none;padding: 0;border: 1px solid #D9D9D9;border-bottom: 0;}
+			#printBoxForm .user li .pro ul li{display: flex;}
+			#printBoxForm .user li .pro ul li span{display: block;text-align: center;border-right: 1px solid #D9D9D9;}
+			#printBoxForm .user li .pro ul li span:nth-child(1){width: 150px}
+			#printBoxForm .user li .pro ul li span:nth-child(2){width: 230px}
+			#printBoxForm .user li .pro ul li span:nth-child(3){width: 48px}
+			#printBoxForm .user li .pro ul li span:nth-child(4){width: 84px}
+			#printBoxForm .user li .pro ul li span:last-child{border-right:0;}
+			#printBoxForm .user li .pro ul.protit{height: 38px;}
+			#printBoxForm .user li .pro ul.protit li{border: #F0F0F0 19px solid;position: relative;}
+			#printBoxForm .user li .pro ul.protit li div{position: absolute;top: -19px;bottom: -19px;right: -19px;left: -19px;display: flex;}
+			#printBoxForm .user li .pro ul.protit li span{line-height: 38px;}
+			#printBoxForm .user li .pro ul.prolist{border-bottom: 1px solid #D9D9D9;}
+			#printBoxForm .user li .pro ul.prolist li > span{line-height: 56px;height: 56px;}
+			#printBoxForm .user li .pro ul.prolist li span img{width: 120px;height: 20px;margin-top: 12px;margin-bottom: 2px;}
+			#printBoxForm .user li .pro ul.prolist li span span{line-height: 12px;font-size: 12px;}
+			@media print{
+				#printBoxForm .user li .pro ul li span:nth-child(2){width: 300px;flex:1}
+			}
+			.panel .panel-heading{align-items: center;justify-content: space-between;padding-right: 60px;flex-wrap: wrap;}
+			a[role="tab"]{white-space: nowrap;}
+			.bootstrap-table .fixed-table-toolbar{top: 7px;}
+			#search_tools input{max-width: 200px; border: 0; border-bottom: 1px solid #eaeaea; height: 40px;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="custom-tabs-line tabs-line-bottom left-aligned">
+						<ul class="nav" role="tablist">
+							<li class="active" data-type="10"><a href="" role="tab" data-toggle="tab">1. 待发货</a></li>
+							<li data-type="13"><a href="" role="tab" data-toggle="tab">2. 待拣货</a></li>
+							<li data-type="16"><a href="" role="tab" data-toggle="tab">3. 待确认</a></li>
+						</ul>
+					</div>
+					<div id="search_tools" style="display: flex;align-items: center;flex: 1;">
+						<input type="text" class="form-control" name="deliveryCode" placeholder="请输入发货单号...">
+						<input type="text" class="form-control" name="orderCode" placeholder="请输入订单号...">
+					</div>
+					<div class="btn-group">
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i> 搜索</button>
+							<div class="btn-group" authority="DELIVERY_EXPORT">
+								<button class="btn btn-warning btn-sm export" onclick="tools.exportByFrom('/api/admin/erp/delivery/pack/export/new');"><i class="fa fa-download"></i> 导出</button>
+								<button type="button" class="btn btn-warning btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a onclick="tools.exportByFrom('/api/admin/erp/delivery/pack/export');">旧版导出</a></li>
+								</ul>
+							</div>
+							<div class="btn-group" data-type="10">
+								<button type="button" class="btn btn-success btn-sm" id="uploadInvoice"><i class="fa fa-upload"></i> 导入发货信息</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/发货单模板.xls">下载发货模板</a></li>
+								</ul>
+							</div>
+							<div class="btn-group" data-type="16" style="display:none">
+								<button type="button" class="btn btn-success btn-sm" id="uploadInvoice1"><i class="fa fa-upload"></i> 导入确认发货信息</button>
+								<button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<span class="caret"></span>
+									<span class="sr-only">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="../excel/确认发货模板.xls">下载确认发货信息模板</a></li>
+								</ul>
+							</div>
+							
+							<button type="button" class="btn btn-success btn-sm" authority="DELIVERY_RE" id="uploadInvoice2"><i class="fa fa-upload"></i>原始发货数据导入</button>
+							
+							<button class="btn btn-warning  btn-sm" authority="DELIVERY_RE" onclick="app.methods.unpackDeliverys();">批量拆包</button>
+						</div>
+					</div>
+				</div>
+				<div class="panel-body">
+                    <div id="toolbar" class="btn-group">
+						<input type="text" inputTpye="daterange" rangeStart="deliveryCreateBeginTime" rangeEnd="deliveryCreateEndTime" class="form-control" name="deliveryOrderTimes" placeholder="发货单时间" />
+                        <select name="storehouseId" class="selectpicker" data-live-search="true" data-title="仓库"></select>
+                        <input type="text" class="form-control" name="productSkuBarcode" placeholder="条形码">
+						<input type="text" class="form-control" name="productTitle" placeholder="品名">
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+                    </div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+	<script type="text/javascript" src="../js/JsBarcode.all.min.js"></script>
+	<script type="text/javascript" src="../dists/print/jQuery.print.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/plupload.full.min.js"></script>
+	<script type="text/javascript" src="../dists/plupload-2.3.6/js/i18n/zh_CN.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="printBox">
+		<form method="post" action="#" id="printBoxForm">
+			<div class="top">
+				<div class="line line_12 line_bottom"></div>
+				<div class="line line_2 line_bottom"></div>
+			</div>
+			<div class="head">芭樂商城購物清單</div>
+			<ul class="user">
+				<li><span class="tit">客戶姓名：</span><span class="val"><%= consignee %></span></li>
+				<li><span class="tit">聯系電話：</span><span class="val"><%= tel %></span></li>
+				<li><span class="tit">收貨地址：</span><span class="val"><%= address %></span></li>
+				<% for(var i = 0;i < order_sku_info.length;i++){ %>
+					<li>
+						<span class="tit">商品列表（訂單編號：<%= order_sku_info[i].order_code %>）：</span>
+						<div class="pro">
+							<ul class="protit">
+								<li>
+									<div>
+										<span>商品編碼</span>
+										<span>商品名稱</span>
+										<span>數量</span>
+										<span>品號</span>
+									</div>
+								</li>
+							</ul>
+							<ul class="prolist">
+								<% for(var j = 0;j < order_sku_info[i].sku_info.length;j++){ %>
+									<li>
+										<span style="line-height: initial"><img class="imgcode" data-skubarcode="<%= order_sku_info[i].sku_info[j].product_sku_barcode %>"><span style="width:100%;"><%= order_sku_info[i].sku_info[j].product_sku_barcode %></span></span>
+										<span style="line-height: 16px;display:flex;justify-content: center;align-items: center;"><%= order_sku_info[i].sku_info[j].product_title %></span>
+										<span><%= order_sku_info[i].sku_info[j].delivery_quantity %></span>
+										<span><%= order_sku_info[i].sku_info[j].product_id %></span>
+									</li>
+								<% } %>
+							</ul>
+						</div>
+					</li>
+				<% } %>
+			</ul>
+			<div class="bottom">
+				<div class="line line_2 line_top"></div>
+				<div class="line line_4 line_top"></div>
+				<div class="line line_18 line_top"></div>
+			</div>
+		</form>
+		<button class="btn btn-primary" onclick="$('#printBoxForm').print();">打印发货单</button>		
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                outData: [],
+				initUploadInvoiceState: false,
+				initUploadInvoiceState1: false,
+				initUploadInvoiceState2: false,
+				search: {
+					'10': {},
+					'13': {},
+					'16': {},
+				},
+				status: '10'
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					$('.panel-heading .nav li a').on('click', function(){
+						var last_status = $('.panel-heading .nav li.active').attr('data-type')
+						app.data.search[last_status] = tools.getParams();
+						$(this).parent().siblings().removeClass('active')
+						$(this).parent().addClass('active')
+						app.data.status = $(this).parent().attr('data-type')
+						$('.toolBox > div[data-type]').hide()
+						$('.toolBox > div[data-type="'+app.data.status+'"]').show()
+						$('#toolbar input:not([inputtpye="daterange"])').val('')
+						for(var i in app.data.search[app.data.status]){
+							$('#toolbar input[name="'+i+'"]:not([inputtpye="daterange"])').val(app.data.search[app.data.status][i])
+						}
+						app.data.table.bootstrapTable('refresh');
+						return false;
+					})
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+						url: utils.prePath() + '/api/admin/erp/delivery/pack/list',
+						queryParams : function(params){
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							delete params['pageSize'];
+							delete params['pageNumber'];
+							var last_parame = {}
+							var codeParame = tools.getParams('#search_tools')
+							if((codeParame.deliveryCode && codeParame.deliveryCode != '') || (codeParame.orderCode && codeParame.orderCode != '')){
+								last_parame = codeParame
+							}else{
+								last_parame = Object.assign(params, tools.getParams(), {
+									'status': app.data.status
+								});
+							}
+							return last_parame
+						},
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.outData = data.body.content;
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+							app.data.initUploadInvoiceState == false && app.data.initUploadInvoiceState1 == false && app.methods.initPushFile();
+							if(tools.getParams().status == 10){
+								$('#table-main tr > *:nth-child(4)').hide()
+							}else{
+								$('#table-main tr > *:nth-child(4)').show()
+							}
+							// code查询，只有一条数据
+							var codeParame = tools.getParams('#search_tools')
+							if((codeParame.deliveryCode && codeParame.deliveryCode != '') || (codeParame.orderCode && codeParame.orderCode != '')){
+								if(app.data.outData[0] != undefined && app.data.outData[0].delivery_status){
+									$('.nav li').removeClass('active')
+									$('.nav li[data-type="'+app.data.outData[0].delivery_status+'"]').addClass('active')
+								}
+							}
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'delivery_code',title: '发货单号',align: 'center',
+					}, {
+						field: 'storehouse_name',title: '发货仓库',align: 'center',
+					}, {
+						field: 'order_sku_info',title: '<span class="columnsTit">订单信息</span><ul class="orderProductInfoBox"><li><span>订单号</span><span><ul class="orderProductInfo"><li><span>商品图</span><span>商品ID</span><span>产品标题</span><span>条码</span><span>数量</span><span>价格</span><span>库位</span></li></ul></span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.orderSkuInfos(value);
+                        }
+					}, {
+						field: 'express_code',title: '国际运单',align: 'center',minWidth:150,
+						formatter: function (value, row, index, field) {
+							return row.express_proxy ? ('<div style="text-align:left">代理：' + row.express_proxy + '<br>物流：' + row.express_company + '<br>单号：' + row.express_code + '</div>') : '';
+                        }
+					}, {
+						field: 'delivery_price',title: '待收金额',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight_price == 0 || row.freight_price == null ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight_price ) + '</div></div>';
+                        }
+					}, {
+						field: 'comments',title: '备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							var html = '<ul class="commentsList">'
+							value.split(' &,& ').map(function(e){
+								html += '<li><span>' + e.split(';')[0] + '</span><span>' + e.split(';')[1] + '</span></li>'
+							})
+							html += '</ul>'
+							return html;
+                        }
+					}, {
+						field: 'created_at',title: '打包时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}, {
+						field: 'consignee',title: '收货人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(value, row.tel, row.email, row.address, index);
+                        }
+					}, {
+						title: '操作',minWidth:230,
+						formatter: function (value, row, index, field) {
+							return '<div class="toolBox btn-group">'+
+									'<button class="btn btn-success btn-xs" onclick="app.methods.openPrintBox(' + index + ')"><i class="fa fa-download"></i>&nbsp;&nbsp;打印出库单</button>' +
+									'<button type="button" class="btn btn-danger btn-xs" onclick="app.methods.unpackDelivery(' + row.delivery_id + ')">拆包</button>'+
+									'<button type="button" class="btn btn-warning btn-xs" authority="DELIVERY_RE" onclick="app.methods.unpackReturnDelivery(' + row.delivery_id + ')">拆包回滚</button></div>';
+                        }
+					}];
+                    return option;
+				},
+				initPushFile: function(){
+					var uploader_uploadInvoice = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadInvoice',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/delivery/pack/express/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.successes.length > 0 && res.errores.length == 0){
+									toastr.success('导入成功...');
+								}
+								if(res.errores.length > 0){
+									var html = '';
+									res.errores.map(function(e){	
+										html += '<tr><td>'+e.deliveryCode+'</td><td>'+e.expressProxy+'</td><td>'+e.expressCompany+'</td><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.errores.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										content: '<table class="table"><tr><td>发货单号</td><td>货代公司</td><td>物流公司</td><td>物流编号</td><td>错误信息</td></tr>' + html + '</table>',
+									})
+								}
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadInvoice.init();
+					app.data.initUploadInvoiceState = true;
+
+					var uploader_uploadInvoice1 = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadInvoice1',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/delivery/way/import",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.successes.length > 0 && res.errores.length == 0){
+									toastr.success('导入成功...');
+								}
+								if(res.errores.length > 0){
+									var html = '';
+									res.errores.map(function(e){	
+										// html += '<tr><td>'+e.deliveryCode+'</td><td>'+e.expressProxy+'</td><td>'+e.expressCompany+'</td><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>'
+										html += '<tr><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.errores.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										// content: '<table class="table"><tr><td>发货单号</td><td>货代公司</td><td>物流公司</td><td>物流编号</td><td>错误信息</td></tr>' + html + '</table>',
+										content: '<table class="table"><tr><td>物流编号</td><td>错误信息</td></tr>' + html + '</table>',
+									})
+								}
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadInvoice1.init();
+					app.data.initUploadInvoiceState1 = true;
+					
+					var uploader_uploadInvoice2 = new plupload.Uploader({
+						runtimes: 'html5,html4',
+						browse_button: 'uploadInvoice2',
+						multi_selection : false,
+						url: utils.prePath() + "/api/admin/erp/delivery/way/import/system",
+						file_data_name: 'file',
+						filters: {
+							max_file_size: '400kb',
+							mime_types: [{ title: "Excel files", extensions: "xls" }],
+						},
+						multipart_params: {
+							access_token: utils.cookie.getCookie('accessToken'),
+						},
+						init: {
+							FilesAdded: function (up, files) {
+								layer.load();
+								up.start();
+								toastr.info('正在上传...');
+							},
+							FileUploaded: function(uploader,file,responseObject){
+								var res = JSON.parse(responseObject.response).body;
+								if(res.successes.length > 0 && res.errores.length == 0){
+									toastr.success('导入成功...');
+								}
+								if(res.errores.length > 0){
+									var html = '';
+									res.errores.map(function(e){	
+										// html += '<tr><td>'+e.deliveryCode+'</td><td>'+e.expressProxy+'</td><td>'+e.expressCompany+'</td><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>'
+										html += '<tr><td>'+e.expressCode+'</td><td>'+e.message+'</td></tr>'
+									})
+									layer.open({
+										type: 1,
+										title : '上传错误，共：' + res.errores.length + '条',
+										area: ['80vw', '80vh'],
+										skin: 'errBox',
+										// content: '<table class="table"><tr><td>发货单号</td><td>货代公司</td><td>物流公司</td><td>物流编号</td><td>错误信息</td></tr>' + html + '</table>',
+										content: '<table class="table"><tr><td>物流编号</td><td>错误信息</td></tr>' + html + '</table>',
+									})
+								}
+								layer.closeAll('loading');								
+							},
+							Error: function (up, err) {
+								toastr.error(JSON.parse(err.response).body.message);
+								layer.closeAll('loading');								
+							}
+						}
+					});
+					uploader_uploadInvoice2.init();
+					app.data.uploader_uploadInvoice2 = true;
+				},
+				unpackDelivery: function(deliveryId){
+					$.ajax({
+						type: "DELETE",
+						url: utils.prePath() + "/api/admin/erp/delivery/pending/unpack/" + deliveryId,
+						success: function (result) {
+							if (result.statusCode == 'OK') {
+								toastr.success('拆包成功...');
+								app.data.table.bootstrapTable('refresh');
+							} else {
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				unpackReturnDelivery: function(deliveryId){
+					layer.confirm('确定要拆单回滚？？？', {
+					  	btn: ['确定','取消'] //按钮
+					}, function(index, layero){
+					  	$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + "/api/admin/erp/delivery/pending/unpack/orderreturn/" + deliveryId,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('拆包回滚成功...');
+									app.data.table.bootstrapTable('refresh');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+								
+							}
+						});
+						layer.close(index);
+					});
+				},
+				unpackDeliverys: function(){
+					layer.prompt({title: '批量回滚，【英文逗号】分隔' ,maxlength: 100000,formType: 2}, function(text, _index){
+						var data = text.replace(/,/g,'\n').replace(/，/g,'\n').split('\n')
+                        $.ajax({
+							type : "DELETE",
+                            url : utils.prePath()+"/api/admin/erp/delivery/pending/unpack/orderreturns",
+                            data : JSON.stringify(data),
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+                                    layer.close(_index)
+                                    toastr.success('回滚成功...');
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+				},
+				openPrintBox: function(index){
+					var data = app.data.outData[index];
+					data.order_sku_info = tools.specialStringToJson(data.order_sku_info)
+					var _index = layer.open({
+						type: 1,
+						content: template('printBox', data),
+						area: ['500px', '740px'],
+						title: '打印预览',
+						closeBtn: 1
+					});
+					$(".imgcode").each(function(){
+						var data = $(this).data('skubarcode');
+						$(this).JsBarcode(data,{
+							width: 120,//设置条之间的宽度
+							height: 20,//高度
+							margin: 0,
+							fontSize: 0
+						})
+					})
+				},
+                initSelect : function(){
+                    tools.renderSelect.storehouse('select[name="storehouseId"]');                    
+					tools.rangeTime('input[name="deliveryOrderTimes"]',true);
+				}
+			},
+			init : function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+
+				$('#search_tools').keyup(function(event){
+					event.keyCode ==13 && app.data.table.bootstrapTable('refresh')
+				});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

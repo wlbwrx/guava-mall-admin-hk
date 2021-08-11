@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Home</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/easyui/themes/bootstrap/easyui.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/hint/hint.css"/>
+		<!-- <link rel="stylesheet" href="../dists/select2/dist/css/select2.css" /> -->
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			body > .container-fluid > .panel > .panel-body{height: 100%;}
+			.layui-layer-content{padding: 6px;}
+			.bootstrap-table{height: calc(100% - 34px - 65px);position: relative;}
+			.bootstrap-table .fixed-table-toolbar{top: -44px;right: 0;}
+
+			.cardBox{height: calc(100% - 44px);overflow-y: auto;padding-bottom: 30px;}
+			.cardBox ul{display: flex;flex-wrap: wrap;padding-left: 0;list-style: none;}
+			.cardBox ul li{width: 160px;margin: 8px;border-radius: 8px;overflow: hidden;box-shadow: 1px 1px 10px 0px #aaa}
+			.cardBox ul li .product-media{padding-bottom: 100%;position: relative;}
+			.cardBox ul li .product-media.selectPro::after{content: '已选择';position: absolute;height: 100%;width: 100%;background: rgba(0,0,0,.7);color: #fff;font-size: 16px;line-height: 160px;text-align: center;}
+			.cardBox ul li .product-media > img{position: absolute; width: 100%; height: 100%; top: 0; left: 0;border-bottom-left-radius: 0 !important;border-bottom-right-radius: 0 !important;}
+			.cardBox ul li .product-media .product-sales{position: absolute;background: rgba(0,0,0,.3);color: #fff;padding: 3px 6px;display: block;}
+			.cardBox li .product-subtitle{text-overflow: ellipsis;white-space: nowrap; display: block;line-height: 12px;color: #887143; font-size: 12px;padding: 8px 6px;background:#F1ECE2;margin-top: -28px;position: relative;}
+			.cardBox .product-content{padding: 6px 6px 0; color: #000;}
+			.cardBox .product-content .product-title{overflow: hidden;text-overflow: ellipsis;width: 100%;white-space: nowrap; display: block; line-height: 20px;}
+			.cardBox .product-content .product-discountprice{font-size: 16px;color: #B4272D; line-height: 22px; display: inline-block;}
+			.cardBox .product-content .product-discountprice:before{content: '$';font-size: 12px;margin-right: 2px;}
+			/* .cardBox .product-content .product-id{border-radius: 10px;line-height: 14px;padding: 2px 4px;background: ;} */
+			.cardBox .product-tools{display: flex}
+			.cardBox .product-tools button{flex: 1;border-radius: 0}
+			.top-30{top: 30px;}
+			input[name="isNewEndDay"]{border: 0;padding: 0 6px;height: 100%;margin-left: 10px;width: 100px;}
+
+			.custom-tabs-line{display: flex;justify-content: space-between;align-items: center;}
+			.btn-group{display: flex;align-items: center}
+			.tab-content{height: calc(100% - 47px);}
+			.tab-pane{height: 100%;box-sizing: border-box}
+			#batchId{height: 500px;width: 100%;resize: none}
+
+			.label-module-ad {float: left;margin-bottom: 3px;}
+			.modal-title{word-break: break-all;}
+
+			.layui-layer.layui-layer-loading{z-index: 3001!important;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-body">
+					<div class="btn-group">
+						<button type="button" class="btn btn-primary" onclick="app.methods.openBindPro();"><i class="fa fa-plus-square"></i>&nbsp; 新增 </button>
+						<button type="button" class="btn btn-primary" onclick="app.methods.productDownLoad();"><i class="fa fa-download"></i>&nbsp; 导出 </button>
+						<button type="button" class="btn btn-info" onclick="app.methods.editDepletionTime();"><i class="fa fa-trash"></i>&nbsp; 修改出清时间 </button>
+						<button type="button" class="btn btn-info" onclick="app.methods.editDepletionPrice();"><i class="fa fa-trash"></i>&nbsp; 修改出清价格 </button>
+						<button type="button" class="btn btn-danger" onclick="app.methods.delAll();"><i class="fa fa-trash"></i>&nbsp; 批量解绑 </button>
+						<button type="button" class="btn btn-success" onclick="app.methods.selectOther();">&nbsp; 全选/反选 </button>
+					</div>
+					<button type="button" onclick="app.methods.initTable();" style="border: none;background: transparent;float: right;"><i class="fa fa-refresh"></i></button>
+					<div class="cardBox"></div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="adlinkData"  role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">广告产品销量</h4>
+					</div>
+					<div class="modal-body">
+                        <div class="btn-group" id="product-sell-parame" style="margin-bottom: 10px;display: flex;flex-wrap: wrap;">
+                            <input type="text" class="form-control" name="adlkId" style="display:none">
+                            <input type="text" style="flex: 1;" inputtpye="daterange" rangestart="orderBeginTime" rangeend="orderEndTime" class="form-control" name="orderBeginEndTime" placeholder="选择时间">
+                            <button class="btn btn-primary" onclick="app.methods.productSellRefash();">查询</button>
+                        </div>
+                        <div class="scroll" style="max-height:360px;overflow-y: scroll;">
+                            <table id="adlinkData-table" class="table table-bordered"></table>
+                        </div>
+                    </div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" onclick="app.methods.bindByAd()">绑定</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../js/bootstrap-table-template.js"></script>
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../dists/easyui/jquery.easyui.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../dists/easyui/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<!-- <script type="text/javascript" src="../dists/select2/dist/js/select2.full.min.js"></script> -->
+	<script type="text/javascript" src="../js/Sortable.min.js"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script id="cardBox" type="text/html">	
+	    <ul>
+			<% for(var i = 0; i < list.length; i++){ %>
+				<li productid="<%=list[i].id%>">
+					<div class="product-media">
+						<img src="<%=list[i].product_img%>"/>
+						<span class="product-sales">3天销量：<%=list[i].sale_sum_3%></span>
+						<span class="product-sales top-30">7天销量：<%=list[i].sale_sum_7%></span>
+					</div>
+					<div class="product-subtitle"><%=(list[i].description || '暂无描述')%></div>
+					<div class="product-content">
+						<span class="product-title">
+							<a class="label label-info product-id" href="<%=list[i].source_url%>" target="_blank"><%=list[i].id%></a>
+							<%=list[i].title%>
+						</span>
+						<% if(list[i].min_price == list[i].max_price){ %>
+							<div class="product-discountprice"><%= list[i].min_price %></div>
+						<% }else{ %>
+							<div class="product-discountprice"><%= list[i].min_price %> ~ <%= list[i].max_price %></div>
+						<% } %>
+						<div>更新:<%= list[i].updated_at %></div>
+					</div>
+					
+					<div class="product-tools">
+						<% if(list[i].status > 0){ %>
+							<button class="btn btn-info btn-xs" onclick="app.methods.productEdit(<%=list[i].id%>)">编辑</button>
+						<% } %>
+						<% if(list[i].status == 20 || list[i].status == 1){ %>
+							<button class="btn btn-success btn-xs" onclick="app.methods.productStatus(<%=list[i].id%>, 10)">上架</button>
+						<% }else if(list[i].status == 10){ %>
+							<button class="btn btn-warning btn-xs" onclick="app.methods.productStatus(<%=list[i].id%>, 20)">下架</button>
+						<% } %>
+						<button class="btn btn-danger btn-xs" onclick="app.methods.deleteCategoryProduct(<%=list[i].id%>)">解绑</button>
+					</div>
+				</li>
+			<% } %>
+		</ul>
+	</script>
+	<script id="bindBox" type="text/html">	
+		<div class="custom-tabs-line tabs-line-bottom left-aligned">
+			<ul class="nav" role="tablist">
+				<li data-type="normarl"><a href="#tab-normarl" role="tab" data-toggle="tab">产品列表</a></li>
+				<li data-type="sales"><a href="#tab-sales" role="tab" data-toggle="tab">销量</a></li>
+				<li data-type="monitor"><a href="#tab-monitor" role="tab" data-toggle="tab">监测</a></li>
+				<li data-type="updatetime"><a href="#tab-updatetime" role="tab" data-toggle="tab">产品更新时间</a></li>
+				<li data-type="joint"><a href="#tab-joint" role="tab" data-toggle="tab">连单</a></li>
+				<li data-type="ad"><a href="#tab-ad" role="tab" data-toggle="tab">广告</a></li>
+				<li data-type="price"><a href="#tab-price" role="tab" data-toggle="tab">价格区间</a></li>
+				<li data-type="batch"><a href="#tab-batch" role="tab" data-toggle="tab">批量绑定</a></li>
+			</ul>
+		</div>
+		<div class="tab-content">
+			<div class="tab-pane fade in" id="tab-normarl">
+				<div class="searchBox btn-group" id="toolbar-normarl">
+						<input type="text" class="form-control" name="id" placeholder="产品ID">
+						<input type="text" class="form-control" name="title" placeholder="产品标题">
+						<select class="selectpicker" data-live-search="true" name="status" data-width="150px"></select>
+						<input class="classify" name="categoryId" style="width:150px">
+					<input type="text" inputTpye="daterange" rangeStart="productCreatedBeginTime" rangeEnd="productCreatedEndTime" class="form-control time" name="productCreatedTime" placeholder="产品创建时间" />
+					<input type="text" inputTpye="daterange" rangeStart="upDownBeginTime" rangeEnd="upDownEndTime" class="form-control time" name="productShelfTime" placeholder="产品上架时间" />
+					<input type="text" class="form-control" name="createdBy" placeholder="产品创建人">
+					<button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				</div>
+				<table id="table-normarl"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-sales">
+				<div class="searchBox btn-group" id="toolbar-sales">
+                    <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+					<input class="classify" name="categoryId" style="width:150px">
+					<input type="text" inputTpye="daterange" rangeStart="orderSubmitBeginTime" rangeEnd="orderSubmitEndTime" class="form-control time" name="orderSubmitTime" placeholder="下单时间" />
+					<select name="productStatus" class="selectpicker" data-live-search="true"></select>
+					<input type="text" inputTpye="daterange" rangeStart="productCreatedBeginTime" rangeEnd="productCreatedEndTime" class="form-control time" name="productCreatedTime" placeholder="产品创建时间" />
+					<input type="text" inputTpye="daterange" rangeStart="upDownBeginTime" rangeEnd="upDownEndTime" class="form-control time" name="productShelfTime" placeholder="产品上架时间" />
+					<input type="text" class="form-control" name="productCreatedBy" placeholder="产品创建人">
+					<button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				</div>
+				<table id="table-sales"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-monitor">
+				<div class="searchBox btn-group" id="toolbar-monitor">
+                    <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+					<input class="classify" name="categoryId" style="width:150px">
+					<input type="text" inputTpye="daterange" tostring="true" onlyhour="true"  rangeStart="statisticsBegainDate" rangeEnd="statisticsEndDate" class="form-control time" name="statisticsTime" placeholder="统计日期" />
+					<select name="productStatus" class="selectpicker" data-live-search="true"></select>
+					加购率权重<input type="number" class="form-control" name="clickRateWeight" value="0.4" max='1' min='0'>
+					加购结算率权重<input type="number" class="form-control" name="submitRateWeight" value="0.3" max='1' min='0'>
+					点击结算率权重<input type="number" class="form-control" name="viewSubmitRateWeight" value="0.3" max='1' min='0'>
+					<button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				</div>
+				<table id="table-monitor"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-updatetime">
+				<div class="searchBox btn-group" id="toolbar-updatetime">
+                    <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+					<input class="classify" name="categoryId" style="width:150px">
+					<input type="text" inputTpye="daterange" rangeStart="productUpdateBeginTime" rangeEnd="productUpdateEndTime" class="form-control time" name="productUpdateTime" placeholder="产品更新时间" />
+					<select name="productStatus" class="selectpicker" data-live-search="true"></select>
+					<button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				</div>
+				<table id="table-updatetime"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-ad">
+				<div class="searchBox btn-group" id="toolbar-ad">
+					<input type="text" class="form-control" name="id" placeholder="ID">
+					<input type="text" class="form-control" name="comments" placeholder="备注">
+					<input type="text" class="form-control" name="tags" placeholder="标签">
+					<button class="btn btn-primary" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					<button class="btn btn-primary" onclick="app.methods.adlinkData();">已选广告产品销量</button>
+				</div>
+				<table id="table-ad"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-price">
+				<div class="searchBox btn-group" id="toolbar-price">
+                    <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+					<input class="classify" name="categoryId" style="width:150px">
+					<!-- <input type="text" inputTpye="daterange" rangeStart="productUpdateBeginTime" rangeEnd="productUpdateEndTime" class="form-control time" name="productUpdateTime" placeholder="产品更新时间" /> -->
+					<select name="productStatus" class="selectpicker" data-live-search="true"></select>
+					<input type="number" class="form-control" name="minProductPrice" value="100" placeholder="最低价NT$"> ~ <input type="number" value="1000" class="form-control" name="maxProductPrice" placeholder="最高价NT$">  
+					<button class="btn btn-primary" onclick="app.methods.refresh();"><i class  ="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				</div>
+				<table id="table-price"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-joint">
+				<div class="searchBox btn-group" id="toolbar-joint">
+                    <select class="selectpicker" data-live-search="true" name="scopeId"></select>
+					<input type="text" class="form-control" name="productId" placeholder="产品ID">
+					<input class="classify" name="categoryId" style="width:150px">
+					<input type="text" inputTpye="daterange" rangeStart="orderSubmitBeginTime" rangeEnd="orderSubmitEndTime" class="form-control time" name="productOrderSubmitTime" placeholder="下单时间" />
+					<select name="productStatus" class="selectpicker" data-live-search="true"></select>
+					<button class="btn btn-primary btn-sm" onclick="app.methods.refresh();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+				</div>
+				<table id="table-joint"></table>
+			</div>
+			<div class="tab-pane fade in" id="tab-batch">
+				<textarea id="batchId" placeholder="批量模块输入产品,默认按照产品ID排序,产品ID之间以','或'回车'分割"></textarea>
+			</div>
+		</div>
+	</script>
+
+	<!-- <script id="searchBox" type="text/html">
+		<div id="toolbar" class="form-inline">
+			
+		</div>
+		<table id="table-images" class="img-container"></table>
+	</script> -->
+	<script type="text/javascript">
+		var app = {
+			data : {
+				moduleId: utils.getURLParam('moduleId'),
+				table:{},
+				type: ''
+			},
+			methods : {
+				initTable : function(){
+					$.ajax({
+						type : "GET",
+						url: utils.prePath() + '/api/admin/aggregate/module/'+app.data.moduleId+'/product?sortOrder=asc&size=2000&page=0',
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.mProduct = result.body;
+								app.data.mProduct.map(function(e){
+									e.updated_at = tools.formatterFunction.time(e.updated_at);
+								})
+								$('.cardBox').html(template('cardBox', {list: app.data.mProduct}));
+								app.methods.sort();
+								// 点击选择
+								$('.cardBox .product-media').off().on('click', function(){
+									if($(this).hasClass('selectPro')){
+										$(this).removeClass('selectPro');
+									}else{
+										$(this).addClass('selectPro');
+									}
+								});
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				editDepletionTime: function(){
+					var productIds = [];
+					$('.cardBox > ul > li .product-media.selectPro').each(function(i){
+						if($(this).hasClass('selectPro')){
+							productIds.push($(this).parent('li').attr('productid') - 0);
+						}
+					});
+					if(productIds.length == 0){
+						toastr.warning('请选择后再操作！')
+						return;
+					}
+					layer.open({
+						title: '操作', 
+						content: '<input type="text" inputTpye="daterange" tostring=true rangeStart="productDepletionStartTime" rangeEnd="productDepletionEndTime" class="form-control" name="productDepletionTime" placeholder="选择时间" />',
+						btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						skin:'depletionBox',
+                        yes: function(index, layero){
+							layer.closeAll();
+							var params = tools.getParams('.depletionBox');
+							$.ajax({
+								type : "PUT",
+								url: utils.prePath() + '/api/admin/aggregate/module/depletion/product',
+								data: JSON.stringify({'productIds':productIds,'productDepletionStartTime':params.productDepletionStartTime || null,'productDepletionEndTime':params.productDepletionEndTime || null}),
+								success : function(result){
+									if(result.statusCode == 'OK'){
+										toastr.success('已完成！');
+										$('.cardBox > ul > li .product-media.selectPro').trigger('click');
+									}else{
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						}
+					});
+					tools.rangeTime('input[name="productDepletionTime"]');
+				},
+				editDepletionPrice: function(){
+					var productIds = [];
+					$('.cardBox > ul > li .product-media.selectPro').each(function(i){
+						productIds.push($(this).parent('li').attr('productid') - 0);
+					});
+					if(productIds.length == 0){
+						toastr.warning('请选择后再操作！')
+						return;
+					}
+					layer.open({
+						title: '操作', 
+						content: '<select class="selectpicker" data-live-search="true" name="productSkuDepletionType"></select><input type="text" class="form-control" name="productSkuDepletionPriceValue" placeholder="值">',
+						btn: ['确定', '取消'] ,
+						area: ['auto','300px'],
+						btnAlign: 'c',
+						skin:'depletionTypeBox',
+                        yes: function(index, layero){
+							layer.closeAll();
+							var params = tools.getParams('.depletionTypeBox');
+							$.ajax({
+								type : "PUT",
+								url: utils.prePath() + '/api/admin/aggregate/module/depletion/sku',
+								data: JSON.stringify({'productIds':productIds,'productSkuDepletionPriceType':params.productSkuDepletionType,'productSkuDepletionPriceValue':params.productSkuDepletionPriceValue || null}),
+								success : function(result){
+									if(result.statusCode == 'OK'){
+										toastr.success('已完成！');
+										$('.cardBox > ul > li .product-media.selectPro').trigger('click');
+									}else{
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						}
+					});
+					tools.renderSelect.depletionPrice('select[name="productSkuDepletionType"]');
+				},
+				selectOther: function(){
+					$('.cardBox > ul > li .product-media').trigger('click');
+				},
+				sort: function(){
+					Sortable.create($('.cardBox ul')[0], {
+						animation: 150,
+						draggable: 'li',
+						onSort: function(){
+							// 根据位子计算priority
+							var priorityData = [];
+							$('.cardBox > ul > li').each(function(i){
+								priorityData.push({
+									'productId': $(this).attr('productid'),
+									'priority': i
+								})
+							});
+							$.ajax({
+								type: "put",
+								url: utils.prePath() + "/api/admin/aggregate/module/" + app.data.moduleId + "/product/sort",
+								data: JSON.stringify(priorityData),
+								success: function (result) {
+									if (result.statusCode != 'OK') {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						}
+					});
+				},
+				productStatus : function(productId , status){//产品下架
+					var canUp = true;
+					if(status == 10){
+						$.each(app.data.mProduct, function(i , product) {
+							if(product.id == productId){
+								if(!product.min_price || !product.max_price){
+									canUp = false;
+									return false;
+								}
+							}
+						});
+					}
+					if(!canUp){
+						toastr.error('该产品SKU价格尚未设置,请设置后重试...');
+						return;
+					}
+					// 设置
+					if(status == 10){
+						layer.open({
+							title: '新品设置',
+							content: '<label class="form-control">该商品是否为新品？<input name="isNew" type="checkbox" checked></label><label class="form-control">新品保持天数<input name="isNewEndDay" min="1" value="7" type="number" placeholder="请填写新品保持天数（）"></label>',
+							btn: ['保存'], //可以无限个按钮
+						 	yes: function(){
+								var isNew = $('input[name="isNew"]')[0].checked;
+								var isNewEndDay = $('input[name="isNewEndDay"]').val() - 0;
+								if(isNew){
+									if(isNewEndDay < 1){
+										toastr.warning('天数格式有误...');
+										return false;
+									}
+									app.methods.stateChange(productId, {status : 10 , downReason : moment().unix() + '', isNew: true, isNewEndDay: isNewEndDay})
+								}else{
+									app.methods.stateChange(productId, {status : 10 , downReason : moment().unix() + '', isNew: false})
+								}
+							}
+						});
+						$('input[name="isNew"]').off().on('change', function(){
+							var isNew = $('input[name="isNew"]')[0].checked;
+							if(isNew){
+								$('input[name="isNewEndDay"]').parent().show()
+							}else{
+								$('input[name="isNewEndDay"]').parent().hide()
+							}
+						})
+					}
+					if(status == 20){
+						app.methods.stateChange(productId, {status : 20 , downReason : '聚合模块操作'})
+					}
+				},
+				stateChange:function(productId, params){
+					$.ajax({
+						type : "PUT",
+						url : utils.prePath()+"/api/admin/product/status/" + productId,
+						data: JSON.stringify(params),
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								params.status == 10 && toastr.success('产品上架成功...');
+								params.status == 20 && toastr.warning('产品下架成功...');
+								app.methods.initTable();
+								layer.closeAll();
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				productEdit : function(productId){//产品详情
+					var index = layer.open({
+					  	type: 2,
+					  	content: '../product/edit.html?id=' + productId,
+					  	area: [$(window).width() + 'px' , $(window).height() + 'px']
+					});
+				},
+                deleteCategoryProduct : function(pid){//删除分类中的产品
+					var pids = [];
+					if(typeof pid == "object"){
+						pids = pid;
+					}else{
+						pids.push(pid);
+					}
+                    layer.confirm('确定要解绑该产品吗?', {
+                        btn: ['确定','取消'] //按钮
+                    }, function(index){
+                        layer.close(index);
+                        $.ajax({
+                            type : "DELETE",
+							url: utils.prePath() + '/api/admin/aggregate/module/'+app.data.moduleId+'/product',
+                            data : JSON.stringify(pids),
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+									app.methods.initTable();
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+				},
+				delAll: function(){
+					var productIds = [];
+					$('.cardBox > ul > li .product-media.selectPro').each(function(i){
+						if($(this).hasClass('selectPro')){
+							productIds.push($(this).parent('li').attr('productid') - 0);
+						}
+					});
+					if(productIds.length == 0){
+						toastr.warning('请选择后再操作！');
+						return;
+					}
+					app.methods.deleteCategoryProduct(productIds);
+				},
+				openBindPro : function(){
+					layer.open({
+                        type: 1,
+                        title : '请给模块增加产品',
+                        area: ['100%', '100%'], //宽高
+                        content: template('bindBox',{}),
+                        btn: ['确定', '取消'] ,
+						btnAlign: 'c',
+						skin: 'addPro',
+                        yes: function(index, layero){
+							if(app.data.type == 'ad'){
+								app.methods.adlinkData();
+								return
+							}
+							// 格式化并绑定
+							var productIds=[];
+							if(app.data.table[app.data.type]){
+								var _selections = app.data.table[app.data.type].bootstrapTable('getSelections');
+								$.each(_selections, function(index , temp) {
+									productIds.push(temp.product_id || temp.id);
+								});
+							}else{
+								var value = $('#batchId').val().trim()
+								if(value && value != ''){
+									value.split('\n').map(function(_e){
+										_e.trim().replace(/，/ig,',').split(',').map(function(e , index){
+											if(e && e.trim() != ''){
+												productIds.push(e);
+											}
+										});
+									})
+								}
+							}
+							app.methods.bindProAjax(tools.uniq(productIds));
+                        }
+					});
+					app.data.table.sales = $('#table-sales');
+					app.data.table.monitor = $('#table-monitor');
+					app.data.table.updatetime = $('#table-updatetime');
+					app.data.table.joint = $('#table-joint');
+					app.data.table.normarl = $('#table-normarl');
+					app.data.table.ad = $('#table-ad');
+					app.data.table.price = $('#table-price');
+
+					app.methods.initTab();
+				},
+				productDownLoad: function(){
+					tools.exportByFrom('/api/admin/aggregate/module/'+ app.data.moduleId+ '/product/export')
+				},
+				initTableSales: function(){
+					app.data.table.sales.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/aggregate/module/product/sales',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-sales'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+                            field: 'product_id',title: 'ID',
+                        },{
+							field: 'product_image',title: '商品图',align: 'center',
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proImage(value, row.product_id, row.product_title)
+							}
+                        },{
+							field: 'product_title',title: '标题',
+							formatter :  function(value, row, index, field) {
+								return value + (row.is_new ? ' <span class="label label-info">新品</span>' : '')
+							}
+                        },{
+							field: 'min_price',title: '价格区间',
+							formatter :  function(value, row, index, field) {
+								return '<span class="money">$' + row.min_price + ' ~ ' + '$' + row.max_price + '</span>';
+							}
+                        },{
+							field: 'sale_quantity',title: '销量',width : 100,
+						}, {
+							field: 'status',title: '状态' ,align : 'center',width : 100,
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proStatus(value)
+							}
+						},{
+                             field:'remark',title: '备注',width : 100,
+                            formatter: function(value, row, index, field) {
+                                if(row.down_reason){
+                                    if(row.down_reason){
+                                        if(row.status == 10){
+                                            return '<span class="nowarp" style="display:block;margin-top:6px;">上架时间：' + tools.formatterFunction.time(row.down_reason * 1000) + '</span>' + '<span class="text-length-table-col">'+(value || '--')+'</span>';
+                                        }else{
+                                            return '<span class="nowarp" style="display:block;margin-top:6px;">下架原因：' + row.down_reason + '</span>' + '<span class="text-length-table-col">'+(value || '--')+'</span>';
+                                        }
+                                    }else{
+                                        return '<span class="text-length-table-col">'+(value || '--')+'</span>';
+                                    }
+                                }else{
+                                    return '--'
+                                }
+                            }
+                        }
+						],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.sales);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				initTableMonitor: function(){
+					app.data.table.monitor.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/aggregate/module/product/monitor',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-monitor'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+                            field: 'product_id',title: '商品ID',align: 'center',
+                        },{
+							field: 'product_image',title: '商品图',align: 'center',
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proImage(value, row.id, row.title)
+							}
+                        },{
+							field: 'product_title',title: '标题',
+							formatter :  function(value, row, index, field) {
+								return value + (row.is_new ? ' <span class="label label-info">新品</span>' : '')
+							}
+                        },{
+							field: 'min_price',title: '价格区间',
+							formatter :  function(value, row, index, field) {
+								return '<span class="money">$' + row.min_price + ' ~ ' + '$' + row.max_price + '</span>';
+							}
+                        },{
+                            field: 'FINAL_RATE',title: '综合概率',align: 'center',formatter: function(value, row, index, field) {
+                                return ((value || 0)* 100).toFixed(2) + '%'
+                            }
+                        },{
+                            field: 'updated_at',title: '产品最后更新时间',formatter: function(value, row, index, field) {
+                                return tools.formatterFunction.time(value);
+                            }
+                        }, {
+							field: 'status',title: '状态' ,align : 'center',width : 100,
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proStatus(value)
+							}
+						}],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.monitor);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				initTableUpdatetime: function(){
+					app.data.table.updatetime.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/aggregate/module/product/updatetime',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-updatetime'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+                            field: 'product_id',title: 'ID',
+                        },{
+							field: 'product_image',title: '商品图',align: 'center',
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proImage(value, row.product_id, row.product_title)
+							}
+                        },{
+							field: 'product_title',title: '标题',
+							formatter :  function(value, row, index, field) {
+								return value + (row.is_new ? ' <span class="label label-info">新品</span>' : '')
+							}
+                        },{
+							field: 'min_price',title: '价格区间',
+							formatter :  function(value, row, index, field) {
+								return '<span class="money">$' + row.min_price + ' ~ ' + '$' + row.max_price + '</span>';
+							}
+                        }, {
+							field: 'status',title: '状态' ,align : 'center',width : 100,
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proStatus(value)
+							}
+						}],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.updatetime);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				initTableJoint: function(){
+					var p = tools.getParams('#toolbar-joint');
+					if(!p.productId || p.productId == ''){
+						app.data.sales = 'stop'
+						toastr.warning('请填写产品ID后进行查询')
+						return
+					}else{
+						app.data.sales = ''
+					}
+					app.data.table.joint.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/aggregate/module/product/joint',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-joint'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+                            field: 'id',title: 'ID',
+                        },{
+							field: 'productImageUrl',title: '商品图',align: 'center',
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proImage(value, row.id, row.title)
+							}
+                        },{
+							field: 'title',title: '标题',
+							formatter :  function(value, row, index, field) {
+								return value + (row.is_new ? ' <span class="label label-info">新品</span>' : '')
+							}
+                        },{
+							field: 'minPrice',title: '价格区间',
+							formatter :  function(value, row, index, field) {
+								return '<span class="money">$' + row.minPrice + ' ~ ' + '$' + row.maxPrice + '</span>';
+							}
+                        },{
+							field: 'product_count',title: '销量',width : 100,
+						}, {
+							field: 'status',title: '状态' ,align : 'center',width : 100,
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proStatus(value)
+							}
+						}],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.joint);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				initTableNormarl:function (){
+					$('#table-normarl').bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        showColumns : false,
+						url: utils.prePath() + (app.data.categoryType == 3 ? '/api/admin/campaign/collection' : '/api/admin/product/list'),
+						queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-normarl'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+							field: 'id',title: 'ID',align : 'center',width : 50,
+							formatter :  function(value, row, index, field) {
+								return   '<a href="'+(row.productExt ? row.productExt.sourceUrl : '#')+'" target="_blank">'+value+'</a>';
+							}
+						}, {
+							field: 'productImageUrl',title: '主图',width : 100,align : 'center',
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proImage(value, row.id, row.title)
+							}
+						}, {
+							field: 'title',title: '标题',width : 300,
+						}, {
+							field: 'description',title: '描述',width : 150,
+						}, {
+							field: 'remark',title: '留言',width : 150,
+							formatter :  function(value, row, index, field) {
+								return   '<span class="text-length-table-col">'+((row.productExt ? row.productExt.remark : '--') || '--')+'</span>';
+							}
+						}, {
+							field: 'minPrice',title: '售价',width : 100,
+						}, {
+							field: 'status',title: '状态' ,align : 'center',width : 100,
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proStatus(value)
+							}
+						},
+						 {
+							field: 'createdBy',title: '创建人' ,align : 'center',width : 100,
+						},{
+							field: 'productExt.remark',title: '上架时间' ,align : 'center',width : 180,
+								formatter: function(value, row, index, field) {
+								return tools.formatterFunction.time(row.productExt.downReason * 1000)
+							}
+						},
+                            {
+                                field: 'productExt.remark',title: '备注',width : 100,
+                                formatter: function(value, row, index, field) {
+                                    if(row.productExt){
+                                        if(row.productExt.downReason){
+                                            if(row.status == 10){
+                                                return '<span class="nowarp" style="display:block;margin-top:6px;">上架时间：' + tools.formatterFunction.time(row.productExt.downReason * 1000) + '</span>' + '<span class="text-length-table-col">'+(value || '--')+'</span>';
+                                            }else{
+                                                return '<span class="nowarp" style="display:block;margin-top:6px;">下架原因：' + row.productExt.downReason + '</span>' + '<span class="text-length-table-col">'+(value || '--')+'</span>';
+                                            }
+                                        }else{
+                                            return '<span class="text-length-table-col">'+(value || '--')+'</span>';
+                                        }
+                                    }else{
+                                        return '--'
+                                    }
+                                }
+                            }
+                        ],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.normarl);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				initTableAd: function(){
+					app.data.table.ad.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        showColumns : false,
+                        url: utils.prePath() + '/api/admin/ad/link/list',
+                        queryParams : function(params){
+							params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-ad'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+                            field: 'id',title: 'ID',align: 'center',
+                        },{
+                            field: 'linkName',title: '名称',align: 'center',
+                        }, {
+                            field: 'affiliate',title: '投放源',align: 'center',
+                        }, {
+                            field: 'pixelId',title: '像素ID',align: 'center',
+                        }, {
+                            field: 'tags',title: '标签',
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                if(!value){
+                                    return '-'
+                                }
+                                value && value.split(',').map(function(e){
+                                    html += '<span class="label label-info">' + e + '</span>'
+                                })
+                                return html;
+                            }
+                        }, {
+                            field: 'adLinkAggregateModules',title: '绑定的模块',maxWidth : 220,
+                            formatter: function (value, row, index) {
+                                var html = '';
+                                value.map(function(e){
+                                    html += '<span class="label label-primary label-module-ad" style="margin-right:6px">' + e.aggregateModuleId + ' ' + e.aggregateModule.name + '</span>'
+                                })
+                                return html;
+                            }
+                        }, {
+                            field: 'comments',title: '备注',
+                        }, {
+                            field: 'updatedAt',title: '更新时间',align: 'center',minWidth:90,
+                            formatter: function (value, row, index, field) {
+                                return (row.createdBy || '--') + '<br>' + tools.formatterFunction.time(value);
+                            }
+                        }],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTableStyle(app.data.table.ad);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				initTablePrice: function(){
+					app.data.table.price.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/aggregate/module/product/price',
+                        queryParams : function(params){
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return Object.assign(params, tools.getParams('#toolbar-price'));
+                        },
+						columns: [{
+							checkbox : true
+						},{
+                            field: 'product_id',title: 'ID',
+                        },{
+							field: 'product_image',title: '商品图',align: 'center',
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proImage(value, row.product_id, row.product_title)
+							}
+                        },{
+							field: 'product_title',title: '标题',
+							formatter :  function(value, row, index, field) {
+								return value + (row.is_new ? ' <span class="label label-info">新品</span>' : '')
+							}
+                        },{
+							field: 'min_price',title: '价格区间',
+							formatter :  function(value, row, index, field) {
+								return '<span class="money">$' + row.min_price + ' ~ ' + '$' + row.max_price + '</span>';
+							}
+                        }, {
+							field: 'status',title: '状态' ,align : 'center',width : 100,
+							formatter :  function(value, row, index, field) {
+								return tools.formatterFunction.proStatus(value)
+							}
+						}],
+						onLoadSuccess : function(data){
+							tableUi.initTabMixTable(app.data.table.price);
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+				adlinkData : function(){
+					var _selections = app.data.table.ad.bootstrapTable('getSelections');
+					if(_selections.length == 0){
+						return
+					}
+					var productIds = [];
+					$.each(_selections, function(index , temp) {
+						productIds.push(temp.id);
+					});
+                    tools.rangeTime('input[name="orderBeginEndTime"]');
+                    $('input[name=adlkId]').val(productIds.toString())
+                    $('#adlinkData .modal-title').text('广告产品销量(adlk:' + productIds.toString() + ')')
+                    app.methods.productSellRefash()
+                    $('#product-sell-parame').off().keyup(function(event){
+                        event.keyCode ==13 && app.methods.productSellRefash();
+                    });
+                    $('#adlinkData').modal('show').css('z-index',2001);
+				},
+				productSellRefash: function(){
+					var p = tools.getParams('#product-sell-parame')
+					layer.load(3000)
+                    $.ajax({
+                        type: "GET",
+                        url: utils.prePath() + '/api/admin/ad/link/datas',
+                        data: {
+                            'adlkIds': p.adlkId,
+                            'orderBeginTime': p.orderBeginTime,
+                            'orderEndTime': p.orderEndTime,
+                        },
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                var html = '<tr><td>选择</td><td>商品ID</td><td>主图</td><td>商品标题</td><td>状态</td><td>商品价格</td><td>销量</td><td>更新</td></tr>'
+                                if(result.body.length > 0){
+                                    result.body.map(function(e){
+                                        html += '<tr><td><input type="checkbox" data-pid="'+e.product_id+'"></td><td>'+e.product_id+'</td><td>'+tools.formatterFunction.proImage(e.product_img)+'</td><td>'+e.title+'</td><td>'+tools.formatterFunction.proStatus(e.status)+'</td><td>'+e.min_price + '~' +e.max_price+'</td><td>'+e.sale_quantity+'</td><td>'+tools.formatterFunction.time(e.updated_at)+'</td></tr>'
+                                    })
+                                }else{
+                                    html += '<tr><td colspan="5">暂无数据···</td></tr>'
+                                }
+								$('#adlinkData-table').html(html)
+								layer.closeAll('load')
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+				bindByAd: function(){
+					var pids = []
+					$('#adlinkData-table input[type="checkbox"]').each(function(){
+						if($(this).is(':checked')){
+							pids.push($(this).data('pid'))
+						}
+					})
+					app.methods.bindProAjax(pids)
+				},
+				refresh: function(){
+                    switch(app.data.type){
+						case 'normarl': app.data.table.normarl.bootstrapTable('refresh');;break;
+						case 'sales': app.data.table.sales.bootstrapTable('refresh');;break;
+						case 'monitor': app.data.table.monitor.bootstrapTable('refresh');;break;
+						case 'updatetime': app.data.table.updatetime.bootstrapTable('refresh');;break;
+						case 'ad': app.data.table.ad.bootstrapTable('refresh');;break;
+						case 'joint': 
+							if(app.data.sales == 'stop'){
+								app.methods.initTableJoint();
+							}else{
+								app.data.table.joint.bootstrapTable('refresh');
+							}
+							break;
+						case 'price': app.data.table.price.bootstrapTable('refresh');break;
+                    }
+				},
+                initTab: function(){
+                    $('.custom-tabs-line > ul li').on('click', function(){
+                        // var authority_data = authoritys.useAuthority();
+                        // if(!authority_data){
+                        //     toastr.error("权限不足，不允许访问...")
+                        //     return;
+						// }
+						app.data.type = $(this).data('type');
+                        if($(this).hasClass('active')){
+							if(app.data.table[app.data.type]){
+								app.data.table[app.data.type].bootstrapTable('refresh');
+							}
+                        }else{
+                            switch(app.data.type){
+								case 'sales': 
+									tools.renderSelect.categoryTree('#toolbar-sales .classify');
+									tools.renderSelect.organizes('#toolbar-sales',);
+									tools.renderSelect.product('select[name="productStatus"]');
+									tools.renderSelect.scope('select[name="scopeId"]');
+									tools.rangeTime('input[name="orderSubmitTime"]');
+									tools.rangeTime('input[name="productShelfTime"]',true); 
+									tools.rangeTime('input[name="productCreatedTime"]',true);
+									app.methods.initTableSales();
+									break;
+								case 'monitor': 
+									tools.renderSelect.categoryTree('#toolbar-monitor .classify');
+									tools.renderSelect.organizes('#toolbar-monitor',);
+									tools.rangeTime('input[name="statisticsTime"]');
+									tools.renderSelect.scope('select[name="scopeId"]');
+									tools.renderSelect.product('select[name="productStatus"]');
+									app.methods.initTableMonitor();
+									break;
+								case 'updatetime': 
+									tools.renderSelect.categoryTree('#toolbar-updatetime .classify');
+									tools.renderSelect.organizes('#toolbar-updatetime',);
+									tools.rangeTime('input[name="productUpdateTime"]');
+									tools.renderSelect.scope('select[name="scopeId"]');
+									tools.renderSelect.product('select[name="productStatus"]');
+									app.methods.initTableUpdatetime();
+									break;
+								case 'joint': 
+									tools.renderSelect.categoryTree('#toolbar-joint .classify');
+									tools.renderSelect.organizes('#toolbar-joint',);
+									tools.rangeTime('input[name="productOrderSubmitTime"]');
+									tools.renderSelect.product('select[name="productStatus"]');
+									tools.renderSelect.scope('select[name="scopeId"]');
+									app.methods.initTableJoint();
+									break;
+								case 'normarl': 
+									tools.renderSelect.product('select[name="status"]');
+									tools.renderSelect.organizes('#toolbar-normarl');
+									tools.rangeTime('input[name="productCreatedTime"]',true);
+									tools.rangeTime('input[name="productShelfTime"]',true); 
+									tools.renderSelect.categoryTree('#toolbar-normarl .classify');
+									app.methods.initTableNormarl();
+									break;
+								case 'ad': 
+									app.methods.initTableAd();
+									break;
+								case 'price': 
+									tools.renderSelect.categoryTree('#toolbar-price .classify');
+									tools.renderSelect.organizes('#toolbar-price',);
+									tools.rangeTime('input[name="productUpdateTime"]');
+									tools.renderSelect.scope('select[name="scopeId"]');
+									tools.renderSelect.product('select[name="productStatus"]');
+									app.methods.initTablePrice();
+									break;
+                            }
+                        }
+					});
+					$('.custom-tabs-line > ul li[data-type="normarl"] a').trigger('click')
+                },
+				bindProAjax : function(productIds){
+					var data = [];
+					productIds.map(function(e , index){
+						data.push({'productId': e, 'priority': index});
+					})
+					if(productIds.length == 0){
+						toastr.warning('请选择后再绑定···')
+						return;
+					}
+                    $.ajax({
+                        type : "PUT",
+						url : utils.prePath() + '/api/admin/aggregate/module/' + app.data.moduleId + '/product',
+                        data : JSON.stringify(data),
+                        success : function(result){
+                            if(result.statusCode == 'OK'){
+								app.methods.initTable();
+								toastr.success('绑定成功，自动去重···<br>完成绑定后，建议您手动修改排序···')
+                            }else{
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+                },
+			},
+			init : function(){
+				app.methods.initTable();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

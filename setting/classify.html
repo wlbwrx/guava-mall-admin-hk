@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>分类管理</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<!-- VENDOR CSS -->
+	<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+	<!-- <link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" /> -->
+	<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+	<link rel="stylesheet" href="../dists/bootstrap-treeview/bootstrap-treeview.min.css" />
+	<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+	<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<link rel="stylesheet" href="../dists/easyui/themes/bootstrap/easyui.css">
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="../css/main.css?v=20200331">
+	<!-- GOOGLE FONTS -->
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	<style>
+		.panel .panel-body{padding: 10px 16px;overflow-y: scroll}
+		.panel .panel-heading .toolBox.right{padding-right: 0;}
+		.treeview .node-tree-main .badge{background: none;padding: 0;}
+		.treeview .node-tree-main .badge button{padding: 0px 10px;}
+		.label{margin: 0 8px;}
+		.toolBox{width: 100%;padding: 0 12px;display: flex;align-items: center;justify-content: flex-end;}
+		input[name="startPrice"],input[name="endPrice"]{display: inline-block;width: 150px}
+	</style>
+</head>
+
+<body>
+	<div class="container-fluid">
+		<div class="panel panel-headline">
+			<div class="panel-heading">
+				<div class="left"></div>
+				<div class="toolBox btn-group right">
+					<button class="btn btn-primary btn-sm refresh" onclick="app.methods.addChild(0);"><i class="fa fa-plus-square"></i></button>
+					<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+				</div>
+			</div>
+			<div class="panel-body">
+				<!-- <div id="tree-main"></div> -->
+				<table id="tree-grid"></table>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog-create" role="dialog" data-backdrop="static">
+		<div class="modal-dialog modal-md" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title">分类</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<label class="control-label col-sm-2">名称<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<input class="form-control" type="text" name="name"/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">排序<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<input class="form-control" type="number" name="orderNum"/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">备注<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<textarea class="form-control" style="resize: none;" type="text" name="comments"></textarea>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-sm-2">价格<span class="text-danger">*</span></label>
+						<div class="col-sm-10">
+							<input class="form-control" type="number" name="startPrice"></textarea>￥~
+							<input class="form-control" type="number" name="endPrice"></textarea>￥
+						</div>
+					</div>
+					<input class="form-control" type="text" name="parentId" style="display:none"/>
+					<input class="form-control" type="text" name="id" style="display:none"/>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" onclick="app.methods.saveChild()">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js"></script>
+<script type="text/javascript" src="../dists/bootstrap-treeview/bootstrap-treeview.min.js"></script>
+<!-- <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script> -->
+<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+<script type="text/javascript" src="../dists/layer/layer.js"></script>
+<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+<script type="text/javascript" src="../dists/easyui/jquery.easyui.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="../dists/easyui/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+<script type="text/javascript" src="../js/moment.js"></script>
+<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+<script type="text/javascript">
+	var app = {
+		data: {
+			tree: $("#tree-grid"),
+			menu: [],
+			state: false
+		},
+		methods: {
+			initTree: function (isDel) {
+				if(app.data.state){
+					var nodes = app.data.tree.treegrid('getSelected');
+				}
+				app.data.tree.treegrid({
+					url: utils.prePath() + "/api/admin/erp/category/list",
+					method: 'GET',
+					idField: 'id',
+					fitColumns: true,
+					rownumbers: true,
+					treeField: 'name',
+					loadMsg: '正在加载请稍后···',
+					columns:[[
+						{title:'分类名称',field:'name',width:180},
+						{title:'备注',field:'comments',width:60},
+						{title:'类型',field:'level',width:60,formatter: function(value, row, index) {
+							var html = ''
+							switch(value){
+								case 1: html = '<span class="label label-info">一级分类</span>';break;
+								case 2: html = '<span class="label label-info">二级分类</span>';break;
+								case 3: html = '<span class="label label-info">三级分类</span>';break;
+								default: html = '<span class="label label-info">'+value+'级分类</span>';break;
+							}
+							return html
+						}},
+						{title:'价格区间',field:'startPrice',width:120,formatter: function(value, row, index) {
+							return (value || 0) + '￥ ~ ' + (row.endPrice || 0) + '￥'
+						}},
+						{title:'对应商城',field:'scopeName',width:80},
+						{title:'创建人',field:'createdBy',width:80},
+						{title:'编辑人',field:'updatedBy',width:80},
+						{title:'操作',field:'tool',width:80,align:'center',formatter: function(value, row, index){
+							return '<div class="toolBox btn-group">'+
+								// (row.level > 2 ? '<button type="button" class="btn btn-info btn-xs bindPro" data-id="' + row.id + '">绑定产品</button>':'<button type="button" class="btn btn-primary btn-xs addChild" data-id="' + row.id + '"><i class="fa fa-plus-square"></i></button>')+
+								// (row.level > 2 ? '':'<button type="button" class="btn btn-primary btn-xs addChild" data-id="' + row.id + '"><i class="fa fa-plus-square"></i></button>')+
+								'<button type="button" class="btn btn-primary btn-xs addChild" data-id="' + row.id + '"><i class="fa fa-plus-square"></i></button>'+
+								'<button type="button" class="btn btn-info btn-xs editChild" data-id="' + row.id + '"><i class="fa fa-edit"></i></button>'+
+								'<button type="button" class="btn btn-danger btn-xs delChild" data-id="' + row.id + '"><i class="fa fa-trash"></i></button>'+
+							'</div>'
+						}},
+					]],
+					loadFilter: function(data){
+						var menu_data = app.methods.formatData(data.body, 0);
+						return menu_data;
+					},
+					onLoadSuccess: function(res, resData){
+						app.data.state = true;
+						app.data.menu = resData
+						if(nodes && nodes.id && !isDel){
+							app.data.tree.treegrid('expandTo',nodes.id);
+						}
+						$('.toolBox').on('click', 'button.addChild', function(){
+							var pid = $(this).data('id');
+							$(".dialog-create input[name=id]").val('');
+							$(".dialog-create input[name=parentId]").val(pid);
+							app.methods.addChild();
+						}).on('click', 'button.editChild', function(){
+							var id = $(this).data('id');
+							var tree_node = app.methods.getTreeNode(app.data.menu, id);
+							tools.initInput('.dialog-create', tree_node);
+							app.methods.addChild();
+						}).on('click', 'button.delChild', function(){
+							var id = $(this).data('id');
+							layer.confirm('确定删除吗？', {icon: 2, title:'警告'}, function(_index){
+								$.ajax({
+									type: "DELETE",
+									url: utils.prePath() + "/api/admin/erp/category/" + id,
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											toastr.success('删除成功');
+											app.methods.initTree(true);
+											layer.closeAll();
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							});
+						}).on('click', 'button.bindPro', function(){
+							var id = $(this).data('id');
+							layer.open({
+								type: 1,
+								title: '营销关联产品',
+								offset: '100px',
+								skin: 'addPromotion',
+								area: ['900px', '650px'], //宽高
+								content: '<div id="searchBar" class="form-inline" style="padding: 8px 0;">' +
+									'  <div class="form-group"><input type="text" class="form-control" name="id" placeholder="产品ID"></div>' +
+									'  <div class="form-group"><input type="text" class="form-control" name="title" placeholder="产品标题"></div>' +
+									'  <div class="form-group"><select type="text" class="form-control" name="organize" style="width: 150px;"></select></div>' +
+									'  <button class="btn btn-primary" onclick="$(\'#promotion-table\').bootstrapTable(\'refresh\');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>' +
+									'</div>' +
+									'<table id="promotion-table"></table>',
+								btn: ['确定', '取消'],
+								btnAlign: 'c',
+								yes: function (index, layero) {
+									var _selections = $('#promotion-table').bootstrapTable('getSelections');
+									if (_selections.length > 0) {
+										// 绑定
+										var params = [];
+										_selections.map(function(e){
+											params.push({
+												"categoryId" : id, 
+												"productId" : e.id	
+											})
+										})
+										$.ajax({
+											type: "POST",
+											url: utils.prePath() + "/api/admin/erp/category/product",
+											data: JSON.stringify(params),
+											success: function (result) {
+												if (result.statusCode == 'OK') {
+													toastr.success('关联产品成功...');											
+													layer.closeAll();
+													app.methods.initTree();
+												} else {
+													toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+												}
+											}
+										});
+									} else {
+										toastr.error('关联产品不能为空...');
+										return;
+									}
+								}
+							});
+							app.methods.initProductTable();
+						})
+					}
+				});
+			},
+			initProductTable: function(){
+				$('#promotion-table').bootstrapTable({
+					pagination: true,
+					cache: false,
+					sortable: false,
+					clickToSelect: true,
+					sidePagination: "server",
+					showColumns: false,
+					pageNumber: 1,
+					pageSize: 15,
+					pageList: [15, 30, 45, 90],
+					queryParamsType: 'page',
+					queryParams: function (params) {
+						params.id = $('#searchBar input[name=id]').val();
+						params.title = $('#searchBar input[name=title]').val();
+						params.organize = ($('select[name="organize"]').val() == '#') ? '' : $('select[name="organize"]').val();
+						params.size = params.pageSize;
+						params.page = parseInt(params.pageNumber) - 1;
+						return params;
+					},
+					url: utils.prePath() + '/api/admin/product/list',
+					totalField: 'body.totalElements',
+					dataField: 'body.content',
+					columns: [{
+						checkbox: true
+					}, {
+						field: 'id',
+						title: 'ID',
+						align: 'center',
+						width: 50,
+						minWidth: 50,
+						formatter: function (value, row, index, field) {
+							return '<a href="' + row.productExt.sourceUrl + '" target="_blank">' + value + '</a>';
+						}
+					}, {
+						field: 'productImageUrl',
+						title: '主图',
+						width: 60,
+						minWidth: 60,
+						align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.proImage(value, row.id)
+						}
+					}, {
+						field: 'title',
+						title: '标题',
+						width: 200,
+						minWidth: 200,
+						formatter: function (value, row, index, field) {
+							return '<span>' + (value || '--') + '</span>';
+						}
+					}, {
+						field: 'keywords',
+						title: '关键词',
+						width: 150,
+						formatter: function (value, row, index, field) {
+							return '<span class="text-length-table-col">' + (value || '--') + '</span>';
+						}
+					}, {
+						field: 'description',
+						title: '描述',
+						width: 100,
+						minWidth: 100,
+						formatter: function (value, row, index, field) {
+							return '<span>' + (value || '--') + '</span>';
+						}
+					}, {
+						field: 'remark',
+						title: '留言',
+						width: 100,
+						minWidth: 100,
+						formatter: function (value, row, index, field) {
+							return '<span class="text-length-table-col">' + (row.productExt.remark || '--') + '</span>';
+						}
+					}]
+				});
+			},
+			getTreeNode: function(data, id){
+				var tree_node = null;
+				for(var i = 0;i < data.length; i++){
+					if(data[i].id == id){
+						return data[i];
+					}else{
+						if(data[i].children && data[i].children.length > 0){
+							tree_node = app.methods.getTreeNode(data[i].children, id);
+							if(tree_node){
+								return tree_node;
+							}
+						}
+					}
+				}
+			},
+			putChild: function(menu_data){
+				var menu_tree = [];
+				menu_data.map(function(e){
+					var tree_node = {
+						text: e.name + ' - ' + e.comments + '<span class="label label-info">' + (e.adminCategories || '--') + '</span>( 创建者：' + e.createdBy + '，<i class="fa fa-edit"></i>者：' + e.updatedBy + ')',
+						tags: [
+							'<button type="button" class="btn btn-danger btn-xs delChild" data-id="' + e.id + '"><i class="fa fa-trash"></i></button>',
+							'<button type="button" class="btn btn-info btn-xs editChild" data-id="' + e.id + '"><i class="fa fa-edit"></i></button>',
+							(e.level > 2 ? '<button type="button" class="btn btn-info btn-xs bindPro" data-id="' + e.id + '">绑定产品</button>':'<button type="button" class="btn btn-primary btn-xs addChild" data-id="' + e.id + '"><i class="fa fa-plus-square"></i></button>'),
+						],
+					}
+					if(e.child && e.child.length > 0){
+						var child_menu = app.methods.putChild(e.child);
+						tree_node['nodes'] = child_menu;
+					}
+					menu_tree.push(tree_node);
+				})
+				return menu_tree;
+			},
+			formatData: function(data, pid, level){
+				var level = level;
+				if(pid == 0){level = 0}
+				level++;
+				var menu_data = [];
+				for(var i = 0; i < data.length; i++){
+					if(data[i].parentId == pid){
+						data[i]['level'] = level;
+						data[i]['children'] = app.methods.formatData(data, data[i].id, level);
+						if(data[i].children.length > 0){
+							data[i]['state'] = 'closed';
+						}
+						menu_data.push(data[i]);
+					}
+				}
+				return menu_data;
+			},
+			addChild: function(id){
+				if(id == 0){$('.dialog-create input').val('');}
+				$(".dialog-create").modal("show");
+			},
+			saveChild: function(parame){
+				var parame = tools.getParams(".dialog-create");
+				if(!parame.name || !parame.orderNum){
+					toastr.error('请正确填写数据')
+					return;
+				}
+				if(!parame.startPrice || !parame.endPrice){
+					toastr.info('默认价格区间为0~120')
+					parame.startPrice = 0
+					parame.endPrice = 120
+				}
+				if(parame.startPrice - parame.endPrice > 0){
+					toastr.error('价格区间有误')
+					return;
+				}
+				$.ajax({
+					// type: parame.id ? "PUT" : "POST",
+					type: "POST",
+					url: utils.prePath() + "/api/admin/erp/category",
+					async: false,
+					data: JSON.stringify(parame),
+					success: function (result) {
+						if (result.statusCode == 'OK') {
+							toastr.success('设置成功');
+							$(".dialog-create").modal("hide");
+							app.methods.initTree();
+						} else {
+							toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+						}
+					}
+				});
+			}
+		},
+		init: function () {
+			app.methods.initTree();
+		}
+	}
+	$(function () {
+		app.init();
+	});
+</script>
+
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>供应商产品</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">供应商产品</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<button class="btn btn-warning btn-sm export" authority="SUPPLIER_EXPORT" onclick="tools.exportByFrom('/api/admin/erp/supplier/product/export');"><i class="fa fa-download"></i> 导出</button>
+						</div>
+					</div>	
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<div class="ajaxpicker form-control" name="supplierId"></div>
+						<select name="isDefault" class="selectpicker" data-live-search="true">
+							<option value="">默认状态</option>
+							<option value="1">默认</option>
+							<option value="0">其他</option>
+						</select>
+						<input type="text" class="form-control" name="productId" placeholder="输入产品ID">
+						<select name="status" class="selectpicker" data-live-search="true"></select>
+                        <button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+                supplierData: [],
+			},
+			methods : {
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/supplier/product',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							app.data.supplierData = data.body.content
+							tableUi.initBootstrapTable();
+							authoritys.useAuthority();
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+                    var option = [{
+						field: 'product_id',title: '产品ID',align: 'center',
+					},{
+						title: '商品图',align: 'center',width: 60,minWidth: 60,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.proImage(row.product_img, row.product_id, row.product_title);
+                        }
+                    }, {
+						field: 'product_title',title: '品名',minWidth:200,
+					}, {
+						field: 'supplier_name',title: '供应商',align: 'center',
+					}, {
+						title: '采购价',align: 'center',
+						formatter: function (value, row, index, field) {
+							if(row.minPrice==row.maxPrice){
+								return row.minPrice;
+							}else{
+								return row.minPrice+"~"+row.maxPrice;
+							}
+						}
+					}, {
+						field: 'total_sale_quantity',title: '总销量',align: 'center',
+						formatter: function (value, row, index, field) {
+							return value || '0';
+                        }
+					}, {
+						field: 'status',title: '状态',align: 'center',width: 50,
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.proStatus(value);
+						}
+					},{
+                        title: '默认供应商操作',align: 'center',minWidth:160,
+                        formatter: function (value, row, index) {
+							if(!row.is_default){
+								return '<button type="button" class="btn btn-primary btn-xs" onclick="app.methods.defaultSupplier(' + index + ')"><i class="fa fa-edit"></i>设为默认</button>';
+							}else{
+								return '<span class="label label-success">产品默认供应商</span>'
+							}
+                        }
+                    }];
+                    return option;
+				},
+				defaultSupplier:function(index){
+					layer.confirm('确定设置该供应商为本产品的默认提供商吗？', {icon: 3, title:'提示'}, function(_index){
+						$.ajax({
+							type: "PUT",
+							url: utils.prePath() + "/api/admin/erp/supplier/default/" + app.data.supplierData[index].id,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('设置成功成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.close(_index);
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+				initSelect : function(){
+					tools.renderSelect.supplier('supplierId');
+				}
+			},
+			init : function(){
+				tools.renderSelect.product('select[name="status"]');
+				app.methods.initSelect();
+				app.methods.initTable();
+				tools.toolbarEnterEvent(function(){app.data.table.bootstrapTable('refresh')});
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

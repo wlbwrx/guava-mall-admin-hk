@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>订单审核</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- <link rel="stylesheet" href="../dists/hint/hint.css"/> -->
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+			ul.addressBox,
+			.ediePrice{cursor: default;text-decoration: none}
+            .productInfoBox li > span:last-child{display: none;}
+            .productInfoBox li > span:nth-last-child(2){display: none;}
+			.productInfoBox li > span:first-child{display: none;}
+
+			.trackerInfo{max-height: 500px; overflow: auto;}
+			.trackerInfo h3{margin: 12px 0 0 0;font-size: 16px;}
+            .trackerInfo table{margin-top: 12px;}
+			.trackerInfo table th{font-size: 14px!important;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">订单审核</h3>
+						<div class="toolBox btn-group"></div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<select class="selectpicker" data-live-search="true" name="noPassReson"></select>
+						<select class="selectpicker" data-live-search="true" name="storehouseId"></select>
+						<input type="text" class="form-control" name="tel" placeholder="电话">
+						<input type="text" class="form-control" name="notAddress" placeholder="地址不包含">
+						<input type="text" class="form-control" name="address" placeholder="地址包含">
+						<input type="text" inputTpye="daterange" rangeStart="orderSubmitBeginTime" rangeEnd="orderSubmitEndTime" class="form-control" name="submitOrderTimes" placeholder="下单时间" />
+						<select name="scopeId" class="selectpicker" data-live-search="true" data-title="商城"></select>
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+						<button class="btn btn-success" onclick="app.methods.batchPass()">批量通过</button>
+						<button class="btn btn-danger" onclick="app.methods.batchFail()">批量不通过</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+    <script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../dists/art-template/dist/template-native.js"></script>
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/html" id="customerInfo">
+        <div class="customerInfoForm">
+            <div class="form-group"><label>收件人</label><input type="text" class="form-control" name="consignee" value="<%= consignee %>"></div>
+            <div class="form-group"><label>电话</label><input type="text" class="form-control" name="tel" value="<%= tel %>"></div>
+            <div class="form-group"><label>城市</label><input type="text" class="form-control" name="city" value="<%= city %>"></div>
+            <div class="form-group"><label>区</label><input type="text" class="form-control" name="district" value="<%= district %>"></div>
+            <div class="form-group"><label>详细地址</label><input type="text" class="form-control" name="detail" value="<%= detail %>"></div>
+            <div class="form-group"><label>Email</label><input type="text" class="form-control" name="email" value="<%= email %>"></div>
+            <button class="btn btn-primary" onclick="app.methods.submitCustomInfo(<%= orderId %>)">提交更改</button>
+        </div>
+	</script>
+	<script type="text/html" id="orderInfo">
+        <div class="orderInfoForm">
+            <div class="form-group"><label>备注</label><textarea type="text" class="form-control" name="remark"><%= remark %></textarea></div>
+			<button class="btn btn-primary" onclick="app.methods.submitOrderInfo(<%= orderId %>)">提交更改</button>
+        </div>
+	</script>
+	<script type="text/html" id="trackerInfo">
+        <div class="trackerInfo">
+            <span class="label label-success"><%= status %></span>
+            <h3>订单编号：<span><%= orderCode %></span></h3>
+            <h3>货运编号：<span><%= destinationCode %></span></h3>
+            <h3>货运公司：<span><%= carrierCode %></span></h3>
+            <h3>包裹编号：<span><%= trackingNumber %></span></h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>配送状态</th>
+                        <th>状态描述</th>
+                        <th>详情</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(var i = 0;i < trackinfo.length;i++){ %>
+                        <tr>
+                            <td style="text-align:center;"><%= i + 1 %></td>
+                            <td><%= trackinfo[i].checkpoint_status %></td>
+                            <td><%= trackinfo[i].StatusDescription %></td>
+                            <td><%= trackinfo[i].Details %></td>
+                            <td><%= trackinfo[i].Date %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <h4></h4>
+        <p></p>
+	</script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main"),
+				orderData: [],
+				scopeData: cacheSessionStorage.getCache('scope')
+			},
+			methods : {
+				// 初始化表格
+				initTable : function(){
+					var authority_data = authoritys.useAuthority();
+					if(!authority_data){
+						toastr.error("权限不足，不允许访问...")
+						return;
+					}
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+                        url: utils.prePath() + '/api/admin/erp/order/approval/list',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+							app.events.initEditAddress();
+							authoritys.useAuthority();
+							app.data.orderData = data.body.content
+							app.events.initCheckbox();
+							app.events.initEditOrder();
+					    },
+					}));
+				},
+
+				// 表格列配置
+                optionByAuthority: function () {
+                    var option = [{
+						title: '<label class="fancy-checkbox"><input type="checkbox" class="checkAll"><span></span></label>',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<label class="fancy-checkbox"><input type="checkbox" class="checkOrder" data-index="' + index + '"><span></span></label>';
+                        }
+					}, {
+						field: 'order_code',title: '订单号',align: 'center',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.warningDays(value, row.days);
+                        }
+					}, {
+						field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="productInfoBox"><li><span>選擇</span><span>產品ID</span><span>商品圖</span><span>品名</span><span>條碼</span><span>數量</span><span>售價</span><span>Code減價</span><span>折扣價</span><span>商品狀態</span><span>库存/待打包/采购未达</span><span>操作</span></li></ul>',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.skuInfos(value, row.no_pass_reson);
+                        }
+					}, {
+						field: 'consignee',title: '收货人',
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.address(row.consignee, (row.tel || ''), (row.email || ''), (row.address || ''), index);
+                        }
+					}, {
+						field: 'lastOrderCreatedAt',title: '用户属性',minWidth:220,
+						formatter: function (value, row, index, field) {
+							return tools.formatterFunction.customerType(row.lastOrderCreatedAt,row.createOrderCount,row.direct_cancel);
+						}
+					}, {
+						field: 'payment_type',title: '付款方式',align: 'center',
+						formatter: function(value, row, index, field) {
+							return tools.formatterFunction.paymentStatus(value);
+						}
+					}, {
+						field: 'total_price',title: '总价',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<div><span class="money">' + value + '</span><div class="nowarp">' + (row.freight == 0 ? '' : '<i class="fa fa-plane"></i>&nbsp;'+ row.freight ) + '</div></div>';
+                        }
+					}, {
+						field: 'storehouse_name',title: '仓库',align: 'center',minWidth: 80
+					}, {
+						field: 'remark',title: '备注',minWidth:150,
+						formatter: function (value, row, index, field) {
+							return '<div class="orderUpdate useCkick" data-index="' + index + '">' + (value || '-') + '</div>';
+                        }
+					}, {
+						field: 'no_pass_reson',title: '过滤原因',align: 'center',
+						formatter: function (value, row, index, field) {
+							if (value && (value.includes('电话') || value.includes('重复订单'))) {
+								return '<a href="#" onclick="app.methods.showParamsTable({tel : \''+ row.tel +'\'})">' + (value || '--') + '</a>';
+							} else if (value && value.includes('姓名')){
+								return '<a href="#" onclick="app.methods.showParamsTable({consignee : \''+ row.consignee +'\'})">' + (value || '--') + '</a>';
+							}
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					},{
+						field: 'exceptionInfo',title: '异常信息',minWidth:120,
+					},{
+						field: 'ip_info',title: 'IP',minWidth:120,
+					}, {
+                        title: '操作',align: 'left',minWidth:280,
+                        formatter: function (value, row, index) {
+                            return '<div class="toolBox btn-group">'+
+                                '<button type="button" class="btn btn-success btn-xs" authority="ORDER_WRITE" onclick="app.methods.pastOrder(' + row.order_id + ')">通过</button>'+
+                                '<button type="button" class="btn btn-danger btn-xs" authority="ORDER_WRITE" onclick="app.methods.failOrder(' + row.order_id + ')">不通过</button>'+
+                                '<button type="button" class="btn btn-danger btn-xs" authority="ORDER_WRITE" onclick="app.methods.saveBlack(\'' + row.tel + '\')">电话拉黑</button>'+
+                                (row.direct_cancel == false ? ('<button type="button" class="btn btn-warning btn-xs" onclick="app.methods.delBlack(\'' + row.tel + '\')">解除灰名单</button>') : '')+
+                                '</div>';
+                        }
+					}, {
+						field: 'coupon_name',title: '优惠券',align: 'center',
+					}, {
+						field: 'message',title: '留言',minWidth:120,
+					}, {
+						field: 'affiliate',title: '来源',align: 'center',
+					}, {
+						field: 'scope_name',title: '商城',align: 'center',
+						formatter: function (value, row, index, field) {
+							return '<span class="nowarp">' + (value || '--') + '</span>';
+                        }
+					}, {
+						field: 'created_at',title: '下单时间',align: 'center',minWidth:90,
+                        formatter: function (value, row, index, field) {
+							return tools.formatterFunction.time(value);
+                        }
+					}];
+                    return option;
+				},
+
+				// 电话拉黑
+				saveBlack:function(tel){
+                    var parame = {
+						auditType: "10",
+						columnType: "20",
+						columnValue: tel,
+						comments: "审核拉黑",
+						directCancel: 1
+					};
+					layer.confirm('确定拉黑吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "POST",
+							url: utils.prePath() + "/api/admin/erp/blacklist",
+							data: JSON.stringify(parame),
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('拉黑成功...');
+									layer.closeAll();
+									app.data.table.bootstrapTable('refresh');
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+					
+				},
+
+				// 通过
+                pastOrder: function(orderId){
+                    $.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/erp/order/approval/pass/" + orderId,
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                toastr.success('订单已通过...');
+								app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+				
+				// 不通过
+                failOrder: function(orderId){
+                    $.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/erp/order/approval/cancel/" + orderId,
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                toastr.success('订单已禁止...');
+								app.data.table.bootstrapTable('refresh');
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+
+				// 解除灰名单
+				delBlack:function(tel){
+					layer.confirm('确定解除灰名单吗？', {icon: 2, title:'警告'}, function(_index){
+						$.ajax({
+							type: "DELETE",
+							url: utils.prePath() + '/api/admin/erp/blacklist/deleteByTel/' + tel,
+							success: function (result) {
+								if (result.statusCode == 'OK') {
+									toastr.success('解除成功...');
+									app.data.table.bootstrapTable('refresh');
+									layer.closeAll();
+								} else {
+									toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+								}
+							}
+						});
+					});
+				},
+
+				// 收货人信息更改
+				submitCustomInfo: function(orderId){
+					var customerInfo = Object.assign(tools.getParams('.customerInfoForm'), {
+						"province" : "臺灣",
+					});
+                    $.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/erp/order/address/update/" + orderId,
+                        data: JSON.stringify(customerInfo),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                toastr.success('收件信息修改成功...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();							
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+
+				// 备注更改
+				submitOrderInfo: function(orderId){
+					var orderInfo = tools.getParams('.orderInfoForm');
+                    $.ajax({
+                        type: "PUT",
+                        url: utils.prePath() + "/api/admin/erp/order/update/" + orderId,
+                        data: JSON.stringify(orderInfo),
+                        success: function (result) {
+                            if (result.statusCode == 'OK') {
+                                toastr.success('订单修改成功...');
+								app.data.table.bootstrapTable('refresh');
+								layer.closeAll();							
+                            } else {
+                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                            }
+                        }
+                    });
+				},
+
+				// 初始化筛选栏
+				initSelect : function(){
+					tools.renderSelect.blackReson('select[name="noPassReson"]');
+					tools.renderSelect.storehouse('select[name="storehouseId"]');
+					tools.rangeTime('input[name="submitOrderTimes"]',true);
+					tools.renderSelect.scope('select[name="scopeId"]');
+				},
+
+				// 历史订单查看
+				showParamsTable : function(_params){
+					layer.open({
+						type: 1,
+						title: '历史订单数据',
+						shadeClose: true,
+						shade: false,
+						maxmin: true, //开启最大化最小化按钮
+						area: ['1200px', '650px'],
+						content: '<table id="table-params"></table>'
+					});
+					
+					$('#table-params').bootstrapTable({
+						pagination : true , 
+						cache: false,
+						sortable: false,
+						sidePagination: "server",
+						templateView : false,
+						pageNumber : 1, 
+						pageSize : 30, 
+						pageList : [30 , 60 , 100],
+						toolbarAlign : 'left',
+						queryParamsType : 'page' ,
+						queryParams : function(params){
+							Object.assign(params , _params);
+							params.size = params.pageSize;
+							params.page = parseInt(params.pageNumber)-1;
+							return params;
+						},
+						url: utils.prePath() + '/api/admin/erp/analysis/order',
+						totalField: 'body.totalElements',
+						dataField: 'body.content',
+						columns: [{
+							field: 'order_code',title: '订单号',align: 'center',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.warningDays(value, row.days);
+							}
+						}, {
+							field: 'sku_infos',title: '<span class="columnsTit">商品信息</span><ul class="analysisSkuBox"><li><span>產品ID</span><span>品名</span><span>條碼</span><span>數量</span><span>折扣总价</span><span>商品狀態</span></li></ul>',
+							formatter: function (value, row, index, field) {
+								var skuData = tools.specialStringToArray(value);
+								var html = '<ul class="analysisSkuBox">';
+								skuData.map(function(e){
+									html += '<li>'+
+										'<span>' + e.product_id + '</span>'+
+										'<span style="text-align:left;">' + e.product_title + '（'+e.product_sku_name+'）</span>'+
+										'<span>' + e.product_sku_barcode  + '</span>'+
+										'<span>' + e.product_quantity + '</span>'+
+										'<span class="money">' + e.product_discount_total_price + '</span>'+
+										'<span>' + tools.formatterFunction.orderProStatus(e.order_product_status) + '</span>'+
+									'</li>';
+								});
+								html += '</ul>';
+								return html;
+							}
+						},{
+							field: 'payment_type',title: '付款方式',align: 'center',
+							formatter: function(value, row, index, field) {
+								return tools.formatterFunction.paymentStatus(value);
+							}
+						}, {
+							field: 'order_status',title: '订单状态',align: 'center',
+							formatter: function(value, row, index, field) {
+								return tools.formatterFunction.orderStatus(value);
+							}
+						}, {
+							field: 'order_total_price',title: '折扣总价',align: 'center',
+							formatter: function (value, row, index, field) {
+								return '<span class="money">' + value + '</span>';
+							}
+						}, {
+							field: 'tracker_infos',title: '<span class="columnsTit">包裹信息</span><ul class="trackerInfoBox"><li><span>包裹號</span><span>貨運編號</span><span>配送狀態</span>',
+							formatter: function (value, row, index, field) {
+								if(value){
+									return tools.formatterFunction.trackerInfosSuperShort(value);
+								}else{
+									return ''
+								}
+							}
+						}, {
+							field: 'remark',title: '备注',minWidth:200,
+						}, {
+							field: 'exceptionInfo',title: '异常信息',minWidth:120,
+						}, {
+							field: 'ip_info',title: 'IP',minWidth:120,
+						},  
+						// {
+						// 	field: 'storehouse_id',title: '发货仓',align: 'center',
+						// 	formatter: function (value, row, index, field) {
+						// 		var html = '';
+						// 		cacheSessionStorage.getCache('storehouse').map(function(e){
+						// 			if(value == e.id){
+						// 				html = e.storehouseName	
+						// 			}
+						// 		})
+						// 		return '<span class="nowarp">' + html + '</span>';
+						// 	}
+						// }, 
+						{
+							field: 'created_at',title: '下单时间',align: 'center',minWidth:90,
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.time(value);
+							}
+						}, {
+							field: 'consignee',title: '收貨人',
+							formatter: function (value, row, index, field) {
+								return tools.formatterFunction.addressText(row.consignee, row.tel, row.city, row.district, row.detail);
+							}
+						}],
+						onLoadSuccess : function(data){
+							// tableUi.initBootstrapTable();
+
+							$('.showTracking1').off().on('click', function(){
+								var trackingNumber = $(this).text();
+								var delivery_code = $(this).attr('delivery_code');
+								if(trackingNumber == '--'){
+									toastr.warning('货运编号格式错误');
+									return
+								}
+								$.ajax({
+									type: "GET",
+									url: utils.prePath() + "/api/admin/erp/delivery/tracker/" + trackingNumber + '/' + delivery_code,
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											var data = result.body;
+											if(!data.originInfo || data.originInfo == 'null'){
+												toastr.error('查询不到物流信息！')
+												return false;										
+											}
+											data['trackinfo'] = [];
+											if(!JSON.parse(data.originInfo).trackinfo){
+												toastr.error('查询不到物流信息！')
+												return false;										
+											}
+											JSON.parse(data.originInfo).trackinfo.map(function(e){
+												e.checkpoint_status = tools.formatterFunction.trackerStatus(e.checkpoint_status);
+												data.trackinfo.push(e)
+											})
+											data.status = tools.formatterFunction.trackerStatus(data.status);
+											var index = layer.open({
+												type: 1,
+												content: template('trackerInfo', data),
+												area: ['800px', 'auto'],
+												title: '查看货运详情',
+												skin: 'trackerInfoBox',
+												closeBtn: 1
+											});
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							})
+							$('.refreshTracking1').off().on('click', function(){
+								var trackingNumber = $(this).parent().find('.showTracking1').text();
+								if(trackingNumber == '--'){
+									toastr.warning('货运编号格式错误');
+									return
+								}
+								$.ajax({
+									type: "PUT",
+									url: utils.prePath() + "/api/admin/erp/delivery/tracker/update/" + trackingNumber,
+									success: function (result) {
+										if (result.statusCode == 'OK') {
+											toastr.success('快递信息查询完成...');
+											$('#table-params').bootstrapTable('refresh')
+										} else {
+											toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+										}
+									}
+								});
+							})
+						}
+					});
+				},
+
+				// 批量通过
+				batchPass: function() {
+					var p_data = []
+					$('.checkOrder').each(function(i){
+						var i = $(this).data('index')
+						if($(this).is(":checked")){
+							p_data.push(app.data.orderData[$(this).data('index')].order_id)
+						}
+					});
+					if(p_data == 0){
+						toastr.error('请选择需要批量通过的订单再进行操作。')
+						return false
+					} else {
+						layer.confirm('确定通过？', {icon: 1, title:'警告'}, function(_index){
+							$.ajax({
+								type: "PUT",
+								url: utils.prePath() + "/api/admin/erp/order/approval/pass",
+								data: JSON.stringify(p_data),
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('批量审核已通过...');
+										layer.closeAll();
+										app.data.table.bootstrapTable('refresh');
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						});
+					}
+				},
+
+				// 批量不通过
+				batchFail: function() {
+					var p_data = []
+					$('.checkOrder').each(function(i){
+						var i = $(this).data('index')
+						if($(this).is(":checked")){
+							p_data.push(app.data.orderData[$(this).data('index')].order_id)
+						}
+					});
+					if(p_data == 0){
+						toastr.error('请选择需要批量不通过的订单再进行操作。')
+						return false
+					} else {
+						layer.confirm('确定不通过？', {icon: 2, title:'警告'}, function(_index){
+							$.ajax({
+								type: "POST",
+								url: utils.prePath() + "/api/admin/erp/order/approval/cancel/batch",
+								data: JSON.stringify(p_data),
+								success: function (result) {
+									if (result.statusCode == 'OK') {
+										toastr.success('批量不通过完成...');
+										layer.closeAll();
+										app.data.table.bootstrapTable('refresh');
+									} else {
+										toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+									}
+								}
+							});
+						});
+					}
+				}
+			},
+			events:{
+				initEditAddress: function(){
+					$('.addressBoxEdit').off().on('click', function(){
+						var orderIndex = $(this).data('index');
+						var addressData = app.data.orderData[orderIndex].address.trim().split(' ');
+						var params = {
+							consignee: app.data.orderData[orderIndex].consignee,
+							tel: app.data.orderData[orderIndex].tel,
+							city: addressData[0],
+							district: addressData[1],
+							detail: addressData.slice(2).join(' '),
+							orderId: app.data.orderData[orderIndex].order_id,
+							email: app.data.orderData[orderIndex].email,
+							index: orderIndex
+						}
+						var _index = layer.open({
+							type: 1,
+							content: template('customerInfo', params),
+							area: ['400px', 'auto'],
+							title: '编辑' + app.data.orderData[orderIndex].order_code + '收件信息',
+							skin:'customerInfo',
+							closeBtn: 1
+						});
+					})
+				},
+				initEditOrder: function(){
+					$('.orderUpdate').off().on('click', function(){
+						var orderIndex = $(this).data('index');
+						var params = {
+							remark: app.data.orderData[orderIndex].remark,
+							orderId: app.data.orderData[orderIndex].order_id
+						}
+						var _index = layer.open({
+							type: 1,
+							content: template('orderInfo', params),
+							area: ['400px', 'auto'],
+							title: '编辑订单' + app.data.orderData[orderIndex].order_code + '信息',
+							skin:'orderInfo',
+							closeBtn: 1
+						});
+					})
+				},
+				initCheckbox:function(){
+					$('.checkAll').on('click',function(){
+						console.log('选择')
+						if($(this).is(":checked")){
+							$('.checkOrder').each(function(){
+								if(!$(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}else{
+							$('.checkOrder').each(function(){
+								if($(this).is(":checked")){
+									$(this).click()
+								}
+							})
+						}
+					});
+				}				
+			},
+			init: function(){
+				app.methods.initSelect();
+				app.methods.initTable();
+			}
+		}
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Home</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<!-- VENDOR CSS -->
+		<link rel="stylesheet" href="../dists/bootstrap/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../dists/bootstrap-table/dist/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="../dists/bootstrap-select/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" href="../dists/daterangepicker/daterangepicker.css" />
+		<link rel="stylesheet" href="../dists/font-awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../dists/toastr/toastr.css" />
+		<!-- MAIN CSS -->
+		<link rel="stylesheet" href="../css/main.css?v=20200331">
+		<!-- GOOGLE FONTS -->
+		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+		<style>
+            .set-limit-pro{z-index: 100;}
+            .simpleBtn{padding-top: 0;}
+			.addPromotion .layui-layer-content{padding: 0 10px;}
+			.modal-backdrop{display: none;}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="panel panel-headline">
+				<div class="panel-heading">
+					<div class="left">
+						<h3 class="panel-title">限量购管理</h3>
+						<div class="toolBox btn-group">
+							<button class="btn btn-info btn-sm searchOpen" onclick="tableUi.showSearchView();"><i class="fa fa-angle-double-up"></i>&nbsp; 搜索 </button>
+							<button class="btn btn-primary btn-sm" onclick="app.methods.createPromotion();"><i class="fa fa-plus-square"></i>&nbsp; 创建 </button>
+						</div>
+					</div>
+					<div class="toolBox btn-group right">
+						<button class="btn btn-info btn-sm refresh" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+					</div>
+				</div>
+				<div class="panel-body">
+					<div id="toolbar" class="btn-group">
+						<input type="text" class="form-control" name="productId" placeholder="产品ID">
+						<input type="text" class="form-control" name="productTitle" placeholder="产品名称">
+						<button class="btn btn-primary" onclick="app.data.table.bootstrapTable('refresh');"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>
+					</div>
+					<table id="table-main"></table>
+				</div>
+			</div>
+		</div>
+
+        <div class="modal fade set-limit-pro" style="z-index:3000" role="dialog">
+            <div class="modal-dialog modal-md" role="document">
+                <div class="modal-content">
+                    <div class="modal-wrapper">
+                        <div class="modal-menu">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title">填写活动参数</h4>
+                            </div>
+                            <div class="modal-body">
+                                <form role="form">
+                                    <div class="form-group">
+                                        <label class="control-label">促销限价</label>
+                                        <span class="red">*</span>
+                                        <div>
+                                            <input class="form-control" type="text" name="promotionLimitPrice" placeholder="请填写促销限价" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="control-label">限制数量</label>
+                                        <span class="red">*</span>
+                                        <div>
+                                            <input class="form-control" min="1" type="number" name="totalNumber" placeholder="请填写限制数量" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="control-label">促销开始</label>
+                                        <span class="red">*</span>
+                                        <div>
+                                            <input class="form-control" name="startTime" placeholder="请选择促销开始时间" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="control-label">备注</label>
+                                        <div>
+                                            <input class="form-control" type="text" name="comments" placeholder="请填写备注" />
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" commit>确定</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade change-time" style="z-index:3000" role="dialog">
+                <div class="modal-dialog modal-md" role="document">
+                    <div class="modal-content">
+                        <div class="modal-wrapper">
+                            <div class="modal-menu">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                    <h4 class="modal-title">请选择促销时间</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <form role="form">
+                                        <div class="form-group">
+                                            <label class="control-label">促销期</label>
+                                            <span class="red">*</span>
+                                            <div>
+                                                <input class="form-control" name="changeDate" placeholder="请选择促销时间" />
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" commit>确定</button>
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../dists/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/bootstrap-table.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js" ></script>
+	<script type="text/javascript" src="../dists/bootstrap-select/js/bootstrap-select.min.js" ></script>    
+	<script type="text/javascript" src="../js/moment.js"></script>
+    <script type="text/javascript" src="../dists/daterangepicker/daterangepicker.min.js"></script>
+	<script type="text/javascript" src="../js/plupload-upload.js"></script>
+	<script type="text/javascript" src="../dists/layer/layer.js"></script>
+	<script type="text/javascript" src="../dists/toastr/toastr.js"></script>
+	<script type="text/javascript" src="../js/common.js?v=20200331"></script>
+	<script type="text/javascript" src="../js/public-func.js?v=20200331"></script>
+	<script type="text/javascript">
+		var app = {
+			data : {
+				table : $("#table-main")
+			},
+			methods : {
+				initTable : function(){
+					app.data.table.bootstrapTable(Object.assign(tableUi.data.tableOption_page, {
+						url: utils.prePath() + '/api/admin/promotion/limit/number',
+						columns: app.methods.optionByAuthority(),
+						onLoadSuccess : function(data){
+							tableUi.initBootstrapTable();
+                            app.data.proData = data.body.content
+					    },
+					}));
+				},
+                optionByAuthority: function () {
+					var option = [{
+						field: 'product_id',
+						title: '产品ID',
+						align : 'center',
+						width : 50,
+						minWidth : 50,
+						formatter :  function(value, row, index, field) {
+							return   '<a href="'+row.source_url+'" target="_blank">'+value+'</a>';
+						}
+					}, {
+						field: 'image_url',
+						title: '产品主图',
+						width : 60,
+						minWidth : 60,
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<a href="#" onclick = "app.methods.preview('+row.product_id+');"><img src="'+value+'" alt="'+row.title+'" class="img-responsive proImage" style="max-width: 80px; max-height: 80px; margin: 0px auto;"></a>';
+						}
+					}, {
+						field: 'title',
+						title: '产品标题',
+						width : 200,
+						minWidth : 200,
+						formatter :  function(value, row, index, field) {
+							return   '<span>'+(value || '--')+'</span>';
+						}
+					}, {
+						field: 'organize',
+						title: '产品分类',
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<span>'+(value || '--')+'</span>';
+						}
+					}, {
+						field: 'sale_number',
+						title: '已售数量',
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<span>'+value+'</span>';
+						}
+					}, {
+						field: 'total_number',
+						title: '限制总数量',
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<span>'+(value || '--')+'</span>';
+						}
+					}, {
+						field: 'original_price',
+						title: '原价',
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<span>'+(value || '--')+'</span>';
+						}
+					}, {
+						field: 'promotion_limit_price',
+						title: '活动价',
+						align : 'center',
+						formatter :  function(value, row, index, field) {
+							return   '<span class="simpleBtn" onclick="app.methods.productEdit(' + index + ',\'promotion_limit_price\')">'+(value || '--')+'</span>';
+						}
+					},{
+						field: 'status',
+						title: '产品状态' ,
+						align : 'center',
+						width : 50,
+						formatter :  function(value, row, index, field) {
+							var statusHtml = '' ;
+							switch (value){
+								case 20:
+									statusHtml = '<span class="label label-warning">已下架</span>' ;
+									break;
+								case 10:
+									statusHtml = '<span class="label label-info">已上架</span>' ;
+									break;
+								case 0:
+									statusHtml = '<span class="label label-info">创建中</span>' ;
+									break;
+								case 1:
+									statusHtml = '<span class="label label-info">已创建</span>' ;
+									break;
+								case -1:
+									statusHtml = '<span class="label label-danger">创建失败</span>' ;
+									break;
+								default:
+									break;
+							}
+							return statusHtml ;			        	
+						}
+					}, {
+						field: 'start_time',
+						title: '活动开始',
+						align : 'center',
+						minWidth : 100,
+						formatter :  function(value, row, index, field) {
+							var time = moment(value).format('YYYY-MM-DD HH:mm:ss');
+							return '<span class="text-length-table-col simpleBtn" onclick="app.methods.productTimeEdit(' + index + ')">' + time + '</span>';
+						}
+					}, {
+						field: 'comments',
+						title: '备注',
+						minWidth : 120,
+						formatter :  function(value, row, index, field) {
+							return   '<span onclick="app.methods.productEdit(' + index + ',\'comments\')">'+(value || '--')+'</span>';
+						}
+					}, {
+						title: '操作' , 
+						align : 'center',
+						width : 140,
+						minWidth : 120,
+						formatter :  function(value, row, index, field) {
+							return '<a class="btn btn-danger btn-xs" onclick="app.methods.productDelete('+row.id+')">刪除</a>'
+						}
+					}];
+					return option;
+				},
+				searchTable : function(){
+					app.data.table.bootstrapTable('refresh');
+				},
+				enterKey : function(){
+					$('#toolbar').keyup(function(event){
+					  	if(event.keyCode ==13){
+					    	app.methods.searchTable();
+					  	}
+					});
+				},
+				productPublish : function(productId , status){
+					$.ajax({
+						type : "PUT",
+						url : utils.prePath()+"/api/admin/product/" + productId,
+						data : JSON.stringify({'status' : status}),
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.table.bootstrapTable('refresh');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				productDelete : function(promotionId){
+					$.ajax({
+						type:"DELETE",
+						url : utils.prePath()+"/api/admin/promotion/limit/number/"+promotionId,
+						success : function(result){
+							if(result.statusCode == 'OK'){
+								app.data.table.bootstrapTable('refresh');
+							}else{
+								toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+							}
+						}
+					});
+				},
+				productEdit : function(index, valueName){
+                    var data = app.data.proData[index];
+                    layer.prompt({title: '修改', value : app.data.proData[index][valueName] , formType: 0}, function(text, index){
+                        if( valueName == 'promotion_limit_price' && !/^[0-9]*$/.test(text)){
+                            toastr.error('请填写数字...');
+                            return false;
+                        }
+                        layer.close(index);
+                        data[valueName] = text;
+                        $.ajax({
+                            type:"POST",
+                            url : utils.prePath()+"/api/admin/promotion/limit/number",
+                            data : JSON.stringify({
+                                "id": data.id,
+                                "productId" : data.product_id,
+                                "promotionLimitPrice" : data.promotion_limit_price ,
+                                "startTime" : data.start_time.replace(/T/,' '), 
+                                "totalNumber" : data.total_number,
+                                "comments" : data.comments
+                            }),
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+                                    app.data.table.bootstrapTable('refresh');
+                                    layer.close(index);
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });
+                },
+                productTimeEdit: function(index){
+					var data = app.data.proData[index];
+                    var _modal = $(".change-time");
+                    _modal.modal({
+                        backdrop: 'static',
+                        keyboard: false,
+                        show: false
+                    });
+                    _modal.find('input').val("");
+                    _modal.modal("show");
+
+                    $('input[name="changeDate"]').daterangepicker({
+                        "singleDatePicker": true,
+                        "showDropdowns": true,
+                        "timePicker": true,
+                        "timePicker24Hour": true,
+						"startDate" : data.start_time,
+						"minDate": moment(),
+						"maxDate": moment().add(3,'day'),
+                        "locale": {
+                            "format": 'YYYY-MM-DD HH:mm:ss',
+                        },
+                    });
+
+                    _modal.find('button[commit]').off('click').on('click', function () {
+                        var datetimes = $("input[name='changeDate']").val().trim();
+                        $.ajax({
+                            type:"POST",
+                            url : utils.prePath()+"/api/admin/promotion/limit/number",
+                            data : JSON.stringify({
+                                "id": data.id,
+                                "productId" : data.product_id,
+                                "promotionLimitPrice" : data.promotion_limit_price,
+                                "startTime" : datetimes.split(' - ')[0], 
+                                "comments" : data.comments,
+                                "totalNumber" : data.total_number
+                            }),
+                            success : function(result){
+                                if(result.statusCode == 'OK'){
+                                    app.data.table.bootstrapTable('refresh');
+                                    _modal.modal("hide");                                    
+                                }else{
+                                    toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                }
+                            }
+                        });
+                    });                    
+                },
+				preview : function(id){
+					layer.open({
+					  	type: 2,
+					  	title: '产品预览',
+					  	maxmin : true,
+					  	shadeClose: true,
+					  	resize : false,	
+					  	shade: 0.8,
+					  	area: ['392px', '710px'],
+					  	content: utils.perviewPath(id)
+                    });
+				},
+				createPromotion : function(){
+					layer.open({
+                        type: 1,
+						title : '营销产品',
+						skin: 'addPromotion',
+                        area: ['900px', '650px'], //宽高
+                        content: '<div id="searchBar" class="form-inline" style="padding: 8px 0;">'
+                                +'  <div class="form-group"><input type="text" class="form-control" name="id" placeholder="产品ID"></div>'
+                                +'  <div class="form-group"><input type="text" class="form-control" name="title" placeholder="产品标题"></div>'
+                                +'  <button class="btn btn-primary" onclick="app.methods.searchPromotionTable();"><i class="fa fa-search"></i>&nbsp;&nbsp;查询</button>'
+                                +'</div>'
+                                +'<table id="promotion-table"></table>',
+                        btn: ['确定', '取消'] ,
+                        btnAlign: 'c',
+                        yes: function(index, layero){
+                        	var _selections = $('#promotion-table').bootstrapTable('getSelections');
+                        	if(_selections.length > 0){
+                                var _selectionProduct = _selections[0];
+                                // 弹出价格框
+                                var _this = this;
+
+                                $('.set-limit-pro input[name="startTime"]').daterangepicker({
+                                    "singleDatePicker": true,
+                                    "showDropdowns": true,
+                                    "timePicker": true,
+                                    "timePicker24Hour": true,
+									"minDate": moment(),
+									"maxDate": moment().add(3,'day'),
+                                    "locale": {
+                                        "format": 'YYYY-MM-DD HH:mm:ss',
+                                    },
+                                });
+
+                                //modal初始化
+                                var _modal = $(".set-limit-pro");
+                                _modal.find('input').val("");
+                                _modal.modal("show");
+
+                                _modal.find('button[commit]').off('click').on('click', function () {
+                                    var data = {
+                                        'productId' : _selectionProduct.id ,
+                                        "promotionLimitPrice" : $('.set-limit-pro input[name="promotionLimitPrice"]').val(),
+                                        "totalNumber": $(".set-limit-pro input[name='totalNumber']").val().trim(),
+                                        "startTime" : $(".set-limit-pro input[name='startTime']").val().trim(), 
+                                        "comments" : $('.set-limit-pro input[name="comments"]').val()
+                                    }
+                                    if(!data.promotionLimitPrice){
+                                        toastr.error('请填写促销价格...');
+                                        return false;
+                                    }
+                                    if(!data.startTime){
+                                        toastr.error('请选择促销时间...');
+                                        return false;
+                                    }
+                                    if(!data.totalNumber){
+                                        toastr.error('请设置库存量...');
+                                        return false;
+                                    }
+                                    $.ajax({
+                                        type:"POST",
+                                        url : utils.prePath()+"/api/admin/promotion/limit/number",
+                                        data : JSON.stringify(data),
+                                        success : function(result){
+                                            if(result.statusCode == 'OK'){
+                                                app.data.table.bootstrapTable('refresh');
+                                                _modal.modal("hide");                                    
+                                                layer.close(index);
+                                            }else{
+                                                toastr.error((result.body && result.body.message) ? result.body.message : '系统异常,请稍候重试或联系开发人员...');
+                                            }
+                                        }
+                                    });
+                                });
+                        	}else{
+                        		toastr.error('营销主产品不能为空...');
+                        		return;
+                        	}
+                        }
+                    });
+					tools.renderSelect.organizes('#searchBar');                    
+					app.methods.initPromotionTable();
+				},
+				initPromotionTable : function(){
+					$('#promotion-table').bootstrapTable({
+                        pagination : true ,
+                        cache: false,
+                        sortable: false,
+                        sidePagination: "server",
+                        showColumns : false,
+                        clickToSelect : true,
+                        templateView : false,
+                        templateFormatter : 'imagetpl' ,
+                        showHeader : true,
+                        pageNumber : 1 ,
+                        pageSize : 15 ,
+                        pageList : [15 , 30 , 45 , 90],
+                        queryParamsType : 'page' ,
+                        queryParams : function(params){
+                            params.status = 10;
+                            params.id = $('#searchBar input[name=id]').val();
+                            params.title = $('#searchBar input[name=title]').val();
+                            params.organize = ($('select[name="organize"]').val() == '#') ? '' : $('select[name="organize"]').val();
+                            params.size = params.pageSize;
+                            params.page = parseInt(params.pageNumber)-1;
+                            return params;
+                        },
+                        url: utils.prePath() + '/api/admin/product/list',
+                        totalField: 'body.totalElements',
+                        dataField: 'body.content',
+                        columns: [{
+                        	radio : true
+					    },{
+					        field: 'id',
+					        title: 'ID',
+					        align : 'center',
+					        width : 50,
+					        minWidth : 50,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="'+row.productExt.sourceUrl+'" target="_blank">'+value+'</a>';
+							}
+					    }, {
+					        field: 'productImageUrl',
+					        title: '主图',
+					        width : 60,
+					        minWidth : 60,
+					        align : 'center',
+					        formatter :  function(value, row, index, field) {
+					        	return   '<a href="#" onclick = "app.methods.preview('+row.id+');"><img src="'+value+'" alt="'+row.title+'" class="img-responsive proImage"></a>';
+							}
+					    }, {
+					        field: 'title',
+					        title: '标题',
+					        width : 200,
+					        minWidth : 200,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span>'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'keywords',
+					        title: '关键词',
+					        width : 150,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'description',
+					        title: '描述',
+							width : 100,
+					        minWidth : 100,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span>'+(value || '--')+'</span>';
+							}
+					    }, {
+					        field: 'remark',
+					        title: '留言',
+					        width : 200,
+					        formatter :  function(value, row, index, field) {
+					        	return   '<span class="text-length-table-col">'+(row.productExt.remark || '--')+'</span>';
+							}
+					    }]
+                    });
+				},
+				searchPromotionTable : function(){
+                    $('#promotion-table').bootstrapTable('refresh');
+                }
+			},
+			init : function(){
+				app.methods.initTable();
+				app.methods.enterKey();
+			}
+		}
+		
+		$(function(){
+			app.init();
+		});
+	</script>
+</html>
